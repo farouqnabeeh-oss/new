@@ -1,0 +1,618 @@
+import { unstable_noStore as noStore } from "next/cache";
+import { getSupabaseAdmin } from "@/lib/supabase";
+import type {
+  AddonGroup,
+  AddonGroupItem,
+  AdminUser,
+  Branch,
+  Category,
+  Customer,
+  MenuBanner,
+  Order,
+  Product,
+  ProductSize,
+  ProductType,
+  SiteSettings
+} from "@/lib/types";
+import { toNumber } from "@/lib/utils";
+import * as mock from "@/lib/mock";
+const _supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const isMockMode = !_supabaseUrl ||
+    _supabaseUrl.includes("your-project") ||
+    _supabaseUrl.includes("your-supabase") ||
+    !_supabaseUrl.startsWith("https://") ||
+    !_supabaseUrl.includes(".supabase.co");
+
+
+function mapBranch(row: Record<string, unknown>): Branch {
+  return {
+    id: Number(row.id),
+    slug: String(row.slug ?? ""),
+    nameAr: String(row.name_ar ?? ""),
+    nameEn: String(row.name_en ?? ""),
+    phone: String(row.phone ?? ""),
+    whatsApp: String(row.whatsapp ?? ""),
+    bannerImagePath: (row.banner_image_path as string | null) ?? null,
+    discountPercent: toNumber(row.discount_percent),
+    isActive: Boolean(row.is_active),
+    sortOrder: Number(row.sort_order ?? 0),
+    latitude: row.latitude ? Number(row.latitude) : null,
+    longitude: row.longitude ? Number(row.longitude) : null,
+    openingTime: (row.opening_time as string | null) ?? null,
+    closingTime: (row.closing_time as string | null) ?? null,
+    deliveryFee: toNumber(row.delivery_fee),
+    deliveryZones: ((row.delivery_zones as any[]) ?? []).map(z => ({
+      ...z,
+      nameAr: z.nameAr || z.name || "",
+      nameEn: z.nameEn || z.name || "",
+      fee: toNumber(z.fee)
+    })),
+    promoVideoUrl: (row.promo_video_url as string | null) ?? null,
+    createdAt: String(row.created_at ?? ""),
+    updatedAt: String(row.updated_at ?? "")
+  };
+}
+
+function mapCategory(row: Record<string, unknown>): Category {
+  return {
+    id: Number(row.id),
+    nameAr: String(row.name_ar ?? ""),
+    nameEn: String(row.name_en ?? ""),
+    branchId: row.branch_id === null ? null : Number(row.branch_id),
+    sortOrder: Number(row.sort_order ?? 0),
+    iconClass: (row.icon_class as string | null) ?? null,
+    isActive: Boolean(row.is_active),
+    createdAt: String(row.created_at ?? ""),
+    updatedAt: String(row.updated_at ?? "")
+  };
+}
+
+function mapProductSize(row: Record<string, unknown>): ProductSize {
+  return {
+    id: Number(row.id),
+    productId: Number(row.product_id),
+    nameAr: String(row.name_ar ?? ""),
+    nameEn: String(row.name_en ?? ""),
+    price: toNumber(row.price),
+    sortOrder: Number(row.sort_order ?? 0)
+  };
+}
+
+function mapProductType(row: Record<string, unknown>): ProductType {
+  return {
+    id: Number(row.id),
+    productId: Number(row.product_id),
+    nameAr: String(row.name_ar ?? ""),
+    nameEn: String(row.name_en ?? ""),
+    price: toNumber(row.price),
+    description: (row.description as string | null) ?? null,
+    sortOrder: Number(row.sort_order ?? 0)
+  };
+}
+
+function mapProduct(row: Record<string, unknown>): Product {
+  const sizes = Array.isArray(row.product_sizes)
+    ? row.product_sizes.map((size) => mapProductSize(size as Record<string, unknown>))
+    : [];
+  const types = Array.isArray(row.product_types)
+    ? row.product_types.map((type) => mapProductType(type as Record<string, unknown>))
+    : [];
+
+  return {
+    id: Number(row.id),
+    nameAr: String(row.name_ar ?? ""),
+    nameEn: String(row.name_en ?? ""),
+    descriptionAr: (row.description_ar as string | null) ?? null,
+    descriptionEn: (row.description_en as string | null) ?? null,
+    basePrice: toNumber(row.base_price),
+    discount: toNumber(row.discount),
+    imagePath: (row.image_path as string | null) ?? null,
+    categoryId: Number(row.category_id),
+    branchId: row.branch_id === null ? null : Number(row.branch_id),
+    allBranches: Boolean(row.all_branches),
+    hasMealOption: Boolean(row.has_meal_option),
+    hasDonenessOption: Boolean(row.has_doneness_option),
+    sortOrder: Number(row.sort_order ?? 0),
+    isActive: Boolean(row.is_active),
+    createdAt: String(row.created_at ?? ""),
+    updatedAt: String(row.updated_at ?? ""),
+    sizes: sizes.sort((left, right) => left.sortOrder - right.sortOrder),
+    types: types.sort((left, right) => left.sortOrder - right.sortOrder)
+  };
+}
+
+function mapAddonGroupItem(row: Record<string, unknown>): AddonGroupItem {
+  return {
+    id: Number(row.id),
+    addonGroupId: Number(row.addon_group_id),
+    nameAr: String(row.name_ar ?? ""),
+    nameEn: String(row.name_en ?? ""),
+    price: toNumber(row.price),
+    sortOrder: Number(row.sort_order ?? 0),
+    isActive: Boolean(row.is_active)
+  };
+}
+
+function mapAddonGroup(row: Record<string, unknown>): AddonGroup {
+  const items = Array.isArray(row.addon_group_items)
+    ? row.addon_group_items.map((item) => mapAddonGroupItem(item as Record<string, unknown>))
+    : [];
+
+  return {
+    id: Number(row.id),
+    nameAr: String(row.name_ar ?? ""),
+    nameEn: String(row.name_en ?? ""),
+    categoryId: Number(row.category_id),
+    productId: row.product_id === null ? null : Number(row.product_id),
+    groupType: String(row.group_type ?? ""),
+    isRequired: Boolean(row.is_required),
+    allowMultiple: Boolean(row.allow_multiple),
+    sortOrder: Number(row.sort_order ?? 0),
+    isActive: Boolean(row.is_active),
+    createdAt: String(row.created_at ?? ""),
+    updatedAt: String(row.updated_at ?? ""),
+    items: items
+      .filter((item) => item.isActive)
+      .sort((left, right) => left.sortOrder - right.sortOrder)
+  };
+}
+
+function mapSettings(row: Record<string, unknown>): SiteSettings {
+  return {
+    id: Number(row.id),
+    siteName: String(row.site_name ?? "UPTOWN"),
+    siteNameAr: String(row.site_name_ar ?? "أبتاون"),
+    logoUrl: (row.logo_url as string | null) ?? null,
+    currencySymbol: String(row.currency_symbol ?? "₪"),
+    primaryColor: String(row.primary_color ?? "#8B0000"),
+    secondaryColor: String(row.secondary_color ?? "#1a1a1a"),
+    footerText: (row.footer_text as string | null) ?? null,
+    ogImageUrl: (row.og_image_url as string | null) ?? null,
+    metaDescriptionAr: (row.meta_description_ar as string | null) ?? null,
+    metaDescriptionEn: (row.meta_description_en as string | null) ?? null,
+    tiktokUrl: (row.tiktok_url as string | null) ?? null,
+    instagramUptownUrl: (row.instagram_uptown_url as string | null) ?? null,
+    facebookUptownUrl: (row.facebook_uptown_url as string | null) ?? null,
+    facebookPastaUrl: (row.facebook_pasta_url as string | null) ?? null,
+    instagramPastaUrl: (row.instagram_pasta_url as string | null) ?? null,
+    siteEmail: (row.site_email as string | null) ?? null,
+    sitePhone: (row.site_phone as string | null) ?? null,
+    siteAddress: (row.site_address as string | null) ?? null,
+    updatedAt: String(row.updated_at ?? "")
+  };
+}
+
+function mapMenuBanner(row: Record<string, unknown>): MenuBanner {
+  return {
+    id: Number(row.id),
+    name: String(row.name ?? ""),
+    imagePath: String(row.image_path ?? ""),
+    sortOrder: Number(row.sort_order ?? 0),
+    isActive: Boolean(row.is_active),
+    createdAt: String(row.created_at ?? ""),
+    updatedAt: String(row.updated_at ?? "")
+  };
+}
+
+function mapAdminUser(row: Record<string, unknown>): AdminUser {
+  return {
+    id: String(row.id ?? ""),
+    userName: String(row.user_name ?? ""),
+    normalizedUserName: String(row.normalized_user_name ?? ""),
+    email: String(row.email ?? ""),
+    normalizedEmail: String(row.normalized_email ?? ""),
+    emailConfirmed: Boolean(row.email_confirmed),
+    passwordHash: String(row.password_hash ?? ""),
+    securityStamp: (row.security_stamp as string | null) ?? null,
+    concurrencyStamp: (row.concurrency_stamp as string | null) ?? null,
+    phoneNumber: (row.phone_number as string | null) ?? null,
+    phoneNumberConfirmed: Boolean(row.phone_number_confirmed),
+    twoFactorEnabled: Boolean(row.two_factor_enabled),
+    lockoutEnd: (row.lockout_end as string | null) ?? null,
+    lockoutEnabled: Boolean(row.lockout_enabled),
+    accessFailedCount: Number(row.access_failed_count ?? 0),
+    displayName: (row.display_name as string | null) ?? null,
+    createdAt: String(row.created_at ?? "")
+  };
+}
+
+export async function getActiveBanners() {
+  noStore();
+  if (isMockMode) return [] as MenuBanner[];
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("menu_banners")
+    .select("*")
+    .eq("is_active", true)
+    .order("sort_order");
+
+  if (error) {
+    console.error("Error fetching banners:", error);
+    return [];
+  }
+
+  return (data ?? []).map((row) => mapMenuBanner(row));
+}
+
+export async function getSiteSettings() {
+  noStore();
+  if (isMockMode) return mock.mockSettings as SiteSettings;
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase.from("site_settings").select("*").limit(1).maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data) {
+    return {
+      id: 0,
+      siteName: "UPTOWN",
+      siteNameAr: "أبتاون",
+      logoUrl: null,
+      currencySymbol: "₪",
+      primaryColor: "#8B0000",
+      secondaryColor: "#1a1a1a",
+      footerText: "By Jacqueline",
+      ogImageUrl: null,
+      metaDescriptionAr: "أبتاون - مطعم برجر وساندويتشات فاخرة",
+      metaDescriptionEn: "UPTOWN - Premium burgers and sandwiches restaurant",
+      tiktokUrl: null,
+      instagramUptownUrl: null,
+      facebookUptownUrl: null,
+      facebookPastaUrl: null,
+      instagramPastaUrl: null,
+      siteEmail: "info@uptown.ps",
+      sitePhone: "+970 2 295 1234",
+      siteAddress: "Ramallah, Palestine",
+      updatedAt: ""
+    } satisfies SiteSettings;
+  }
+
+  return mapSettings(data);
+}
+
+export async function getActiveBranches() {
+  noStore();
+  if (isMockMode) return mock.mockBranches as Branch[];
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("branches")
+    .select("*")
+    .eq("is_active", true)
+    .order("sort_order")
+    .order("id");
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map((row) => mapBranch(row));
+}
+
+export async function getBranchBySlug(slug: string) {
+  noStore();
+  if (isMockMode) return mock.mockBranches.find(b => b.slug === slug) as Branch | null;
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("branches")
+    .select("*")
+    .ilike("slug", slug)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data ? mapBranch(data) : null;
+}
+
+export async function getMenuBanners() {
+  noStore();
+  if (isMockMode) return mock.mockBanners as MenuBanner[];
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("menu_banners")
+    .select("*")
+    .eq("is_active", true)
+    .order("sort_order")
+    .order("id");
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map((row) => mapMenuBanner(row));
+}
+
+export async function getCategories(branchSlug?: string | null) {
+  noStore();
+  if (isMockMode) return mock.mockCategories as unknown as (Category & { productCount: number })[];
+  const supabase = getSupabaseAdmin();
+
+  let branchId: number | null = null;
+  if (branchSlug) {
+    const branch = await getBranchBySlug(branchSlug);
+    branchId = branch?.id ?? null;
+  }
+
+  let query = supabase
+    .from("categories")
+    .select("*, products(count)")
+    .eq("is_active", true)
+    .order("sort_order")
+    .order("id");
+
+  if (branchId !== null) {
+    query = query.or(`branch_id.is.null,branch_id.eq.${branchId}`);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map((row) => {
+    const category = mapCategory(row);
+    const productCount = Array.isArray(row.products) && row.products[0]?.count ? Number(row.products[0].count) : 0;
+    return { ...category, productCount };
+  });
+}
+
+export async function getProducts(branchSlug?: string | null, categoryId?: number | null) {
+  noStore();
+  if (isMockMode) return mock.mockProducts.filter(p => !categoryId || p.categoryId === categoryId) as unknown as Product[];
+  const supabase = getSupabaseAdmin();
+
+  let branchId: number | null = null;
+  if (branchSlug) {
+    const branch = await getBranchBySlug(branchSlug);
+    branchId = branch?.id ?? null;
+  }
+
+  let query = supabase
+    .from("products")
+    .select("*, product_sizes(*), product_types(*)")
+    .eq("is_active", true)
+    .order("sort_order")
+    .order("id");
+
+  if (branchId !== null) {
+    query = query.or(`all_branches.eq.true,branch_id.eq.${branchId}`);
+  }
+
+  if (categoryId) {
+    query = query.eq("category_id", categoryId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map((row) => mapProduct(row));
+}
+
+export async function getProductById(id: number) {
+  noStore();
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("products")
+    .select("*, categories(name_ar, name_en), product_sizes(*), product_types(*)")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  const product = mapProduct(data);
+  const category = data.categories as { name_ar?: string; name_en?: string } | null;
+  return {
+    ...product,
+    categoryNameAr: category?.name_ar ?? "",
+    categoryNameEn: category?.name_en ?? ""
+  };
+}
+
+export async function getAddonGroups(categoryId?: number | null, productId?: number | null) {
+  noStore();
+  if (isMockMode) return mock.mockAddonGroups as unknown as AddonGroup[];
+  const supabase = getSupabaseAdmin();
+
+  let effectiveCategoryId = categoryId ?? null;
+
+  if (productId) {
+    const { data, error } = await supabase
+      .from("products")
+      .select("category_id")
+      .eq("id", productId)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    effectiveCategoryId = data?.category_id ?? null;
+  }
+
+  if (!effectiveCategoryId) {
+    return [];
+  }
+
+  let query = supabase
+    .from("addon_groups")
+    .select("*, addon_group_items(*)")
+    .eq("category_id", effectiveCategoryId)
+    .eq("is_active", true)
+    .order("sort_order")
+    .order("id");
+
+  if (productId) {
+    query = query.or(`product_id.is.null,product_id.eq.${productId}`);
+  } else {
+    query = query.is("product_id", null);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map((row) => mapAddonGroup(row));
+}
+
+export async function getAdminData() {
+  noStore();
+  if (isMockMode) {
+    return {
+      branches: mock.mockBranches,
+      categories: mock.mockCategories,
+      products: mock.mockProducts,
+      addonGroups: mock.mockAddonGroups,
+      menuBanners: [],
+      settings: mock.mockSettings,
+      orders: [],
+      customers: []
+    };
+  }
+
+  const supabase = getSupabaseAdmin();
+  const [
+    branchesResult,
+    categoriesResult,
+    productsResult,
+    addonGroupsResult,
+    menuBannersResult,
+    settingsResult,
+    ordersResult,
+    customersResult
+  ] = await Promise.all([
+    supabase.from("branches").select("*").order("sort_order").order("id"),
+    supabase.from("categories").select("*, branches(*)").order("sort_order").order("id"),
+    supabase.from("products").select("*, categories(*), branches(*)").order("sort_order").order("id"),
+    supabase
+      .from("addon_groups")
+      .select("*, addon_group_items(*)")
+      .order("sort_order")
+      .order("id"),
+    supabase.from("menu_banners").select("*").order("sort_order").order("id"),
+    supabase.from("site_settings").select("*").limit(1).maybeSingle(),
+    supabase.from("orders").select("*, branches(*), order_items(*)").order("created_at", { ascending: false }).limit(100),
+    supabase.from("customers").select("*").order("created_at", { ascending: false }).limit(100)
+  ]);
+
+  for (const result of [
+    branchesResult,
+    categoriesResult,
+    productsResult,
+    addonGroupsResult,
+    menuBannersResult,
+    settingsResult,
+    ordersResult,
+    customersResult
+  ]) {
+    if (result.error) {
+      throw result.error;
+    }
+  }
+
+  const branches = (branchesResult.data ?? []).map((row) => mapBranch(row));
+  const categories = (categoriesResult.data ?? []).map((row) => mapCategory(row));
+  const categoriesById = new Map(categories.map((category) => [category.id, category]));
+  const branchesById = new Map(branches.map((branch) => [branch.id, branch]));
+  const products = (productsResult.data ?? []).map((row) => {
+    const product = mapProduct(row);
+    return {
+      ...product,
+      category: categoriesById.get(product.categoryId) || { id: 0, nameAr: "بدون قسم", nameEn: "No Category" } as any,
+      branch: product.branchId ? branchesById.get(product.branchId) ?? null : null
+    };
+  });
+  const productsById = new Map(products.map((product) => [product.id, product]));
+  const addonGroups = (addonGroupsResult.data ?? []).map((row) => {
+    const addonGroup = mapAddonGroup(row);
+    return {
+      ...addonGroup,
+      category: categoriesById.get(addonGroup.categoryId)!,
+      product: addonGroup.productId ? productsById.get(addonGroup.productId) ?? null : null
+    };
+  });
+  const menuBanners = (menuBannersResult.data ?? []).map((row) => mapMenuBanner(row));
+  const settings = settingsResult.data ? mapSettings(settingsResult.data) : null;
+  const orders = (ordersResult.data ?? []).map((row: any) => ({
+    ...row,
+    id: Number(row.id),
+    branch: row.branches ? mapBranch(row.branches) : null,
+    items: (row.order_items ?? []).map((item: any) => ({
+        id: Number(item.id),
+        orderId: Number(item.order_id),
+        productId: Number(item.product_id),
+        productNameAr: String(item.product_name_ar),
+        productNameEn: String(item.product_name_en),
+        quantity: Number(item.quantity),
+        price: Number(item.price),
+        addonDetails: item.addon_details
+    }))
+  })) as Order[];
+  const customers = (customersResult.data ?? []) as Customer[];
+
+  return {
+    branches,
+    categories: categories.map((category) => ({
+      ...category,
+      branch: category.branchId ? branchesById.get(category.branchId) ?? null : null
+    })),
+    products,
+    addonGroups,
+    menuBanners,
+    settings,
+    orders,
+    customers
+  };
+}
+
+export async function getSalesStats() {
+  noStore();
+  if (isMockMode) return { total: 12500, daily: 450, weekly: 3200, monthly: 12500 };
+  
+  const supabase = getSupabaseAdmin();
+  // We'll calculate stats from the orders table
+  const { data: orders, error } = await supabase.from("orders").select("total_amount, created_at");
+  if (error || !orders) return { total: 0, daily: 0, weekly: 0, monthly: 0 };
+
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  
+  const total = orders.reduce((sum, o) => sum + Number(o.total_amount), 0);
+  const daily = orders
+    .filter(o => o.created_at.startsWith(today))
+    .reduce((sum, o) => sum + Number(o.total_amount), 0);
+    
+  return { total, daily, weekly: total * 0.4, monthly: total }; // Rough estimates for now
+}
+
+export async function getAdminUserByEmail(email: string) {
+  noStore();
+  if (isMockMode) return null;
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("aspnet_users")
+    .select("*")
+    .eq("normalized_email", email.trim().toUpperCase())
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data ? mapAdminUser(data) : null;
+}

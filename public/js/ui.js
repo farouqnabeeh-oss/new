@@ -1,0 +1,520 @@
+// ===== UI Module =====
+const UI = {
+    showModal(overlayId, panelId) {
+        const overlay = document.getElementById(overlayId);
+        const panel = document.getElementById(panelId);
+        if (overlay) overlay.style.display = 'block';
+        if (panel) {
+            panel.style.display = 'flex';
+            setTimeout(() => panel.classList.add('is-active'), 10);
+        }
+        document.body.style.overflow = 'hidden';
+    },
+
+    hideModal(overlayId, panelId) {
+        const overlay = document.getElementById(overlayId);
+        const panel = document.getElementById(panelId);
+        if (panel) panel.classList.remove('is-active');
+        if (overlay) overlay.style.display = 'none';
+        setTimeout(() => {
+            if (panel) panel.style.display = 'none';
+        }, 400);
+        document.body.style.overflow = '';
+    },
+
+    updateCartBadge(branchSlug) {
+        if (typeof Cart === 'undefined') return;
+        const count = Cart.getCount(branchSlug);
+        const btn = document.getElementById('cart-btn');
+        const badge = document.getElementById('cart-badge');
+
+        if (btn) {
+            btn.style.display = 'flex';
+            // Trigger pulse animation
+            btn.classList.add('cart-pulse');
+            setTimeout(() => btn.classList.remove('cart-pulse'), 500);
+        }
+
+        if (badge) {
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'flex' : 'none';
+        } else if (btn && count > 0 && !document.getElementById('cart-badge')) {
+            // If badge was missing (e.g. innerHTML overwrite), standard updateBadge in page.tsx will catch it
+            // but we can force a re-render of the inner button if needed.
+        }
+    },
+
+    renderCartModal(branchSlug, currency) {
+        const items = Cart.getItems(branchSlug);
+        const total = Cart.getTotal(branchSlug);
+        const panel = document.getElementById('cart-modal');
+        const isAr = Lang.current === 'ar';
+
+        if (items.length === 0) {
+            panel.innerHTML = `
+                <div class="modal-header premium-cart-header">
+                    <span class="modal-title">${Lang.t('cart')}</span>
+                    <button class="modal-close" onclick="UI.hideModal('cart-modal-overlay','cart-modal')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+                <div class="modal-body cart-empty-premium">
+                    <div class="cart-empty-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#ECEAE7" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+                    </div>
+                    <h4>${isAr ? 'حقيبتك فارغة' : 'Your Bag is Empty'}</h4>
+                    <p>${Lang.t('emptyCart')}</p>
+                    <button class="uptown-btn-outline mt-6" onclick="UI.hideModal('cart-modal-overlay','cart-modal')">${isAr ? 'ابدأ التسوق' : 'Start Shopping'}</button>
+                </div>`;
+            return;
+        }
+
+        const itemsHtml = items.map(item => {
+            const itemName = Lang.localized(item.nameAr, item.nameEn);
+            const itemPrice = (item.finalPrice * item.quantity).toFixed(0);
+            return `
+                <div class="cart-item-premium">
+                    <div class="cart-item-img-box">
+                        <img src="${item.imagePath || 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=200'}" alt="${itemName}">
+                    </div>
+                    <div class="cart-item-content">
+                        <div class="cart-item-top">
+                            <span class="cart-item-name">${itemName}</span>
+                            <button class="cart-item-remove" onclick="Cart.removeItem('${branchSlug}','${item.id}');UI.renderCartModal('${branchSlug}','${currency}');UI.updateCartBadge('${branchSlug}');">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            </button>
+                        </div>
+                        <div class="cart-item-meta">
+                            ${item.selectedSize ? `<span class="badge-mini">${Lang.localized(item.selectedSize.nameAr, item.selectedSize.nameEn)}</span>` : ''}
+                            ${item.selectedType ? `<span class="badge-mini">${Lang.localized(item.selectedType.nameAr, item.selectedType.nameEn)}</span>` : ''}
+                        </div>
+                        <div class="cart-item-footer">
+                            <div class="cart-qty-control">
+                                <button onclick="Cart.setQuantity('${branchSlug}','${item.id}', ${item.quantity - 1});UI.renderCartModal('${branchSlug}','${currency}');UI.updateCartBadge('${branchSlug}');">−</button>
+                                <span>${item.quantity}</span>
+                                <button onclick="Cart.setQuantity('${branchSlug}','${item.id}', ${item.quantity + 1});UI.renderCartModal('${branchSlug}','${currency}');UI.updateCartBadge('${branchSlug}');">+</button>
+                            </div>
+                            <span class="cart-item-price-premium">${itemPrice} ${currency}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        panel.innerHTML = `
+            <div class="modal-header premium-cart-header">
+                <span class="modal-title">${Lang.t('cart')} (${items.length})</span>
+                <button class="modal-close" onclick="UI.hideModal('cart-modal-overlay','cart-modal')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <div class="modal-body side-modal-body">
+                <div class="cart-items-wrapper">
+                    ${itemsHtml}
+                </div>
+                <div class="cart-summary-premium">
+                    <div class="summary-line">
+                        <span>${isAr ? 'المجموع الفرعي' : 'Subtotal'}</span>
+                        <span>${total.toFixed(0)} ${currency}</span>
+                    </div>
+                    <div class="summary-line grand-total">
+                        <span>${Lang.t('total')}</span>
+                        <span>${total.toFixed(0)} ${currency}</span>
+                    </div>
+                    <button class="uptown-checkout-btn" onclick="UI.hideModal('cart-modal-overlay','cart-modal');window.location.href='/checkout/${branchSlug}';">
+                        ${Lang.t('checkout')}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-inline-start:10px"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    </button>
+                </div>
+            </div>`;
+    },
+
+    renderProductModal(product, addonGroups, branchSlug, currency, branchDiscount) {
+        const panel = document.getElementById('product-modal');
+        let state = {
+            quantity: 1,
+            selectedSize: product.sizes?.length ? product.sizes[0] : null,
+            selectedType: product.types?.length ? product.types[0] : null,
+            selectedAddOns: [],
+            note: ''
+        };
+        const hasCombinedSizeAndType = !!product.sizes?.length && !!product.types?.length;
+
+        const getSelectedIds = () => new Set(state.selectedAddOns.map(item => item.id));
+        const isMealSelection = () => {
+            const type = state.selectedType;
+            if (!product.hasMealOption || !type) return false;
+            const text = `${type.nameAr || ''} ${type.nameEn || ''}`.toLowerCase();
+            return text.includes('meal') || text.includes('وجبة');
+        };
+
+        const findGroupByItemId = (itemId) => addonGroups.find(group => group.items.some(item => item.id === itemId));
+
+        const getVisibleGroups = () => addonGroups.filter(group => {
+            switch (group.groupType) {
+                case 'MealDrink':
+                case 'MealDrinkUpgrade':
+                case 'MealFries':
+                    return isMealSelection();
+                case 'Doneness':
+                    return !!product.hasDonenessOption;
+                default:
+                    return true;
+            }
+        });
+
+        const syncVisibleSelections = () => {
+            const visibleGroupIds = new Set(getVisibleGroups().map(group => group.id));
+            state.selectedAddOns = state.selectedAddOns.filter(item => {
+                const group = findGroupByItemId(item.id);
+                return group && visibleGroupIds.has(group.id);
+            });
+
+            getVisibleGroups().forEach(group => {
+                if (!group.isRequired || group.allowMultiple || !group.items.length) return;
+                const hasSelection = state.selectedAddOns.some(item => group.items.some(groupItem => groupItem.id === item.id));
+                if (!hasSelection) {
+                    state.selectedAddOns.push(group.items[0]);
+                }
+            });
+        };
+
+        const calculateBasePrice = () => {
+            if (state.selectedSize && hasCombinedSizeAndType) {
+                return state.selectedSize.price + (state.selectedType?.price || 0);
+            }
+            if (state.selectedSize) return state.selectedSize.price;
+            if (state.selectedType) return state.selectedType.price;
+            return product.basePrice || 0;
+        };
+
+        const calculateUnitPrice = () => {
+            const addonsPrice = state.selectedAddOns.reduce((sum, addon) => sum + (addon.price || 0), 0);
+            let unitPrice = calculateBasePrice() + addonsPrice;
+
+            if (product.discount > 0) unitPrice = unitPrice - (unitPrice * product.discount / 100);
+            if (branchDiscount > 0) unitPrice = unitPrice - (unitPrice * branchDiscount / 100);
+
+            return unitPrice;
+        };
+
+        const validateRequiredGroups = () => {
+            const missingGroups = getVisibleGroups().filter(group => {
+                if (!group.isRequired) return false;
+                return !state.selectedAddOns.some(item => group.items.some(groupItem => groupItem.id === item.id));
+            });
+
+            if (!missingGroups.length) return true;
+
+            const missingLabel = Lang.localized(missingGroups[0].nameAr, missingGroups[0].nameEn);
+            alert(`${Lang.t('required')}: ${missingLabel}`);
+            return false;
+        };
+
+        const toggleAddon = (group, item) => {
+            if (group.allowMultiple) {
+                const exists = state.selectedAddOns.findIndex(addon => addon.id === item.id);
+                if (exists >= 0) {
+                    state.selectedAddOns.splice(exists, 1);
+                } else {
+                    state.selectedAddOns.push(item);
+                }
+            } else {
+                const currentlySelected = state.selectedAddOns.some(existing => existing.id === item.id);
+                state.selectedAddOns = state.selectedAddOns.filter(existing => {
+                    const existingGroup = findGroupByItemId(existing.id);
+                    return existingGroup?.id !== group.id;
+                });
+
+                if (!currentlySelected || group.isRequired) {
+                    state.selectedAddOns.push(item);
+                }
+            }
+        };
+
+        const renderGroup = (group, selectedIds) => {
+            const groupLabel = Lang.localized(group.nameAr, group.nameEn);
+            const reqBadge = group.isRequired ? `<span class="required-badge">(${Lang.t('required')})</span>` : '';
+
+            return `
+                <div class="option-group">
+                    <div class="option-group-title">${groupLabel} ${reqBadge}</div>
+                    <div class="option-stack">
+                        ${group.items.map(item => {
+                const isSelected = selectedIds.has(item.id);
+                const itemNameAr = item.nameAr || '';
+                const itemNameEn = item.nameEn || '';
+                const isNote = itemNameAr.includes('بدون') || itemNameEn.toLowerCase().includes('without') || itemNameEn.toLowerCase().includes('no ');
+
+                const selectorClass = group.allowMultiple ? 'option-item-check' : 'option-item-radio';
+                const priceLabel = item.price > 0 ? `+${item.price}${currency}` : '';
+
+                return `
+                                <div class="option-item ${isSelected ? 'selected' : ''} ${isNote ? 'is-note-option' : ''}" data-action="addon" data-group-id="${group.id}" data-id="${item.id}">
+                                    <div class="option-item-label">
+                                        <div class="${selectorClass}"></div>
+                                        <span class="option-item-name">${isNote ? '❌ ' : ''}${Lang.localized(itemNameAr, itemNameEn)}</span>
+                                    </div>
+                                    ${priceLabel ? `<span class="option-item-price">${priceLabel}</span>` : ''}
+                                </div>
+                            `;
+            }).join('')}
+                    </div>
+                </div>
+            `;
+        };
+
+        const render = () => {
+            syncVisibleSelections();
+
+            const selectedIds = getSelectedIds();
+            const visibleGroups = getVisibleGroups();
+            const totalPrice = calculateUnitPrice() * state.quantity;
+
+            let html = `
+                <div class="modal-header">
+                    <button class="modal-close" onclick="UI.hideModal('product-modal-overlay','product-modal')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                    <span class="modal-title">${Lang.localized(product.nameAr, product.nameEn)}</span>
+                </div>
+                <div class="modal-body">
+            `;
+
+            const desc = Lang.localized(product.descriptionAr, product.descriptionEn);
+            if (desc) {
+                html += `<div class="product-modal-desc">${desc}</div>`;
+            }
+
+            if (product.sizes?.length) {
+                html += `
+                    <div class="option-group">
+                        <div class="option-group-title">${Lang.t('size')}</div>
+                        <div class="option-stack">
+                            ${product.sizes.map(size => {
+                    const priceText = size.price > 0 ? `+${size.price}${currency}` : `${currency}`;
+                    return `
+                                <div class="option-item ${state.selectedSize?.id === size.id ? 'selected' : ''}" data-action="size" data-id="${size.id}">
+                                    <span class="option-item-price">${priceText}</span>
+                                    <div class="option-item-label">
+                                        <span class="option-item-name">${Lang.localized(size.nameAr, size.nameEn)}</span>
+                                        <div class="option-item-radio"></div>
+                                    </div>
+                                </div>
+                            `;
+                }).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (product.types?.length) {
+                const selectedSizePrice = state.selectedSize?.price || product.basePrice || 0;
+                html += `
+                    <div class="option-group">
+                        <div class="option-group-title">${Lang.t('type')}</div>
+                        <div class="option-stack">
+                            ${product.types.map(type => {
+                    const priceVal = hasCombinedSizeAndType ? selectedSizePrice + (type.price || 0) : type.price;
+                    const priceText = priceVal > 0 ? `+${priceVal}${currency}` : `${currency}`;
+                    return `
+                                <div class="option-item ${state.selectedType?.id === type.id ? 'selected' : ''}" data-action="type" data-id="${type.id}">
+                                    <span class="option-item-price">${priceText}</span>
+                                    <div class="option-item-label">
+                                        <span class="option-item-name">${Lang.localized(type.nameAr, type.nameEn)}</span>
+                                        <div class="option-item-radio"></div>
+                                    </div>
+                                </div>
+                            `;
+                }).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            html += visibleGroups.map(group => {
+                const groupLabel = Lang.localized(group.nameAr, group.nameEn);
+                return `
+                    <div class="option-group">
+                        <div class="option-group-title">${groupLabel}</div>
+                        <div class="option-stack">
+                            ${group.items.map(item => {
+                    const isSelected = selectedIds.has(item.id);
+                    const selectorClass = group.allowMultiple ? 'option-item-check' : 'option-item-radio';
+                    const priceText = item.price > 0 ? `+${item.price}${currency}` : '';
+                    return `
+                                    <div class="option-item ${isSelected ? 'selected' : ''}" data-action="addon" data-group-id="${group.id}" data-id="${item.id}">
+                                        <span class="option-item-price">${priceText}</span>
+                                        <div class="option-item-label">
+                                            <span class="option-item-name">${Lang.localized(item.nameAr, item.nameEn)}</span>
+                                            <div class="${selectorClass}"></div>
+                                        </div>
+                                    </div>
+                                `;
+                }).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            html += `
+                <div class="note-field">
+                    <label style="text-align:right; display:block; margin-bottom:10px; font-weight:900;">${Lang.t('addNote')}</label>
+                    <textarea id="product-note" placeholder="${Lang.t('notes')}..." style="width:100%; border-radius:15px; border:2px solid #eee; padding:15px; text-align:right;">${state.note}</textarea>
+                </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="add-to-cart-btn" data-action="add-to-cart">${Lang.t('addToCart')} (${totalPrice.toFixed(0)}${currency})</button>
+                </div>
+            `;
+
+            panel.innerHTML = html;
+
+            panel.querySelectorAll('[data-action]').forEach(element => {
+                element.addEventListener('click', () => {
+                    const action = element.dataset.action;
+
+                    if (action === 'size') {
+                        state.selectedSize = product.sizes.find(size => size.id == element.dataset.id);
+                        render();
+                        return;
+                    }
+
+                    if (action === 'type') {
+                        state.selectedType = product.types.find(type => type.id == element.dataset.id);
+                        render();
+                        return;
+                    }
+
+                    if (action === 'addon') {
+                        const group = addonGroups.find(current => current.id == element.dataset.groupId);
+                        const item = group?.items.find(current => current.id == element.dataset.id);
+                        if (!group || !item) return;
+                        toggleAddon(group, item);
+                        render();
+                        return;
+                    }
+
+                    if (action === 'qty-minus') {
+                        if (state.quantity > 1) state.quantity--;
+                        render();
+                        return;
+                    }
+
+                    if (action === 'qty-plus') {
+                        state.quantity++;
+                        render();
+                        return;
+                    }
+
+                    if (action === 'add-to-cart') {
+                        state.note = document.getElementById('product-note')?.value || '';
+                        if (!validateRequiredGroups()) return;
+
+                        Cart.addItem(
+                            branchSlug,
+                            product,
+                            state.quantity,
+                            state.selectedSize,
+                            state.selectedType,
+                            state.selectedAddOns,
+                            state.note,
+                            branchDiscount
+                        );
+                        UI.hideModal('product-modal-overlay', 'product-modal');
+                        UI.updateCartBadge(branchSlug);
+                    }
+                });
+            });
+        };
+
+        render();
+        UI.showModal('product-modal-overlay', 'product-modal');
+    }
+};
+
+window.UI = UI;
+
+const bindUIEvents = () => {
+    // Modal Close
+    document.getElementById('cart-modal-overlay')?.addEventListener('click', () => UI.hideModal('cart-modal-overlay', 'cart-modal'));
+    document.getElementById('product-modal-overlay')?.addEventListener('click', () => UI.hideModal('product-modal-overlay', 'product-modal'));
+
+    // Initial Badge Update
+    const prefBranch = localStorage.getItem('uptown-preferred-branch');
+    if (prefBranch) UI.updateCartBadge(prefBranch);
+
+    // Header Scroll Effect
+    const header = document.getElementById('site-header');
+    const handleScroll = () => {
+        if (window.scrollY > 50) {
+            header?.classList.add('is-scrolled');
+        } else {
+            header?.classList.remove('is-scrolled');
+        }
+    };
+    window.addEventListener('scroll', handleScroll);
+    handleScroll(); // Initial check
+
+    // Mobile Menu Toggle
+    const mobileMenu = document.getElementById('ultra-mobile-menu');
+    const toggleBtn = document.getElementById('mobile-menu-toggle');
+    const closeBtn = document.getElementById('close-menu');
+
+    const openMobileMenu = () => {
+        mobileMenu?.classList.add('is-open');
+        document.body.style.overflow = 'hidden';
+    };
+
+    const closeMobileMenu = () => {
+        mobileMenu?.classList.remove('is-open');
+        document.body.style.overflow = '';
+    };
+
+    toggleBtn?.addEventListener('click', openMobileMenu);
+    closeBtn?.addEventListener('click', closeMobileMenu);
+
+    // Close mobile menu on link click
+    mobileMenu?.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', closeMobileMenu);
+    });
+
+    // Cart Button Click
+    const cartBtn = document.getElementById('cart-btn');
+    cartBtn?.addEventListener('click', () => {
+        // Find active branch slug
+        let branchSlug = '';
+        const path = window.location.pathname;
+        
+        if (path.startsWith('/menu/')) {
+            branchSlug = path.split('/')[2];
+        } else if (path.startsWith('/checkout/')) {
+            branchSlug = path.split('/')[2];
+        } else {
+            // Check localStorage
+            branchSlug = localStorage.getItem('uptown-preferred-branch');
+        }
+
+        if (!branchSlug) {
+            alert(Lang.current === 'ar' ? 'يرجى اختيار فرع أولاً' : 'Please choose a branch first');
+            return;
+        }
+
+        const currency = Lang.current === 'ar' ? 'ILS' : 'ILS'; // or get from branch/settings
+        UI.renderCartModal(branchSlug, currency);
+        UI.showModal('cart-modal-overlay', 'cart-modal');
+    });
+
+    // Payment Icons Fallback (Handle errors in client-side)
+    document.querySelectorAll('.hp-payment-grid img').forEach(img => {
+        img.addEventListener('error', () => {
+            img.style.display = 'none';
+        });
+    });
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindUIEvents, { once: true });
+} else {
+    bindUIEvents();
+}

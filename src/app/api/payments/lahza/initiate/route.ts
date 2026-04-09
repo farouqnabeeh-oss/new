@@ -1,0 +1,63 @@
+import { NextResponse } from "next/server";
+import { initializeLahzaTransaction } from "@/lib/lahza";
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const { orderId, email, amount, currency, customerName, customerPhone } = body;
+
+    console.log(`[Lahza] Initiation request for Order #${orderId}, Amount: ${amount} ${currency}`);
+    
+    // Ensure amount is a number and valid
+    const numericAmount = Number(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      throw new Error(`Invalid payment amount: ${amount}`);
+    }
+
+    // Amount needs to be in cents/agora (multiply by 100)
+    const amountInCents = Math.round(numericAmount * 100);
+    console.log(`[Lahza] Converting ${numericAmount} to ${amountInCents} cents/agora`);
+
+    const result = await initializeLahzaTransaction({
+      email,
+      amount: amountInCents.toString(),
+      currency,
+      mobile: customerPhone,
+      reference: `ORD-${orderId}-${Date.now()}`,
+      callback_url: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/success?orderId=${orderId}&branchSlug=${body.branchSlug}&method=card`,
+      metadata: {
+        orderId,
+        customerName,
+        customerPhone,
+        branchSlug: body.branchSlug,
+        custom_fields: [
+          {
+            display_name: "Order ID",
+            variable_name: "order_id",
+            value: orderId.toString()
+          },
+          {
+            display_name: "Customer Phone",
+            variable_name: "customer_phone",
+            value: customerPhone
+          }
+        ]
+      }
+    });
+
+    if (result.status && result.data.authorization_url) {
+        console.log("Lahza Authorization URL generated:", result.data.authorization_url);
+        return NextResponse.json({ success: true, authorizationUrl: result.data.authorization_url });
+    } else {
+        throw new Error(result.message || "Failed to get authorization URL from Lahza");
+    }
+
+  } catch (error: any) {
+    console.error("Lahza Initiation Error Detail:", error);
+    return NextResponse.json({ 
+        success: false, 
+        error: error.message || "Unknown initiation error",
+        detail: error.cause ? error.cause.message : undefined 
+    }, { status: 500 });
+  }
+}
