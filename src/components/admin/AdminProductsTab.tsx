@@ -309,7 +309,7 @@ export function AdminProductsTab({ products, categories, branches, settings }: P
             <tr key={product.id}>
               <td>
                 <img 
-                  src={product.imagePath || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800&auto=format&fit=crop'} 
+                  src={product.imagePath || '/images/classic-cheeseburger__0x1e3y1qv68eiip.jpg'} 
                   alt="" 
                   style={{ width: "40px", height: "40px", objectFit: "cover", borderRadius: "8px" }} 
                 />
@@ -319,7 +319,7 @@ export function AdminProductsTab({ products, categories, branches, settings }: P
                 {product.discount > 0 ? <span className="badge badge-primary">{product.discount}%</span> : null}
               </td>
               <td>{product.category?.nameEn || "No Category"}</td>
-              <td>{product.basePrice}{settings?.currencySymbol}</td>
+              <td>{Number(product.basePrice || 0).toFixed(0)}{settings?.currencySymbol}</td>
               <td>{product.sizes.length}</td>
               <td>{product.types.length}</td>
               <td>

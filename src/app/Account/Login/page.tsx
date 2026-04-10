@@ -30,7 +30,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: url('https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=2070&auto=format&fit=crop') center/cover no-repeat;
+          background: url('/images/panar1.jpeg') center/cover no-repeat;
           position: relative;
           font-family: 'Tajawal', sans-serif;
           overflow: hidden;

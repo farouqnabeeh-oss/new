@@ -63,7 +63,7 @@ export async function seedRestaurantData() {
     {
       name_ar: "ساندويش دجاج إيطالي",
       name_en: "Italian Chicken Sandwich",
-      description_ar: "150 غرام . دجاج مشوي . ماشroom وايت صوص . خس . مخلل . بصل . صوص اب تاون",
+      description_ar: "150 غرام . دجاج مشوي . م صوص . خس . مخلل . بصل . صوص اب تاون",
       description_en: "150g grilled chicken, mushroom white sauce, lettuce, pickles, onions, and Uptown sauce",
       base_price: 25,
       category_id: categoryMap["Sandwiches"],
@@ -75,7 +75,7 @@ export async function seedRestaurantData() {
     {
       name_ar: "ساندويش مسحب فاهيتا",
       name_en: "Fajita Chicken Sandwich",
-      description_ar: "150 غرام . دجاج مشوي . فلفل حلو ملون . ماشroom . بصل . بندورة . صوص مكسيكي",
+      description_ar: "150 غرام . دجاج مشوي . فلفل حلو ملون . مشروم. بصل . بندورة . صوص مكسيكي",
       description_en: "150g grilled chicken, bell peppers, mushroom, onions, tomato, and Mexican sauce",
       base_price: 25,
       category_id: categoryMap["Sandwiches"],
@@ -148,7 +148,7 @@ export async function seedRestaurantData() {
     {
       name_ar: "دجاج فاهيتا مع أرز",
       name_en: "Fajita Chicken with Rice",
-      description_ar: "دجاج . فلفل حلو . بصل . ماشroom . صوص مكسيكي",
+      description_ar: "دجاج . فلفل حلو . بصل . مشروم. صوص مكسيكي",
       description_en: "Chicken, bell peppers, onions, mushroom, and Mexican sauce",
       base_price: 45,
       category_id: categoryMap["Main Meals"],
@@ -159,7 +159,7 @@ export async function seedRestaurantData() {
     {
       name_ar: "ستروجانوف دجاج مع أرز",
       name_en: "Chicken Stroganoff with Rice",
-      description_ar: "دجاج . فلفل حلو . بصل . ماشroom . وايت صوص",
+      description_ar: "دجاج . فلفل حلو . بصل . مشروم. وايت صوص",
       description_en: "Chicken, bell peppers, onions, mushroom, and white sauce",
       base_price: 45,
       category_id: categoryMap["Main Meals"],
@@ -170,7 +170,7 @@ export async function seedRestaurantData() {
     {
       name_ar: "ستروجانوف لحمة مع أرز",
       name_en: "Beef Stroganoff with Rice",
-      description_ar: "شرائح فيليه ستيك . فلفل حلو . بصل . ماشroom . وايت صوص",
+      description_ar: "شرائح فيليه ستيك . فلفل حلو . بصل . مشروم. وايت صوص",
       description_en: "Fillet steak strips, bell peppers, onions, mushroom, and white sauce",
       base_price: 60,
       category_id: categoryMap["Main Meals"],
@@ -181,7 +181,7 @@ export async function seedRestaurantData() {
     {
       name_ar: "فوتوتشيني مع دجاج",
       name_en: "Fettuccine with Chicken",
-      description_ar: "دجاج مشوي . فوتوتشيني . ماشroom . وايت صوص . جبنة بارميزان",
+      description_ar: "دجاج مشوي . فوتوتشيني . مشروم. وايت صوص . جبنة بارميزان",
       description_en: "Grilled chicken, fettuccine, mushroom, white sauce, and parmesan cheese",
       base_price: 45,
       category_id: categoryMap["Main Meals"],
@@ -363,7 +363,7 @@ export async function seedRestaurantData() {
     {
       name_ar: "سلطة فتوش",
       name_en: "Fattoush Salad",
-      description_ar: "خس ناعم . بندورة . خيار . فلفل . بصل أبيض . نعنع . خبز مقلي . سماق . ملح . دبس رمان",
+      description_ar: "خس ناعم . بندورة . خيار . فلفل . بصل أبيض . نعنع . خبز محمص . سماق . ملح . دبس رمان",
       description_en: "Lettuce, tomato, cucumber, pepper, white onion, mint, fried bread, sumac, salt, and pomegranate molasses",
       base_price: 30,
       category_id: categoryMap["Salads"],
@@ -387,7 +387,9 @@ export async function seedRestaurantData() {
     { name_ar: "سموذي طبيعي", name_en: "Natural Smoothie", description_ar: "تشكيلة سموذي فواكه طبيعية", description_en: "Assorted natural fruit smoothies", base_price: 17, category_id: categoryMap["Natural Smoothie"], is_active: true, all_branches: true, image_path: "/images/natural-smoothie__c9pnbwbvwhncuvs.jpg" },
 
     // Milkshake
-    { name_ar: "ميلك شيك", name_en: "Milkshake", description_ar: "ميلك شيك غني بعدة نكهات", description_en: "Rich milkshakes in various flavors", base_price: 17, category_id: categoryMap["Milkshake"], is_active: true, all_branches: true, image_path: "/images/milkshakes__pgt1ljcxf6qma9t.jpg" },    // Hot Drinks
+    { name_ar: "ميلك شيك", name_en: "Milkshake", description_ar: "ميلك شيك غني بعدة نكهات", description_en: "Rich milkshakes in various flavors", base_price: 17, category_id: categoryMap["Milkshake"], is_active: true, all_branches: true, image_path: "/images/milkshakes__pgt1ljcxf6qma9t.jpg" },
+
+    // Hot Drinks
     { name_ar: "شاي", name_en: "Tea", description_ar: "شاي كلاسيكي ساخن", description_en: "Classic hot tea", base_price: 8, category_id: categoryMap["Hot Drinks"], is_active: true, all_branches: true, image_path: "/images/tea__68ipsqrolope9un.jpg" },
     { name_ar: "اسبريسو", name_en: "Espresso", description_ar: "اسبريسو كلاسيكي", description_en: "Classic espresso", base_price: 8, category_id: categoryMap["Hot Drinks"], is_active: true, all_branches: true, image_path: "/images/espresso__e6jr0mu46qix1iw.jpg" },
     { name_ar: "قهوة عربية", name_en: "Arabic Coffee", description_ar: "قهوة عربية أصيلة", description_en: "Authentic Arabic coffee", base_price: 13, category_id: categoryMap["Hot Drinks"], is_active: true, all_branches: true, image_path: "/images/arabic-coffee__nrx56q4y8ik0dt1.jpg" },
@@ -442,9 +444,9 @@ export async function seedRestaurantData() {
     { name_ar: "كلاسيك تشيز بيرجر", name_en: "Classic Cheese Burger", description_ar: "120 غرام . جبنة تشيدر . خس . بندورة . بصل . صوص اب تاون", description_en: "120g, cheddar, lettuce, tomato, onions, uptown sauce", base_price: 23, category_id: categoryMap["Burgers"], is_active: true, all_branches: true, has_meal_option: true, image_path: "/images/classic-cheeseburger__0x1e3y1qv68eiip.jpg" },
     { name_ar: "سماش بيرجر", name_en: "Smash Burger", description_ar: "240 غرام . جبنة تشيدر . بندورة . بصل . صوص اب تاون", description_en: "240g, double cheddar, tomato, onions, uptown sauce", base_price: 35, category_id: categoryMap["Burgers"], is_active: true, all_branches: true, has_meal_option: true, image_path: "/images/smashed-burger__f4vm70uiqpdg28s.jpg" },
     { name_ar: "باربيكيو بيرجر", name_en: "BBQ Burger", description_ar: "150 غرام . خس . جبنة موزاريلا . مخلل . بصل . باربيكيو . صوص اب تاون", description_en: "150g, mozzarella, pickles, onions, bbq sauce, uptown sauce", base_price: 25, category_id: categoryMap["Burgers"], is_active: true, all_branches: true, has_meal_option: true, image_path: "/images/bbq-burger__qw0nxdtpwc5rbst.jpg" },
-    { name_ar: "سويس ماشroom بيرجر", name_en: "Swiss Mushroom Burger", description_ar: "150 غرام . جبنة سويسرية . خس . بندورة . بصل . ماشroom . مخلل . صوص اب تاون", description_en: "150g, swiss cheese, lettuce, tomato, mushroom, onions, uptown sauce", base_price: 30, category_id: categoryMap["Burgers"], is_active: true, all_branches: true, has_meal_option: true, image_path: "/images/swiss-mushroom-burger__txtxxp1aifr4j8i.jpg" },
-    { name_ar: "ماشroom بيرجر", name_en: "Mushroom Burger", description_ar: "150 غرام . ماشroom . خس . بندورة . بصل . مخلل . صوص اب تاون", description_en: "150g, mushroom, lettuce, tomato, pickles, onions, uptown sauce", base_price: 30, category_id: categoryMap["Burgers"], is_active: true, all_branches: true, has_meal_option: true, image_path: "/images/mushroom-burger__s07zohznm42itsy.jpg" },
-    { name_ar: "ماشroom وايت صوص بيرجر", name_en: "Mushroom White Sauce Burger", description_ar: "150 غرام . ماشroom . وايت صوص . خس . بندورة . بصل . اب تاون صوص", description_en: "150g, mushroom, white sauce, lettuce, tomato, onions, uptown sauce", base_price: 30, category_id: categoryMap["Burgers"], is_active: true, all_branches: true, has_meal_option: true, image_path: "/images/mushroom-white-sauce-burger__4w37ua1o61radfn.jpg" },
+    { name_ar: "سويس مشروم بيرجر", name_en: "Swiss Mushroom Burger", description_ar: "150 غرام . جبنة سويسرية . خس . بندورة . بصل . مشروم. مخلل . صوص اب تاون", description_en: "150g, swiss cheese, lettuce, tomato, mushroom, onions, uptown sauce", base_price: 30, category_id: categoryMap["Burgers"], is_active: true, all_branches: true, has_meal_option: true, image_path: "/images/swiss-mushroom-burger__txtxxp1aifr4j8i.jpg" },
+    { name_ar: "مشروم بيرجر", name_en: "Mushroom Burger", description_ar: "150 غرام . مشروم. خس . بندورة . بصل . مخلل . صوص اب تاون", description_en: "150g, mushroom, lettuce, tomato, pickles, onions, uptown sauce", base_price: 30, category_id: categoryMap["Burgers"], is_active: true, all_branches: true, has_meal_option: true, image_path: "/images/mushroom-burger__s07zohznm42itsy.jpg" },
+    { name_ar: "مشروم وايت صوص بيرجر", name_en: "Mushroom White Sauce Burger", description_ar: "150 غرام . مشروم. وايت صوص . خس . بندورة . بصل . اب تاون صوص", description_en: "150g, mushroom, white sauce, lettuce, tomato, onions, uptown sauce", base_price: 30, category_id: categoryMap["Burgers"], is_active: true, all_branches: true, has_meal_option: true, image_path: "/images/mushroom-white-sauce-burger__4w37ua1o61radfn.jpg" },
     { name_ar: "مكسيكانو بيرجر", name_en: "Mexicano Burger", description_ar: "150 غرام . خس . جبنة تشيدر . بندورة . بصل . هالبينو . صوص مكسيكي", description_en: "150g, cheddar, tomato, onions, jalapeno, mexican sauce", base_price: 30, category_id: categoryMap["Burgers"], is_active: true, all_branches: true, has_meal_option: true, image_path: "/images/mexicano-burger__l76kbi9btmcrvey.jpg" },
     { name_ar: "أسايدو بيرجر", name_en: "Asado Burger", description_ar: "150 غرام . قطع لحم بقري فاخر مطهو لأكثر من 5 ساعات . خس . بندورة . بصل مشوي", description_en: "150g slow-cooked beef bits, lettuce, tomato, grilled onions", base_price: 36, category_id: categoryMap["Burgers"], is_active: true, all_branches: true, has_meal_option: true, image_path: "/images/asado-burger__2m81wutgpbyhv9z.jpg" },
     { name_ar: "ريب أي بيرجر", name_en: "Ribeye Burger", description_ar: "150 غرام . قطعة كلاسيك . شرائح ستيك ريب أي 60 غرام . خس . بندورة . بصل . جبنة", description_en: "150g patty + ribeye strips, lettuce, tomato, onions, cheese", base_price: 45, category_id: categoryMap["Burgers"], is_active: true, all_branches: true, has_meal_option: true, image_path: "/images/ribeye-burger__8w4my5hb4xqt6zg.jpg" },
@@ -597,4 +599,3 @@ export async function seedRestaurantData() {
 
   console.log("Seeding complete!");
 }
-

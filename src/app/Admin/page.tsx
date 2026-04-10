@@ -14,6 +14,7 @@ import { AdminSettingsTab } from "@/components/admin/AdminSettingsTab";
 import { AdminProfileTab } from "@/components/admin/AdminProfileTab";
 import { AdminIntelligenceTab } from "@/components/admin/AdminIntelligenceTab";
 import { AdminCustomersTab } from "@/components/admin/AdminCustomersTab";
+import { AdminLangSwitcher } from "@/components/admin/AdminLangSwitcher";
 
 export default async function AdminPage() {
   const session = await getCurrentSession();
@@ -40,7 +41,7 @@ export default async function AdminPage() {
         <div className="admin-header">
           <h1 className="admin-title">{isAr ? "⚙️ لوحة التحكم" : "⚙️ Admin Panel"}</h1>
           <div style={{ display: "flex", gap: "15px", alignItems: "center" }}>
-            <FooterLangSwitcher isAr={isAr} />
+            <AdminLangSwitcher currentLang={lang} />
             <form action={logoutAction} style={{ display: "inline" }}>
               <button type="submit" className="btn btn-outline" style={{ padding: '8px 20px' }}>
                 {isAr ? "تسجيل الخروج" : "Logout"}

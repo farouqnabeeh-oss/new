@@ -11,9 +11,8 @@ function SuccessContent() {
   const [orderData, setOrderData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const soundPlayed = useRef(false);
-  const redirectTriggered = useRef(false);
 
-  // 🔊 Play success chime using Web Audio API (no external file needed)
+  // 🔊 Play success chime using Web Audio API (Multiple notes for noticeability)
   const playSuccessSound = () => {
     if (soundPlayed.current) return;
     soundPlayed.current = true;
@@ -27,16 +26,22 @@ function SuccessContent() {
         osc.type = "sine";
         osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
         gainNode.gain.setValueAtTime(0, ctx.currentTime + start);
-        gainNode.gain.linearRampToValueAtTime(gain, ctx.currentTime + start + 0.05);
+        gainNode.gain.linearRampToValueAtTime(gain, ctx.currentTime + start + 0.02);
         gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + start + duration);
         osc.start(ctx.currentTime + start);
         osc.stop(ctx.currentTime + start + duration);
       };
-      // High-end success chime
-      playTone(523.25, 0.0, 0.4, 0.5); // C5
-      playTone(659.25, 0.15, 0.4, 0.45); // E5
-      playTone(783.99, 0.3, 0.4, 0.4); // G5
-      playTone(1046.50, 0.5, 0.8, 0.35); // C6
+
+      // Play a standard "Notice" chime sequence twice for emphasis
+      const playSequence = (offset: number) => {
+        playTone(523.25, offset + 0.0, 0.3, 0.6); // C5
+        playTone(659.25, offset + 0.1, 0.3, 0.5); // E5
+        playTone(783.99, offset + 0.2, 0.3, 0.4); // G5
+        playTone(1046.50, offset + 0.3, 0.6, 0.3); // C6
+      };
+
+      playSequence(0);
+      playSequence(0.8); // Repeat after 800ms
     } catch (e) {
       // Audio not supported — silent fail
     }
@@ -77,49 +82,18 @@ function SuccessContent() {
     }
   }, [orderId, branchSlug]);
 
-  // 🔄 Auto-redirect to WhatsApp for WhatsApp orders
-  useEffect(() => {
-    if (orderData && !redirectTriggered.current && orderData.payment_method === 'Cash') {
-      redirectTriggered.current = true;
-      const timer = setTimeout(() => {
-        shareOnWhatsApp();
-      }, 2500);
-      return () => clearTimeout(timer);
-    }
-  }, [orderData]);
-
   // Detect language from cookie
   const isAr = typeof document !== "undefined"
     ? document.cookie.includes("language=ar") || !document.cookie.includes("language=en")
     : true;
 
-  // Calculate invoice breakdown once for use in both UI and WhatsApp
+  // Calculate invoice breakdown
   const dPercent = orderData?.branches?.discount_percent || 0;
   const itemsSubtotal = (orderData?.order_items || []).reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0);
   const discountAmount = (itemsSubtotal * dPercent) / 100;
   const deliveryFee = (orderData?.total_amount || 0) > 0 
     ? Math.max(0, (orderData.total_amount - (itemsSubtotal - discountAmount)))
     : 0;
-
-  const shareOnWhatsApp = () => {
-    if (!orderData) return;
-
-    const itemsList = (orderData.order_items || []).map((oi: any) =>
-      `- ${oi.quantity}x ${isAr ? oi.product_name_ar : oi.product_name_en}`
-    ).join('\n');
-
-    const customerName = orderData.customer_name || (isAr ? "غير متوفّر" : "N/A");
-    const orderTypeStr = orderData.order_type || (isAr ? "غير محدد" : "N/A");
-    const finalTotal = orderData.total_amount || (itemsSubtotal - discountAmount + deliveryFee);
-
-    const message = isAr
-      ? `*طلب جديد رقم #${orderId}*\n\n*الاسم:* ${customerName}\n*نوع الطلب:* ${orderTypeStr}\n\n*الأصناف:*\n${itemsList}\n\n*المجموع:* ${itemsSubtotal.toFixed(2)} ₪\n${discountAmount > 0 ? `*الخصم:* -${discountAmount.toFixed(2)} ₪\n` : ''}${deliveryFee > 0.1 ? `*التوصيل:* +${deliveryFee.toFixed(2)} ₪\n` : ''}*المجموع النهائي:* ${finalTotal.toFixed(2)} ₪\n\nيرجى تأكيد الطلب. شكراً 🙏`
-      : `*New Order #${orderId}*\n\n*Name:* ${customerName}\n*Type:* ${orderTypeStr}\n\n*Items:*\n${itemsList}\n\n*Subtotal:* ${itemsSubtotal.toFixed(2)} ₪\n${discountAmount > 0 ? `*Discount:* -${discountAmount.toFixed(2)} ₪\n` : ''}${deliveryFee > 0.1 ? `*Delivery:* +${deliveryFee.toFixed(2)} ₪\n` : ''}*Grand Total:* ${finalTotal.toFixed(2)} ₪\n\nPlease confirm my order. Thank you 🙏`;
-
-    const whatsappNumber = (orderData.branches?.whatsapp || "970222951234")
-      .replace(/\+/g, '').replace(/\s/g, '');
-    window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, '_blank');
-  };
 
   if (loading) {
     return (
@@ -270,18 +244,6 @@ function SuccessContent() {
 
         {/* Action Buttons */}
         <div className="no-print" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <button onClick={shareOnWhatsApp} style={{
-            background: '#25D366', color: '#fff',
-            width: '100%', borderRadius: '18px', height: '58px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 900, fontSize: '16px', border: 'none', cursor: 'pointer',
-            boxShadow: '0 8px 20px rgba(37,211,102,0.25)',
-            gap: '10px'
-          }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.557 4.116 1.534 5.836L0 24l6.29-1.503A11.937 11.937 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.886 9.886 0 01-5.035-1.378l-.361-.214-3.733.892.939-3.617-.236-.375A9.856 9.856 0 012.106 12C2.106 6.527 6.527 2.106 12 2.106c5.473 0 9.894 4.421 9.894 9.894 0 5.473-4.421 9.894-9.894 9.894z"/></svg>
-            {isAr ? 'إرسال الطلب عبر واتساب' : 'Send Order via WhatsApp'}
-          </button>
-
           <button onClick={() => window.print()} style={{
             background: '#f4f4f4', color: '#000',
             width: '100%', borderRadius: '18px', height: '50px',

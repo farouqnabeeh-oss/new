@@ -2691,7 +2691,7 @@ html[dir="rtl"] .branch-discount-badge {
   content: '';
   position: absolute;
   inset: 0;
-  background: url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80&w=2000') center;
+  background: url('/images/panar1.jpeg') center;
   background-size: cover;
   opacity: 0.15;
   mix-blend-mode: overlay;

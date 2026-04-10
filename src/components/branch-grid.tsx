@@ -142,7 +142,7 @@ export function BranchGrid({ branches, lang = "ar" }: Props) {
               <div className="branch-card-media-shell" style={{ position: 'relative', height: '240px', overflow: 'hidden' }}>
                   <a href={`/menu/${branch.slug}`} onClick={() => localStorage.setItem("uptown-preferred-branch", branch.slug)}>
                     <img
-                        src={branch.bannerImagePath || "https://images.unsplash.com/photo-1543353071-09707a3f9d3d?q=80&w=1600&auto=format&fit=crop"}
+                        src={branch.bannerImagePath || "/images/panar2.jpeg"}
                         alt={branchName}
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         className="branch-img"

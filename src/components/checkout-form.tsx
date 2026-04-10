@@ -4,7 +4,7 @@ import { useState, useEffect, useTransition } from "react";
 import { Branch, SiteSettings } from "@/lib/types";
 import { saveOrderAction } from "@/lib/order-actions";
 import Script from "next/script";
-import { ShoppingBag, Truck, Utensils, Clock, CreditCard, Banknote, CheckCircle2 } from "lucide-react";
+import { ShoppingBag, Truck, Utensils, Clock, CreditCard, Banknote, CheckCircle2, Info } from "lucide-react";
 
 type Props = {
     branch: Branch;
@@ -261,7 +261,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                         </div>
                         <div className="uptown-input-group">
                             <label>{isAr ? 'البريد الإلكتروني' : 'Email'} ({isAr ? 'اختياري' : 'Optional'})</label>
-                            <input type="email" id="customer-email" className="uptown-input" />
+                            <input type="email" id="customer-email" className="uptown-input" suppressHydrationWarning />
                         </div>
                         <div className="uptown-input-group">
                             <label>{isAr ? 'تاريخ الميلاد' : 'Birth Date'} ({isAr ? 'اختياري' : 'Optional'})</label>
@@ -353,7 +353,6 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                             <div onClick={() => setPaymentMethod('palpay')} className={`premium-choice-card ${paymentMethod === 'palpay' ? 'active' : ''}`} style={{ padding: '25px' }}>
                                 <CreditCard size={36} />
                                 <span style={{ fontSize: '14px', marginTop: '10px' }}>{isAr ? 'دفع إلكتروني بطاقة/لحظة' : 'Online Payment Card/Lahza'}</span>
-                                <img src="/images/Visa-Emblem.jpg" alt="Visa" style={{ height: '30px', marginTop: '10px', objectFit: 'contain' }} />
                             </div>
                         </div>
                     </div>

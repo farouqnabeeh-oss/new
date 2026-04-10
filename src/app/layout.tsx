@@ -151,8 +151,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <div className="up-footer-col">
           <h4 className="up-footer-title" style={{ fontSize: '18px', fontWeight: 900, marginBottom: '20px', color: '#000' }}>{isAr ? "طرق الدفع" : "Payment Methods"}</h4>
           <div className="up-footer-payments" style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-            <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa" style={{ height: '25px', width: 'auto' }} />
-            <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="MasterCard" style={{ height: '35px', width: 'auto' }} />
+            <img src="/images/visa.png" alt="Visa" style={{ height: '30px', width: 'auto' }} />
+             <img src="/images/Mastercard-logo.svg" alt="MasterCard" style={{ height: '35px', width: 'auto' }} />
           </div>
         </div>
       </div>

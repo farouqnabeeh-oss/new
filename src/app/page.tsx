@@ -23,8 +23,8 @@ export default async function HomePage() {
 
   // Fallback banners if none in DB
   const displayBanners = banners.length > 0 ? banners : [
-    { imagePath: "https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=1600&auto=format&fit=crop" },
-    { imagePath: "https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?q=80&w=1600&auto=format&fit=crop" }
+    { imagePath: "/images/panar1.jpeg" },
+    { imagePath: "/images/panar2.jpeg" }
   ];
 
   return (
