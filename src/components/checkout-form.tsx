@@ -344,15 +344,15 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
 
                     {/* 💳 PAYMENT */}
                     <div style={{ marginBottom: '40px' }}>
-                        <h4 style={{ fontWeight: 800, marginBottom: '20px' }}>{isAr ? 'اختر طريقة الطلب والدفع' : 'Choose Order & Payment Method'}</h4>
+                        <h4 style={{ fontWeight: 800, marginBottom: '20px', textAlign: isAr ? 'right' : 'left' }}>{isAr ? 'اختر طريقة الدفع' : 'Choose Payment Method'}</h4>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                            <div onClick={() => setPaymentMethod('cash')} className={`premium-choice-card ${paymentMethod === 'cash' ? 'active' : ''}`} style={{ padding: '25px' }}>
-                                <Banknote size={36} />
-                                <span style={{ fontSize: '14px', marginTop: '10px' }}>{isAr ? 'الطلب والدفع عبر واتساب' : 'Order & Pay via WhatsApp'}</span>
-                            </div>
                             <div onClick={() => setPaymentMethod('palpay')} className={`premium-choice-card ${paymentMethod === 'palpay' ? 'active' : ''}`} style={{ padding: '25px' }}>
                                 <CreditCard size={36} />
-                                <span style={{ fontSize: '14px', marginTop: '10px' }}>{isAr ? 'دفع إلكتروني بطاقة/لحظة' : 'Online Payment Card/Lahza'}</span>
+                                <span style={{ fontSize: '14px', marginTop: '10px' }}>{isAr ? 'الدفع بالفيزا' : 'Visa Payment'}</span>
+                            </div>
+                            <div onClick={() => setPaymentMethod('cash')} className={`premium-choice-card ${paymentMethod === 'cash' ? 'active' : ''}`} style={{ padding: '25px' }}>
+                                <Banknote size={36} />
+                                <span style={{ fontSize: '14px', marginTop: '10px' }}>{isAr ? 'الدفع كاش' : 'Cash Payment'}</span>
                             </div>
                         </div>
                     </div>
@@ -362,10 +362,6 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                             <p style={{ fontWeight: 600, color: '#666' }}>
                                 {isAr ? "سيتم توجيهك إلى بوابة الدفع الآمنة لإتمام العملية." : "You will be redirected to our secure payment gateway to complete your request."}
                             </p>
-                            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
-                                <Script src="https://www.google.com/recaptcha/api.js" strategy="afterInteractive" />
-                                <div className="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"></div>
-                            </div>
                         </div>
                     )}
 
@@ -377,7 +373,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                        <button type="submit" className="uptown-btn red" disabled={isPending || !isOpen} style={{ opacity: !isOpen ? 0.6 : 1, cursor: !isOpen ? 'not-allowed' : 'pointer' }}>
+                        <button type="submit" className="uptown-btn red-gradient" disabled={isPending || !isOpen} style={{ opacity: !isOpen ? 0.6 : 1, cursor: !isOpen ? 'not-allowed' : 'pointer' }}>
                             <CheckCircle2 color="#fff" />
                             {!isOpen
                                 ? (isAr ? 'المطعم مغلق حالياً' : 'Restaurant Closed')
@@ -385,7 +381,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                                     ? (isAr ? 'جاري المعالجة...' : 'Processing...')
                                     : (paymentMethod === 'palpay'
                                         ? (isAr ? 'المتابعة للدفع الإلكتروني' : 'Continue to Online Payment')
-                                        : (isAr ? 'تأكيد إرسال الطلب' : 'Confirm & Send')))}
+                                        : (isAr ? 'إرسال الطلب' : 'Send Order')))}
                         </button>
                     </div>
                 </form>
@@ -399,7 +395,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                     gap: 15px; cursor: pointer; transition: all 0.3s ease; text-align: center;
                 }
                 .premium-choice-card.active {
-                    background: #FDF4F4; border-color: #E31E24; color: #E31E24; box-shadow: 0 10px 30px rgba(227,30,36,0.1);
+                    background: #FDF4F4; border-color: #8B0000; color: #8B0000; box-shadow: 0 10px 30px rgba(139,0,0,0.1);
                 }
                 .premium-choice-card.sm { padding: 15px; border-radius: 18px; flex-direction: row; justify-content: center; }
                 .premium-choice-card span { font-weight: 800; }
@@ -410,14 +406,16 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                     padding: 16px 20px; border-radius: 18px; border: 1px solid #ECEAE7; 
                     background: #fff; font-size: 15px; font-weight: 600; outline: none; transition: 0.3s;
                 }
-                .uptown-input:focus { border-color: #E31E24; box-shadow: 0 0 0 4px rgba(227,30,36,0.05); }
+                .uptown-input:focus { border-color: #8B0000; box-shadow: 0 0 0 4px rgba(139,0,0,0.05); }
                 
                 .uptown-btn {
                     width: 100%; padding: 20px; border-radius: 25px; border: none; font-size: 18px; 
                     font-weight: 900; display: flex; align-items: center; justify-content: center; gap: 12px; cursor: pointer; transition: 0.3s;
                 }
-                .uptown-btn.red { background: #8B0000; color: #fff; box-shadow: 0 10px 40px rgba(139,0,0,0.3); }
-                .uptown-btn.blue { background: #2563EB; color: #fff; box-shadow: 0 10px 40px rgba(37,99,235,0.2); }
+                .uptown-btn.red-gradient { 
+                    background: linear-gradient(135deg, #8B0000 0%, #B91C1C 100%); 
+                    color: #fff; box-shadow: 0 10px 30px rgba(139,0,0,0.3); 
+                }
                 .uptown-btn:hover { transform: scale(1.02); opacity: 0.95; }
                 .uptown-btn:disabled { opacity: 0.5; cursor: not-allowed; }
             ` }} />

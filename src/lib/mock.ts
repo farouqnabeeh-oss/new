@@ -751,6 +751,32 @@ export const mockAddonGroups = [
       { id: 405, nameAr: "خس", nameEn: "Lettuce", price: 0, sortOrder: 5, isActive: true },
       { id: 406, nameAr: "صوص", nameEn: "Sauce", price: 0, sortOrder: 6, isActive: true }
     ]
+  },
+  // Sandwiches (101)
+  {
+    id: 5, nameAr: "إضافات ساندويشات", nameEn: "Sandwich Addons", categoryId: 101, productId: null, groupType: "addons", isRequired: false, allowMultiple: true, sortOrder: 1, isActive: true,
+    items: [
+      { id: 501, nameAr: "جبنة شيدر", nameEn: "Cheddar Cheese", price: 3, sortOrder: 1, isActive: true },
+      { id: 502, nameAr: "صوص مكسيكي", nameEn: "Mexican Sauce", price: 0, sortOrder: 2, isActive: true },
+      { id: 503, nameAr: "صوص رانش", nameEn: "Ranch Sauce", price: 3, sortOrder: 3, isActive: true }
+    ]
+  },
+  {
+    id: 6, nameAr: "بدون", nameEn: "Without", categoryId: 101, productId: null, groupType: "without", isRequired: false, allowMultiple: true, sortOrder: 2, isActive: true,
+    items: [
+      { id: 601, nameAr: "مخلل", nameEn: "Pickles", price: 0, sortOrder: 1, isActive: true },
+      { id: 602, nameAr: "بندورة", nameEn: "Tomato", price: 0, sortOrder: 2, isActive: true },
+      { id: 603, nameAr: "بصل", nameEn: "Onion", price: 0, sortOrder: 3, isActive: true }
+    ]
+  },
+  // Wings (103)
+  {
+    id: 7, nameAr: "اختر الصوص", nameEn: "Select Sauce", categoryId: 103, productId: null, groupType: "types", isRequired: true, allowMultiple: false, sortOrder: 1, isActive: true,
+    items: [
+      { id: 701, nameAr: "بافالو", nameEn: "Buffalo", price: 0, sortOrder: 1, isActive: true },
+      { id: 702, nameAr: "باربيكيو", nameEn: "BBQ", price: 0, sortOrder: 2, isActive: true },
+      { id: 703, nameAr: "هني ماسترد", nameEn: "Honey Mustard", price: 0, sortOrder: 3, isActive: true }
+    ]
   }
 ];
 
