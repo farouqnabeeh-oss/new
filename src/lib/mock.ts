@@ -873,6 +873,7 @@ export const mockProducts = [
     imagePath: "/images/small-water__retkduxc2891b17.jpg",
     createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), sizes: [], types: []
   },
+  {
     id: 1610, nameAr: "بفاريا", nameEn: "Bavaria", descriptionAr: "شراب بفاريا بر باردة", descriptionEn: "Cold Bavaria drink",
     basePrice: 8, discount: 10, categoryId: 111, branchId: null, allBranches: true, hasMealOption: false, hasDonenessOption: false, sortOrder: 10, isActive: true,
     imagePath: "/images/bavaria__g0tdpqe9yr51l45.jpg",

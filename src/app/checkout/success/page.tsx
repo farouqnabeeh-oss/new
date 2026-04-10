@@ -11,6 +11,7 @@ function SuccessContent() {
   const [orderData, setOrderData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const soundPlayed = useRef(false);
+  const redirectTriggered = useRef(false);
 
   // 🔊 Play success chime using Web Audio API (no external file needed)
   const playSuccessSound = () => {
@@ -31,11 +32,11 @@ function SuccessContent() {
         osc.start(ctx.currentTime + start);
         osc.stop(ctx.currentTime + start + duration);
       };
-      // Success arpeggio chime: C5 → E5 → G5 → C6
-      playTone(523, 0.0, 0.3, 0.4);
-      playTone(659, 0.2, 0.3, 0.3);
-      playTone(784, 0.4, 0.3, 0.3);
-      playTone(1047, 0.6, 0.6, 0.25);
+      // High-end success chime
+      playTone(523.25, 0.0, 0.4, 0.5); // C5
+      playTone(659.25, 0.15, 0.4, 0.45); // E5
+      playTone(783.99, 0.3, 0.4, 0.4); // G5
+      playTone(1046.50, 0.5, 0.8, 0.35); // C6
     } catch (e) {
       // Audio not supported — silent fail
     }
@@ -75,6 +76,17 @@ function SuccessContent() {
       playSuccessSound();
     }
   }, [orderId, branchSlug]);
+
+  // 🔄 Auto-redirect to WhatsApp for WhatsApp orders
+  useEffect(() => {
+    if (orderData && !redirectTriggered.current && orderData.payment_method === 'Cash') {
+      redirectTriggered.current = true;
+      const timer = setTimeout(() => {
+        shareOnWhatsApp();
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [orderData]);
 
   // Detect language from cookie
   const isAr = typeof document !== "undefined"
@@ -277,7 +289,7 @@ function SuccessContent() {
             fontWeight: 700, fontSize: '14px',
             border: '1px solid #eee', cursor: 'pointer', gap: '8px'
           }}>
-            🖨️ {isAr ? 'طباعة الفاتورة' : 'Print Invoice'}
+            💾 {isAr ? 'حفظ الفاتورة / طباعة' : 'Save Invoice / Print'}
           </button>
 
           <a href="/" style={{
