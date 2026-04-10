@@ -346,13 +346,13 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                     <div style={{ marginBottom: '40px' }}>
                         <h4 style={{ fontWeight: 800, marginBottom: '20px', textAlign: isAr ? 'right' : 'left' }}>{isAr ? 'اختر طريقة الدفع' : 'Choose Payment Method'}</h4>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                            <div onClick={() => setPaymentMethod('palpay')} className={`premium-choice-card ${paymentMethod === 'palpay' ? 'active' : ''}`} style={{ padding: '25px' }}>
-                                <CreditCard size={36} />
-                                <span style={{ fontSize: '14px', marginTop: '10px' }}>{isAr ? 'الدفع بالفيزا' : 'Visa Payment'}</span>
-                            </div>
                             <div onClick={() => setPaymentMethod('cash')} className={`premium-choice-card ${paymentMethod === 'cash' ? 'active' : ''}`} style={{ padding: '25px' }}>
                                 <Banknote size={36} />
                                 <span style={{ fontSize: '14px', marginTop: '10px' }}>{isAr ? 'الدفع كاش' : 'Cash Payment'}</span>
+                            </div>
+                            <div onClick={() => setPaymentMethod('palpay')} className={`premium-choice-card ${paymentMethod === 'palpay' ? 'active' : ''}`} style={{ padding: '25px' }}>
+                                <CreditCard size={36} />
+                                <span style={{ fontSize: '14px', marginTop: '10px' }}>{isAr ? 'الدفع بالفيزا' : 'Visa Payment'}</span>
                             </div>
                         </div>
                     </div>

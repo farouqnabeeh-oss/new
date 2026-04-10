@@ -777,6 +777,24 @@ export const mockAddonGroups = [
       { id: 702, nameAr: "باربيكيو", nameEn: "BBQ", price: 0, sortOrder: 2, isActive: true },
       { id: 703, nameAr: "هني ماسترد", nameEn: "Honey Mustard", price: 0, sortOrder: 3, isActive: true }
     ]
+  },
+  // Desserts (110)
+  {
+    id: 8, nameAr: "إضافات الحلويات", nameEn: "Dessert Addons", categoryId: 110, productId: null, groupType: "addons", isRequired: false, allowMultiple: true, sortOrder: 1, isActive: true,
+    items: [
+      { id: 801, nameAr: "سكوپ بوظة إضافي", nameEn: "Extra Ice Cream Scoop", price: 5, sortOrder: 1, isActive: true },
+      { id: 802, nameAr: "شوكولاتة نوتيلا إضافية", nameEn: "Extra Nutella", price: 5, sortOrder: 2, isActive: true },
+      { id: 803, nameAr: "صوص لوتس", nameEn: "Lotus Sauce", price: 5, sortOrder: 3, isActive: true }
+    ]
+  },
+  // Appetizers (114)
+  {
+    id: 9, nameAr: "صوص جانبي", nameEn: "Side Sauce", categoryId: 114, productId: null, groupType: "addons", isRequired: false, allowMultiple: true, sortOrder: 1, isActive: true,
+    items: [
+      { id: 901, nameAr: "صوص حار", nameEn: "Spicy Sauce", price: 3, sortOrder: 1, isActive: true },
+      { id: 902, nameAr: "صوص الثوم", nameEn: "Garlic Sauce", price: 3, sortOrder: 2, isActive: true },
+      { id: 903, nameAr: "صوص الجبنة", nameEn: "Cheese Sauce", price: 5, sortOrder: 3, isActive: true }
+    ]
   }
 ];
 

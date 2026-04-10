@@ -221,7 +221,7 @@
 
 .uptown-checkout-btn {
     width: 100%;
-    background: #1a1a1a;
+    background: linear-gradient(135deg, #8B0000 0%, #B91C1C 100%);
     color: #fff;
     border: none;
     padding: 22px;
@@ -233,13 +233,12 @@
     align-items: center;
     justify-content: center;
     transition: 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 15px 35px rgba(139, 0, 0, 0.2);
 }
 
 .uptown-checkout-btn:hover {
-    background: #E31E24;
     transform: translateY(-5px);
-    box-shadow: 0 25px 50px rgba(227, 30, 36, 0.3);
+    box-shadow: 0 25px 50px rgba(139, 0, 0, 0.4);
 }
 
 /* Animation for adding to cart */
@@ -422,7 +421,7 @@ html[dir="rtl"] .side-panel.is-active {
 
 .add-to-cart-btn {
     width: 100%;
-    background: #b91c1c;
+    background: linear-gradient(135deg, #8B0000 0%, #B91C1C 100%);
     color: #fff;
     border: none;
     padding: 18px;
@@ -430,11 +429,11 @@ html[dir="rtl"] .side-panel.is-active {
     font-size: 16px;
     font-weight: 900;
     cursor: pointer;
-    box-shadow: 0 10px 25px rgba(185, 28, 28, 0.4);
+    box-shadow: 0 10px 25px rgba(139, 0, 0, 0.4);
     transition: 0.3s;
 }
 
 .add-to-cart-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 15px 30px rgba(185, 28, 28, 0.5);
+    box-shadow: 0 15px 30px rgba(139, 0, 0, 0.5);
 }
