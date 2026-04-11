@@ -22,14 +22,15 @@ const TABS: TabConfig[] = [
 ];
 
 type Props = {
-  children: Record<TabKey, React.ReactNode>;
+  children: Partial<Record<TabKey, React.ReactNode>>;
+  role?: string;
 };
 
-export function AdminTabsWrapper({ children }: Props) {
+export function AdminTabsWrapper({ children, role }: Props) {
   const { t } = useAdminTranslation();
   const [activeTab, setActiveTab] = useState<TabKey>("intelligence");
 
-  const translatedTabs = [
+  let translatedTabs = [
     { key: "intelligence", label: t('intelligence') },
     { key: "branches", label: t('branches') },
     { key: "categories", label: t('categories') },
@@ -40,10 +41,14 @@ export function AdminTabsWrapper({ children }: Props) {
     { key: "profile", label: t('profile') }
   ];
 
+  if (role === "cashier") {
+    translatedTabs = translatedTabs.filter(t => ["intelligence", "customers", "profile"].includes(t.key));
+  }
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tab = params.get("tab") as TabKey | null;
-    if (tab && TABS.some((t) => t.key === tab)) {
+    if (tab && translatedTabs.some((t) => t.key === tab)) {
       setActiveTab(tab);
     }
   }, []);

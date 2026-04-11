@@ -50,7 +50,7 @@ export default async function AdminPage() {
           </div>
         </div>
 
-        <AdminTabsWrapper>
+        <AdminTabsWrapper role={session.role}>
           {session.role === "cashier" ? {
             intelligence: <AdminIntelligenceTab orders={orders} branches={branches} />,
             customers: <AdminCustomersTab customers={customers} />,

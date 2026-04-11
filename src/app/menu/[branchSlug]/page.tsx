@@ -93,7 +93,8 @@ export default async function MenuPage({ params }: MenuPageProps) {
         .category-pill { 
           background: #f8f8f8; color: #333; border: 1px solid #eee; 
           padding: 10px 22px; border-radius: 50px; white-space: nowrap; 
-          font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+          font-weight: 800; font-size: 14px; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+          box-sizing: border-box;
         }
         .category-pill.active { 
           background: linear-gradient(180deg, #e62b32 0, var(--primary) 100%); 

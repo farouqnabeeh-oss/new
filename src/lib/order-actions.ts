@@ -296,3 +296,20 @@ ${itemsList}
     
     return true;
 }
+
+export async function updateOrderStatus(orderId: number | string, newStatus: string) {
+    if (!isDBConfigured()) return { success: false, error: "DB not configured" };
+    try {
+        const supabase = getSupabaseAdmin();
+        const { error } = await supabase
+            .from("orders")
+            .update({ status: newStatus, updated_at: new Date().toISOString() })
+            .eq("id", orderId);
+        
+        if (error) throw error;
+        return { success: true };
+    } catch (err: any) {
+        console.error("[updateOrderStatus] Error:", err.message);
+        return { success: false, error: err.message };
+    }
+}
