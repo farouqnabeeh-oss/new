@@ -215,6 +215,10 @@ export function BranchGrid({ branches, lang = "ar" }: Props) {
           .simple-branch-grid {
             grid-template-columns: 1fr;
           }
+          .map-btn, .order-btn {
+            font-size: 11px !important;
+            padding: 10px 8px !important;
+          }
         }
       `}</style>
     </div>
