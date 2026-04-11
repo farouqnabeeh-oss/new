@@ -80,11 +80,28 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </div>
 
         <div className="header-right" id="header-cart-container" style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '4px' }}>
-          <button id="cart-btn" style={{ display: 'none', background: 'none', border: 'none', cursor: 'pointer', padding: '10px', position: 'relative' }}>
+          <button
+            id="cart-btn"
+            aria-label="Cart"
+            style={{
+              display: 'none',
+              background: '#f5f5f5',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '10px',
+              position: 'relative',
+              borderRadius: '50%',
+              width: '44px',
+              height: '44px',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+            }}
+          >
             <span id="cart-badge" style={{
               position: 'absolute',
-              top: '0',
-              right: '0',
+              top: '2px',
+              right: '2px',
               background: '#cf1f28',
               color: '#fff',
               fontSize: '10px',
@@ -95,13 +112,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               display: 'none',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 10px rgba(207,31,40,0.3)'
+              boxShadow: '0 2px 6px rgba(207,31,40,0.4)'
             }}>0</span>
-            {/* Shopping Bag icon */}
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-              <line x1="3" y1="6" x2="21" y2="6"></line>
-              <path d="M16 10a4 4 0 0 1-8 0"></path>
+            {/* Shopping Cart Icon */}
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="8" cy="21" r="1"></circle>
+              <circle cx="19" cy="21" r="1"></circle>
+              <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
             </svg>
           </button>
         </div>
