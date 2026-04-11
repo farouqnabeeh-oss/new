@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "seed": "npx tsx src/lib/run-seed.ts"
   },
   "dependencies": {
     "@stripe/react-stripe-js": "^6.1.0",
