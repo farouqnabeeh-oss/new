@@ -276,19 +276,24 @@ export async function getSiteSettings() {
 export async function getActiveBranches() {
   noStore();
   if (isMockMode) return mock.mockBranches as Branch[];
-  const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("branches")
-    .select("*")
-    .eq("is_active", true)
-    .order("sort_order")
-    .order("id");
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("branches")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order")
+      .order("id");
 
-  if (error) {
-    throw error;
+    if (error || !data || data.length === 0) {
+      console.warn("DB branches empty or error, falling back to mock");
+      return mock.mockBranches as Branch[];
+    }
+    return data.map((row) => mapBranch(row));
+  } catch (e) {
+    console.error("Fetch branches failed, falling back to mock", e);
+    return mock.mockBranches as Branch[];
   }
-
-  return (data ?? []).map((row) => mapBranch(row));
 }
 
 export async function getBranchBySlug(slug: string) {
@@ -330,71 +335,84 @@ export async function getMenuBanners() {
 export async function getCategories(branchSlug?: string | null) {
   noStore();
   if (isMockMode) return mock.mockCategories as unknown as (Category & { productCount: number })[];
-  const supabase = getSupabaseAdmin();
+  try {
+    const supabase = getSupabaseAdmin();
 
-  let branchId: number | null = null;
-  if (branchSlug) {
-    const branch = await getBranchBySlug(branchSlug);
-    branchId = branch?.id ?? null;
+    let branchId: number | null = null;
+    if (branchSlug) {
+      const branch = await getBranchBySlug(branchSlug);
+      branchId = branch?.id ?? null;
+    }
+
+    let query = supabase
+      .from("categories")
+      .select("*, products(count)")
+      .eq("is_active", true)
+      .order("sort_order")
+      .order("id");
+
+    if (branchId !== null) {
+      query = query.or(`branch_id.is.null,branch_id.eq.${branchId}`);
+    }
+
+    const { data, error } = await query;
+
+    if (error || !data || data.length === 0) {
+      console.warn("DB categories empty or error, falling back to mock");
+      return mock.mockCategories as any[];
+    }
+
+    return data.map((row) => {
+      const category = mapCategory(row);
+      const productCount = Array.isArray(row.products) && row.products[0]?.count ? Number(row.products[0].count) : 0;
+      return { ...category, productCount };
+    });
+  } catch (e) {
+    console.error("Fetch categories failed, falling back to mock", e);
+    return mock.mockCategories as any[];
   }
-
-  let query = supabase
-    .from("categories")
-    .select("*, products(count)")
-    .eq("is_active", true)
-    .order("sort_order")
-    .order("id");
-
-  if (branchId !== null) {
-    query = query.or(`branch_id.is.null,branch_id.eq.${branchId}`);
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    throw error;
-  }
-
-  return (data ?? []).map((row) => {
-    const category = mapCategory(row);
-    const productCount = Array.isArray(row.products) && row.products[0]?.count ? Number(row.products[0].count) : 0;
-    return { ...category, productCount };
-  });
 }
 
 export async function getProducts(branchSlug?: string | null, categoryId?: number | null) {
   noStore();
   if (isMockMode) return mock.mockProducts.filter(p => !categoryId || p.categoryId === categoryId) as unknown as Product[];
-  const supabase = getSupabaseAdmin();
+  try {
+    const supabase = getSupabaseAdmin();
 
-  let branchId: number | null = null;
-  if (branchSlug) {
-    const branch = await getBranchBySlug(branchSlug);
-    branchId = branch?.id ?? null;
+    let branchId: number | null = null;
+    if (branchSlug) {
+      const branch = await getBranchBySlug(branchSlug);
+      branchId = branch?.id ?? null;
+    }
+
+    let query = supabase
+      .from("products")
+      .select("*, product_sizes(*), product_types(*)")
+      .eq("is_active", true)
+      .order("sort_order")
+      .order("id");
+
+    if (branchId !== null) {
+      query = query.or(`all_branches.eq.true,branch_id.eq.${branchId}`);
+    }
+
+    if (categoryId) {
+      query = query.eq("category_id", categoryId);
+    }
+
+    const { data, error } = await query;
+
+    if (error || !data || data.length === 0) {
+      console.warn("DB products empty or error, falling back to mock");
+      const filtered = mock.mockProducts.filter(p => !categoryId || p.categoryId === categoryId);
+      return filtered as unknown as Product[];
+    }
+
+    return data.map((row) => mapProduct(row));
+  } catch (e) {
+    console.error("Fetch products failed, falling back to mock", e);
+    return mock.mockProducts.filter(p => !categoryId || p.categoryId === categoryId) as any[];
   }
-
-  let query = supabase
-    .from("products")
-    .select("*, product_sizes(*), product_types(*)")
-    .eq("is_active", true)
-    .order("sort_order")
-    .order("id");
-
-  if (branchId !== null) {
-    query = query.or(`all_branches.eq.true,branch_id.eq.${branchId}`);
-  }
-
-  if (categoryId) {
-    query = query.eq("category_id", categoryId);
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    throw error;
-  }
-
-  return (data ?? []).map((row) => mapProduct(row));
 }
 
 export async function getProductById(id: number) {
@@ -464,52 +482,52 @@ export async function getAddonGroups(categoryId?: number | null, productId?: num
     }) as unknown as AddonGroup[];
   }
 
-  const supabase = getSupabaseAdmin();
+  try {
+    const supabase = getSupabaseAdmin();
 
-  let effectiveCategoryId = categoryId ?? null;
+    let effectiveCategoryId = categoryId ?? null;
 
-  if (productId) {
-    const { data, error } = await supabase
-      .from("products")
-      .select("category_id")
-      .eq("id", productId)
-      .maybeSingle();
-
-    if (error) {
-      throw error;
+    if (productId) {
+      const { data } = await supabase
+        .from("products")
+        .select("category_id")
+        .eq("id", productId)
+        .maybeSingle();
+      effectiveCategoryId = data?.category_id ?? null;
     }
 
-    effectiveCategoryId = data?.category_id ?? null;
-  }
+    if (!effectiveCategoryId) return [];
 
-  if (!effectiveCategoryId) {
-    console.warn(`[getAddonGroups] ⚠️ No category found for Product #${productId}. Returning empty.`);
+    let query = supabase
+      .from("addon_groups")
+      .select("*, addon_group_items(*)")
+      .eq("category_id", effectiveCategoryId)
+      .eq("is_active", true)
+      .order("sort_order");
+
+    if (productId) {
+      query = query.or(`product_id.is.null,product_id.eq.${productId}`);
+    } else {
+      query = query.is("product_id", null);
+    }
+
+    const { data, error } = await query;
+
+    if (error || !data || data.length === 0) {
+      console.warn("DB addon groups empty or error, falling back to mock");
+      const mockGroups = mock.mockAddonGroups.filter(g => {
+        if (g.categoryId !== effectiveCategoryId) return false;
+        if (productId) return g.productId === null || g.productId === productId;
+        return g.productId === null;
+      });
+      return mockGroups as unknown as AddonGroup[];
+    }
+
+    return data.map((row) => mapAddonGroup(row));
+  } catch (e) {
+    console.error("Fetch addon groups failed, falling back to mock", e);
     return [];
   }
-
-  console.log(`[getAddonGroups] 🔍 Fetching groups for Category #${effectiveCategoryId}${productId ? ` and Product #${productId}` : ""}`);
-
-  let query = supabase
-    .from("addon_groups")
-    .select("*, addon_group_items(*)")
-    .eq("category_id", effectiveCategoryId)
-    .eq("is_active", true)
-    .order("sort_order")
-    .order("id");
-
-  if (productId) {
-    query = query.or(`product_id.is.null,product_id.eq.${productId}`);
-  } else {
-    query = query.is("product_id", null);
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    throw error;
-  }
-
-  return (data ?? []).map((row) => mapAddonGroup(row));
 }
 
 export async function getAdminData() {
