@@ -434,6 +434,11 @@ const UI = {
                         );
                         UI.hideModal('product-modal-overlay', 'product-modal');
                         UI.updateCartBadge(branchSlug);
+                        // Show cart modal for feedback
+                        setTimeout(() => {
+                            UI.renderCartModal(branchSlug, currency);
+                            UI.showModal('cart-modal-overlay', 'cart-modal');
+                        }, 300);
                     }
                 });
             });

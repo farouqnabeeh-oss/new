@@ -22,28 +22,9 @@ interface Props {
 export default function MenuClient({ categories, allProducts, branch, isAr, currency }: Props) {
   
   const updateBadge = useCallback(() => {
-    if (!window.Cart) return;
-    const count = window.Cart.getItems(branch.slug).length;
-    const cartBtn = document.getElementById("cart-btn");
-    if (cartBtn) {
-      cartBtn.style.display = "flex";
-      cartBtn.innerHTML = `
-        <div class="cart-icon-wrapper" style="display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;background:none;border:none;padding:0">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle>
-            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-          </svg>
-          ${count > 0 ? `
-            <div style="position:absolute;top:-5px;right:-5px;background:#8B0000;color:#fff;min-width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;box-shadow:0 4px 10px rgba(0,0,0,0.2)">
-              ${count}
-            </div>` : ''}
-        </div>`;
-      cartBtn.onclick = () => {
-        window.UI.renderCartModal(branch.slug, currency);
-        window.UI.showModal("cart-modal-overlay", "cart-modal");
-      };
-    }
-  }, [branch.slug, currency]);
+    if (!window.UI || !window.Cart) return;
+    window.UI.updateCartBadge(branch.slug);
+  }, [branch.slug]);
 
   useEffect(() => {
     const start = () => {
@@ -76,7 +57,7 @@ export default function MenuClient({ categories, allProducts, branch, isAr, curr
           const image = p.imagePath || '/images/classic-cheeseburger__0x1e3y1qv68eiip.jpg';
           
           content += `
-            <div class="up-card" onclick="window.viewP('${p.id}')">
+            <div class="up-card" data-pid="${p.id}" onclick="window.viewP('${p.id}')">
               ${disc > 0 ? `<div class="up-fire-badge">🔥 -${disc}%</div>` : ''}
               <div class="up-img-wrap"><img src="${image}" class="up-img" loading="lazy" /></div>
               <div class="up-body">
@@ -99,21 +80,24 @@ export default function MenuClient({ categories, allProducts, branch, isAr, curr
 
       // 4. Global viewP handler
       window.viewP = async (id: string | number) => {
+        const card = document.querySelector(`[data-pid="${id}"]`);
+        const btn = card?.querySelector('.up-add-pill');
+        const originalText = btn ? btn.textContent : '';
+        
         try {
-          // Fetch the FULL product details including addonGroups, sizes, and types
+          if (btn) btn.textContent = isAr ? 'جاري التحميل...' : 'Loading...';
+          
           const res = await fetch(`/api/ProductsApi/${id}`);
           if (!res.ok) throw new Error("Product data fetch failed");
           
           const fullProduct = await res.json();
-          const ads = fullProduct.addonGroups || [];
-          
-          console.log(`[Product Modal] Fetched full details for #${id}:`, fullProduct);
-          window.UI.renderProductModal(fullProduct, ads, branch.slug, currency, 0);
+          window.UI.renderProductModal(fullProduct, fullProduct.addonGroups || [], branch.slug, currency, 0);
         } catch (e) {
           console.error(`[Product Modal] API Error for Product #${id}:`, e);
-          // Fallback to local data if API fails (though options might be missing)
           const p = allProducts.find(x => String(x.id) === String(id));
           if (p) window.UI.renderProductModal(p, [], branch.slug, currency, 0);
+        } finally {
+          if (btn) btn.textContent = originalText;
         }
       };
 
