@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getProducts } from "@/lib/data";
+import { ProductSize, ProductType } from "@/lib/types";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -24,13 +25,13 @@ export async function GET(request: Request) {
       hasDonenessOption: product.hasDonenessOption,
       sortOrder: product.sortOrder,
       isActive: product.isActive,
-      sizes: product.sizes.map((size) => ({
+      sizes: (product.sizes || []).map((size: ProductSize) => ({
         id: size.id,
         nameAr: size.nameAr,
         nameEn: size.nameEn,
         price: size.price
       })),
-      types: product.types.map((type) => ({
+      types: (product.types || []).map((type: ProductType) => ({
         id: type.id,
         nameAr: type.nameAr,
         nameEn: type.nameEn,
