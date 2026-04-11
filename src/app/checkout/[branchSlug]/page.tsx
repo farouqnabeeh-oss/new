@@ -17,13 +17,21 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
   }
 
   return (
-    <div className="ultra-checkout-shell" style={{ minHeight: '100vh', background: 'var(--luxury-cream)', paddingBottom: '100px' }}>
-      <div className="checkout-page" style={{ maxWidth: '900px', margin: '0 auto', padding: '120px 24px' }}>
-        
-
-
+    <div className="ultra-checkout-shell" style={{ minHeight: '100vh', background: 'var(--luxury-cream)' }}>
+      <style>{`
+        .checkout-page-container {
+          max-width: 900px;
+          margin: 0 auto;
+          padding: 120px 24px 100px;
+        }
+        @media (max-width: 768px) {
+          .checkout-page-container {
+            padding: 85px 15px 80px;
+          }
+        }
+      `}</style>
+      <div className="checkout-page-container">
         <CheckoutFormWrapper branch={branch} settings={settings as any} lang="ar" />
-
       </div>
     </div>
   );

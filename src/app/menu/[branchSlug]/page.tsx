@@ -98,7 +98,7 @@ export default async function MenuPage({ params }: MenuPageProps) {
         .category-pill.active { 
           background: linear-gradient(180deg, #e62b32 0, var(--primary) 100%); 
           color: #fff; border-color: transparent; font-weight: 800; 
-          box-shadow: 0 6px 15px rgba(139, 0, 0, 0.3); transform: scale(1.05);
+          box-shadow: 0 6px 15px rgba(139, 0, 0, 0.3);
         }
 
         /* 🎨 THE RESTORED PREMIUM CARD DESIGN */
@@ -119,13 +119,13 @@ export default async function MenuPage({ params }: MenuPageProps) {
         .up-card { 
           background: #fff; border-radius: 30px; overflow: hidden; 
           display: flex; flex-direction: column; position: relative; 
-          cursor: pointer; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s; 
+          cursor: pointer; transition: box-shadow 0.3s; 
           box-shadow: 0 10px 25px rgba(0,0,0,0.08);
         }
-        .up-card:active { transform: scale(0.96); }
+        .up-card:active { transform: scale(0.98); }
         
-        .up-img-wrap { width: 100%; height: 220px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: transparent; }
-        .up-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; transition: transform 0.4s; }
+        .up-img-wrap { width: 100%; height: 220px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: transparent; padding-top: 10px; }
+        .up-img { width: 100%; height: 100%; object-fit: contain; transition: transform 0.4s; }
         .up-card:hover .up-img { transform: scale(1.05); }
         
         .up-body { padding: 20px; text-align: center; flex-grow: 1; display: flex; flex-direction: column; }
@@ -223,8 +223,8 @@ export default async function MenuPage({ params }: MenuPageProps) {
         <div id="uptown-render-area"></div>
       </div>
 
-      <MenuClient 
-        categories={categories} 
+      <MenuClient
+        categories={categories}
         allProducts={allProducts}
         branch={branch}
         isAr={isAr}
