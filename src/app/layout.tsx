@@ -100,9 +100,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <div className="up-footer-brand">
             <img src="/logo.jpeg" alt={siteName} style={{ height: '70px', width: 'auto', marginBottom: '15px' }} />
           </div>
-          {/* <p style={{ color: '#666', fontSize: '14px', lineHeight: '1.6', maxWidth: '300px' }}>
-            {isAr ? "نقدم لك تجربة طعام فريدة تجمع بين الفخامة والمذاق الأصيل." : "Providing you with a unique dining experience that combines luxury and authentic taste."}
-          </p> */}
+          <p style={{ color: '#666', fontSize: '15px', lineHeight: '1.6', maxWidth: '300px', fontWeight: 600 }}>
+            {isAr ? "ساعات العمل:" : "Working Hours:"}<br/>
+            <span style={{ color: '#cf1f28', fontWeight: 800 }}>{isAr ? "١٠:٠٠ صباحاً - ١٢:٠٠ منتصف الليل" : "10:00 AM - 12:00 AM"}</span>
+          </p>
         </div>
 
         <div className="up-footer-col">

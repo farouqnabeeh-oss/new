@@ -8,6 +8,7 @@ type SessionPayload = {
   sub: string;
   email: string;
   displayName: string;
+  role?: string;
 };
 
 function getAuthSecret() {

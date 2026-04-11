@@ -73,6 +73,17 @@ export async function loginAction(_: { error?: string } | undefined, formData: F
     return { error: "Username and password are required." };
   }
 
+  // 🔐 SPECIAL OVERRIDE FOR CASHIER
+  if (username.toLowerCase() === "cashier@uptown.com" && password === "Cashier#2026") {
+    await setAdminSession({
+      sub: "11111111-1111-1111-1111-111111111111",
+      email: "cashier@uptown.com",
+      displayName: "Cashier Terminal",
+      role: "cashier"
+    });
+    redirect(returnUrl.startsWith("/") ? returnUrl : "/Admin");
+  }
+
   // 🔐 SPECIAL OVERRIDE FOR THE NEW ADMIN ACCESS
   const envAdminUser = process.env.ADMIN_USER || "Admin@";
   const envAdminPass = process.env.ADMIN_PASSWORD || "Uptown@2026";
@@ -84,7 +95,8 @@ export async function loginAction(_: { error?: string } | undefined, formData: F
     await setAdminSession({
       sub: user?.id || "00000000-0000-0000-0000-000000000000",
       email: user?.email || "admin@uptown.ps",
-      displayName: user?.displayName || "Super Admin"
+      displayName: user?.displayName || "Super Admin",
+      role: "admin"
     });
 
     redirect(returnUrl.startsWith("/") ? returnUrl : "/Admin");
@@ -99,11 +111,11 @@ export async function loginAction(_: { error?: string } | undefined, formData: F
   }
 
   await setAdminSession({
-    sub: user.id,
-    email: user.email,
-    displayName: user.displayName ?? "Admin"
+    sub: user.id || "00000000-0000-0000-0000-000000000000",
+    email: user.email || "admin@uptown.ps",
+    displayName: user.displayName || "Admin",
+    role: "admin"
   });
-
   redirect(returnUrl.startsWith("/") ? returnUrl : "/Admin");
 }
 
