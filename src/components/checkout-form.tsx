@@ -312,7 +312,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                                 <div style={{ position: 'relative' }}>
                                     <select 
                                         className="uptown-input premium-select" 
-                                        style={{ width: '100%', appearance: 'none', WebkitAppearance: 'none', cursor: 'pointer' }}
+                                        style={{ width: '100%', cursor: 'pointer', backgroundPosition: 'left 20px center' }}
                                         value={selectedZone}
                                         onChange={(e) => {
                                             const zone = branch.deliveryZones?.find(z => (isAr ? (z.nameAr || (z as any).name) : (z.nameEn || (z as any).name)) === e.target.value);
@@ -326,15 +326,12 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                                         }}
                                     >
                                         <option value="">{isAr ? '--- اختر المنطقة ---' : '--- Choose Zone ---'}</option>
-                                        {branch.deliveryZones?.map((z, zIdx) => {
+                                        {branch.deliveryZones?.length > 0 ? branch.deliveryZones.map((z, zIdx) => {
                                             const zoneName = isAr ? z.nameAr : z.nameEn;
                                             if (!zoneName) return null;
                                             return <option key={`zone-${zIdx}`} value={zoneName}>{zoneName} (+{z.fee} {settings.currencySymbol})</option>;
-                                        })}
+                                        }) : <option value="Manual" disabled>{isAr ? 'المناطق غير متاحة حالياً' : 'Zones momentarily unavailable'}</option>}
                                     </select>
-                                    <div style={{ position: 'absolute', top: '50%', right: isAr ? 'auto' : '20px', left: isAr ? '20px' : 'auto', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#8B0000' }}>
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                                    </div>
                                 </div>
                                 <div className="uptown-input-group" style={{ marginTop: '20px' }}>
                                     <label>{isAr ? 'العنوان بالتفصيل' : 'Detailed Address'} *</label>

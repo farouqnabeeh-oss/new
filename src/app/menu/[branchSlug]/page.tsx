@@ -158,7 +158,8 @@ export default async function MenuPage({ params }: MenuPageProps) {
           .up-title { font-size: 1.1rem; }
           .up-price-tag { font-size: 1.2rem; }
           .up-desc { display: none; } 
-          .up-add-pill { padding: 8px 14px; font-size: 11px; border-radius: 8px; }
+          .up-add-pill { padding: 6px 5px; font-size: 10px; border-radius: 6px; }
+          .up-footer { padding-top: 5px; }
         }
 
         .branch-header-name { display: block !important; }

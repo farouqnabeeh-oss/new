@@ -26,7 +26,7 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
         }
         @media (max-width: 768px) {
           .checkout-page-container {
-            padding: 85px 15px 80px;
+            padding: 50px 15px 50px;
           }
         }
       `}</style>
