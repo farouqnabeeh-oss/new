@@ -122,6 +122,19 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
 
             const finalAddress = orderType === 'delivery' ? `${selectedZone} - ${address}` : address;
             try {
+                const mappedItems = items.map((i: any) => {
+                    const normalAddons = i.selectedAddOns?.filter((a: any) => !(a.nameAr || '').includes('بدون') && !(a.nameEn || '').toLowerCase().includes('without') && !(a.nameEn || '').toLowerCase().includes('no '));
+                    const noteAddons = i.selectedAddOns?.filter((a: any) => (a.nameAr || '').includes('بدون') || (a.nameEn || '').toLowerCase().includes('without') || (a.nameEn || '').toLowerCase().includes('no '));
+                    const parts = [];
+                    if (i.selectedSize) parts.push(`الحجم: ${isAr ? i.selectedSize.nameAr : i.selectedSize.nameEn}`);
+                    if (i.selectedType) parts.push(`النوع: ${isAr ? i.selectedType.nameAr : i.selectedType.nameEn}`);
+                    if (normalAddons?.length) parts.push(`إضافات: ` + normalAddons.map((a:any)=> isAr ? a.nameAr : a.nameEn).join('، '));
+                    if (noteAddons?.length) parts.push(`ملاحظات: ` + noteAddons.map((a:any)=> isAr ? a.nameAr : a.nameEn).join('، '));
+                    if (i.note) parts.push(`ملاحظة إضافية: ${i.note}`);
+                    
+                    return { ...i, addonDetails: parts.join(' | ') };
+                });
+
                 const res = await saveOrderAction({
                     branchId: branch.id,
                     customerName: name,
@@ -132,7 +145,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                     tableNumber: orderType === 'delivery' ? null : (subType === 'table' ? table : pickupTime),
                     totalAmount: freshTotal,
                     paymentMethod: paymentMethod === 'cash' ? 'Cash' : 'Card'
-                }, items, captchaToken || undefined);
+                }, mappedItems, captchaToken || undefined);
 
                 console.log("[Checkout] Order Save Result:", res);
 
@@ -196,7 +209,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
 
                     // Construct WhatsApp Message
                     const orderTypeLabel = orderType === 'delivery' ? (isAr ? 'توصيل' : 'Delivery') : (subType === 'table' ? (isAr ? 'طاولة' : 'Table') : (isAr ? 'استلام' : 'Pickup'));
-                    const itemsTxt = items.map((i: any) => `- ${i.quantity}x ${isAr ? i.nameAr : i.nameEn} (${i.finalPrice} ₪)`).join('%0A');
+                    const itemsTxt = mappedItems.map((i: any) => `- ${i.quantity}x ${isAr ? i.nameAr : i.nameEn} (${i.finalPrice} ₪) %0A   ${i.addonDetails || ''}`).join('%0A');
                     const msg = `*طلب جديد من UPTOWN*%0A%0A` +
                         `*العميل:* ${name}%0A` +
                         `*الهاتف:* ${phone}%0A` +

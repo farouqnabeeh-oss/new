@@ -87,6 +87,10 @@ const UI = {
                         <div class="cart-item-meta">
                             ${item.selectedSize ? `<span class="badge-mini">${Lang.localized(item.selectedSize.nameAr, item.selectedSize.nameEn)}</span>` : ''}
                             ${item.selectedType ? `<span class="badge-mini">${Lang.localized(item.selectedType.nameAr, item.selectedType.nameEn)}</span>` : ''}
+                            ${item.selectedAddOns && item.selectedAddOns.length > 0 ? item.selectedAddOns.map(a => {
+                                const isNote = (a.nameAr||'').includes('بدون') || (a.nameEn||'').toLowerCase().includes('without') || (a.nameEn||'').toLowerCase().includes('no ');
+                                return `<span class="badge-mini" style="background: ${isNote ? '#fff' : '#f0f0f0'}; color: ${isNote ? '#e63946' : '#555'}; border: ${isNote ? '1px solid #e63946' : 'none'};">${Lang.localized(a.nameAr, a.nameEn)}</span>`;
+                            }).join('') : ''}
                         </div>
                         <div class="cart-item-footer">
                             <div class="cart-qty-control">
