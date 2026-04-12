@@ -38,16 +38,16 @@ export function AdminIntelligenceTab({ orders, branches }: Props) {
       <div className="admin-section-header">
         <h2 className="admin-subtitle">📊 Intelligence & Analytics</h2>
         <div className="intelligence-filters">
-            <select 
-                value={timeRange} 
-                onChange={(e) => setTimeRange(e.target.value as any)}
-                className="ultra-login-input"
-                style={{ width: '150px', height: '40px', padding: '0 15px', borderRadius: '10px' }}
-            >
-                <option value="day">Today</option>
-                <option value="week">Past Week</option>
-                <option value="month">Past Month</option>
-            </select>
+          <select
+            value={timeRange}
+            onChange={(e) => setTimeRange(e.target.value as any)}
+            className="ultra-login-input"
+            style={{ width: '150px', height: '40px', padding: '0 15px', borderRadius: '10px' }}
+          >
+            <option value="day">Today</option>
+            <option value="week">Past Week</option>
+            <option value="month">Past Month</option>
+          </select>
         </div>
       </div>
 
@@ -76,7 +76,7 @@ export function AdminIntelligenceTab({ orders, branches }: Props) {
           <h3 style={{ marginBottom: '24px', fontWeight: 900 }}>Sales Velocity</h3>
           <div style={{ height: '300px', background: '#f9f9f9', borderRadius: '20px', display: 'flex', alignItems: 'flex-end', gap: '15px', padding: '20px' }}>
             {[40, 70, 45, 90, 65, 80, 100].map((h, i) => (
-                <div key={i} style={{ flex: 1, height: `${h}%`, background: 'var(--primary)', borderRadius: '8px 8px 0 0', opacity: 0.8 + (i*0.02) }}></div>
+              <div key={i} style={{ flex: 1, height: `${h}%`, background: 'var(--primary)', borderRadius: '8px 8px 0 0', opacity: 0.8 + (i * 0.02) }}></div>
             ))}
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '15px', color: 'var(--text-secondary)', fontWeight: 700, fontSize: '12px' }}>
@@ -103,8 +103,8 @@ export function AdminIntelligenceTab({ orders, branches }: Props) {
       {/* 📄 LATEST ORDERS TABLE */}
       <div className="admin-card">
         <div style={{ padding: '24px 32px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ fontWeight: 900 }}>Recent Transactions</h3>
-            <button className="btn btn-outline btn-sm" onClick={() => window.location.reload()}>Refresh</button>
+          <h3 style={{ fontWeight: 900 }}>Recent Transactions</h3>
+          <button className="btn btn-outline btn-sm" onClick={() => window.location.reload()}>Refresh</button>
         </div>
         <table className="admin-table">
           <thead>
@@ -132,30 +132,30 @@ export function AdminIntelligenceTab({ orders, branches }: Props) {
                 </td>
                 <td style={{ fontSize: '12px', opacity: 0.6 }}>{new Date(order.createdAt).toLocaleDateString('ar-EG')}</td>
                 <td>
-                    <select 
-                        defaultValue={order.status} 
-                        onChange={async (e) => {
-                            const res = await updateOrderStatus(order.id, e.target.value);
-                            if(res.success) window.location.reload();
-                            else alert('Failed to update status: ' + res.error);
-                        }}
-                        style={{ padding: '6px', borderRadius: '5px', fontSize: '11px', border: '1px solid #ddd', marginRight: '5px' }}
-                    >
-                        <option value="Pending">Pending</option>
-                        <option value="Confirmed">Confirmed</option>
-                        <option value="Paid">Paid</option>
-                        <option value="Preparing">Preparing</option>
-                        <option value="Out for Delivery">Out for Delivery</option>
-                        <option value="Delivered">Delivered</option>
-                        <option value="Cancelled">Cancelled</option>
-                    </select>
-                    <button style={{ fontSize:'11px', cursor:'pointer', padding: '6px 10px', background: '#f5f5f5', border: '1px solid #ddd', borderRadius: '5px' }} onClick={async () => {
-                        const res = await getOrderSummary(order.id);
-                        if(res.success) {
-                            const items = res.order.order_items.map((i:any) => `${i.quantity}x ${i.product_name_ar || i.product_name_en} (${i.price}₪) \n${i.addon_details || ''}`).join('\n\n');
-                            alert(`Order #${order.id} details:\n\nCustomer: ${order.customerName}\nPhone: ${order.customerPhone}\nType: ${order.orderType}\nAddress: ${order.address || 'N/A'}\n\nItems:\n${items}`);
-                        }
-                    }}>Details</button>
+                  <select
+                    defaultValue={order.status}
+                    onChange={async (e) => {
+                      const res = await updateOrderStatus(order.id, e.target.value);
+                      if (res.success) window.location.reload();
+                      else alert('Failed to update status: ' + res.error);
+                    }}
+                    style={{ padding: '6px', borderRadius: '5px', fontSize: '11px', border: '1px solid #ddd', marginRight: '5px' }}
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="Confirmed">Confirmed</option>
+                    <option value="Paid">Paid</option>
+                    <option value="Preparing">Preparing</option>
+                    <option value="Out for Delivery">Out for Delivery</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
+                  <button style={{ fontSize: '11px', cursor: 'pointer', padding: '6px 10px', background: '#f5f5f5', border: '1px solid #ddd', borderRadius: '5px' }} onClick={async () => {
+                    const res = await getOrderSummary(order.id);
+                    if (res.success) {
+                      const items = res.order.order_items.map((i: any) => `${i.quantity}x ${i.product_name_ar || i.product_name_en} (${i.price}₪) \n${i.addon_details || ''}`).join('\n\n');
+                      alert(`Order #${order.id} details:\n\nCustomer: ${order.customerName}\nPhone: ${order.customerPhone}\nType: ${order.orderType}\nAddress: ${order.address || 'N/A'}\n\nItems:\n${items}`);
+                    }
+                  }}>Details</button>
                 </td>
               </tr>
             )) : (
