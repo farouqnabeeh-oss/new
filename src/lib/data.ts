@@ -222,57 +222,46 @@ function mapAdminUser(row: Record<string, unknown>): AdminUser {
 export async function getActiveBanners() {
   noStore();
   if (isMockMode) return mock.mockBanners as MenuBanner[];
-  const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("menu_banners")
-    .select("*")
-    .eq("is_active", true)
-    .order("sort_order");
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("menu_banners")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order");
 
-  if (error) {
-    console.error("Error fetching banners:", error);
-    return [];
+    if (error) {
+      console.error("Error fetching banners:", error);
+      return mock.mockBanners as MenuBanner[];
+    }
+
+    return (data ?? []).map((row) => mapMenuBanner(row));
+  } catch (e) {
+    console.error("Fetch banners failed, falling back to mock", e);
+    return mock.mockBanners as MenuBanner[];
   }
-
-  return (data ?? []).map((row) => mapMenuBanner(row));
 }
 
 export async function getSiteSettings() {
   noStore();
   if (isMockMode) return mock.mockSettings as SiteSettings;
-  const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase.from("site_settings").select("*").limit(1).maybeSingle();
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase.from("site_settings").select("*").limit(1).maybeSingle();
 
-  if (error) {
-    console.error("Error fetching site settings:", error);
+    if (error) {
+      console.error("Error fetching site settings:", error);
+    }
+
+    if (error || !data) {
+      return mock.mockSettings as SiteSettings;
+    }
+
+    return mapSettings(data);
+  } catch (e) {
+    console.error("Fetch site settings failed, falling back to mock", e);
+    return mock.mockSettings as SiteSettings;
   }
-
-  if (error || !data) {
-    return {
-      id: 0,
-      siteName: "UPTOWN",
-      siteNameAr: "أبتاون",
-      logoUrl: null,
-      currencySymbol: "₪",
-      primaryColor: "#8B0000",
-      secondaryColor: "#1a1a1a",
-      footerText: "By Jacqueline",
-      ogImageUrl: null,
-      metaDescriptionAr: "أبتاون - مطعم برجر وساندويتشات فاخرة",
-      metaDescriptionEn: "UPTOWN - Premium burgers and sandwiches restaurant",
-      tiktokUrl: null,
-      instagramUptownUrl: null,
-      facebookUptownUrl: null,
-      facebookPastaUrl: null,
-      instagramPastaUrl: null,
-      siteEmail: "info@uptown.ps",
-      sitePhone: "+970 2 295 1234",
-      siteAddress: "Ramallah, Palestine",
-      updatedAt: ""
-    } satisfies SiteSettings;
-  }
-
-  return mapSettings(data);
 }
 
 export async function getActiveBranches() {
@@ -301,39 +290,49 @@ export async function getActiveBranches() {
 export async function getBranchBySlug(slug: string) {
   noStore();
   if (isMockMode) return mock.mockBranches.find(b => b.slug === slug) as Branch | null;
-  const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("branches")
-    .select("*")
-    .ilike("slug", slug)
-    .eq("is_active", true)
-    .maybeSingle();
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("branches")
+      .select("*")
+      .ilike("slug", slug)
+      .eq("is_active", true)
+      .maybeSingle();
 
-  if (error) {
-    console.error("Error fetching branch by slug:", error);
-    return null;
+    if (error) {
+      console.error("Error fetching branch by slug:", error);
+      return mock.mockBranches.find(b => b.slug === slug) as Branch | null;
+    }
+
+    return data ? mapBranch(data) : (mock.mockBranches.find(b => b.slug === slug) as Branch | null);
+  } catch (e) {
+    console.error("Fetch branch by slug failed, falling back to mock", e);
+    return mock.mockBranches.find(b => b.slug === slug) as Branch | null;
   }
-
-  return data ? mapBranch(data) : null;
 }
 
 export async function getMenuBanners() {
   noStore();
   if (isMockMode) return mock.mockBanners as MenuBanner[];
-  const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("menu_banners")
-    .select("*")
-    .eq("is_active", true)
-    .order("sort_order")
-    .order("id");
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("menu_banners")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order")
+      .order("id");
 
-  if (error) {
-    console.error("Error fetching menu banners:", error);
-    return [];
+    if (error) {
+      console.error("Error fetching menu banners:", error);
+      return mock.mockBanners as MenuBanner[];
+    }
+
+    return (data ?? []).map((row) => mapMenuBanner(row));
+  } catch (e) {
+    console.error("Fetch menu banners failed, falling back to mock", e);
+    return mock.mockBanners as MenuBanner[];
   }
-
-  return (data ?? []).map((row) => mapMenuBanner(row));
 }
 
 export async function getCategories(branchSlug?: string | null) {
@@ -362,8 +361,8 @@ export async function getCategories(branchSlug?: string | null) {
     const { data, error } = await query;
 
     if (error || !data || data.length === 0) {
-      console.warn("DB categories empty or error");
-      return [];
+      console.warn("DB categories empty or error, falling back to mock");
+      return mock.mockCategories as unknown as (Category & { productCount: number })[];
     }
 
     return data.map((row) => {
@@ -372,8 +371,8 @@ export async function getCategories(branchSlug?: string | null) {
       return { ...category, productCount };
     });
   } catch (e) {
-    console.error("Fetch categories failed", e);
-    return [];
+    console.error("Fetch categories failed, falling back to mock", e);
+    return mock.mockCategories as unknown as (Category & { productCount: number })[];
   }
 }
 
@@ -411,14 +410,18 @@ export async function getProducts(branchSlug?: string | null, categoryId?: numbe
     const { data, error } = await query;
 
     if (error || !data || data.length === 0) {
-      console.warn("DB products empty or error");
-      return [];
+      console.warn("DB products empty or error, falling back to mock");
+      let mockData = mock.mockProducts;
+      if (categoryId) mockData = mockData.filter(p => p.categoryId === categoryId);
+      return mockData as unknown as Product[];
     }
 
     return data.map((row) => mapProduct(row));
   } catch (e) {
-    console.error("Fetch products failed", e);
-    return [];
+    console.error("Fetch products failed, falling back to mock", e);
+    let mockData = mock.mockProducts;
+    if (categoryId) mockData = mockData.filter(p => p.categoryId === categoryId);
+    return mockData as unknown as Product[];
   }
 }
 
@@ -437,61 +440,66 @@ export async function getProductById(id: number) {
       )
     } as any;
   }
-  const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("products")
-    .select("*, categories(name_ar, name_en), product_sizes(*), product_types(*)")
-    .eq("id", id)
-    .maybeSingle();
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("products")
+      .select("*, categories(name_ar, name_en), product_sizes(*), product_types(*)")
+      .eq("id", id)
+      .maybeSingle();
 
-  if (error) {
-    console.error("Error fetching product by id:", error);
+    if (error) {
+      console.error("Error fetching product by id:", error);
+      return null;
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    const product = mapProduct(data);
+    const category = data.categories as { name_ar?: string; name_en?: string } | null;
+
+    // Fetch Addon Groups for this product/category
+    const { data: addonGroupsData } = await supabase
+      .from("addon_groups")
+      .select("*, addon_group_items(*)")
+      .or(`category_id.eq.${product.categoryId},product_id.eq.${product.id}`)
+      .eq("is_active", true)
+      .order("sort_order");
+
+    // Filter out category groups that are overridden by product-specific groups
+    // e.g. if there's a Size group for product 87 specifically, don't show the category-wide Size group
+    const addonGroups = (addonGroupsData ?? [])
+      .filter(row => {
+        // 1. If this group is assigned to a DIFFERENT product, exclude it
+        if (row.product_id !== null && row.product_id !== product.id) {
+          return false;
+        }
+
+        // 2. If this is a category-level group, check if there's a product-level override for THIS product
+        if (row.product_id === null && row.category_id !== null) {
+          const hasSpecificOverride = addonGroupsData?.some(
+            other => other.product_id === product.id &&
+              (other.group_type === row.group_type || other.name_ar === row.name_ar)
+          );
+          return !hasSpecificOverride;
+        }
+
+        return true;
+      })
+      .map(row => mapAddonGroup(row));
+
+    return {
+      ...product,
+      categoryNameAr: category?.name_ar ?? "",
+      categoryNameEn: category?.name_en ?? "",
+      addonGroups
+    };
+  } catch (e) {
+    console.error("Fetch product by id failed", e);
     return null;
   }
-
-  if (!data) {
-    return null;
-  }
-
-  const product = mapProduct(data);
-  const category = data.categories as { name_ar?: string; name_en?: string } | null;
-
-  // Fetch Addon Groups for this product/category
-  const { data: addonGroupsData } = await supabase
-    .from("addon_groups")
-    .select("*, addon_group_items(*)")
-    .or(`category_id.eq.${product.categoryId},product_id.eq.${product.id}`)
-    .eq("is_active", true)
-    .order("sort_order");
-
-  // Filter out category groups that are overridden by product-specific groups
-  // e.g. if there's a Size group for product 87 specifically, don't show the category-wide Size group
-  const addonGroups = (addonGroupsData ?? [])
-    .filter(row => {
-      // 1. If this group is assigned to a DIFFERENT product, exclude it
-      if (row.product_id !== null && row.product_id !== product.id) {
-        return false;
-      }
-
-      // 2. If this is a category-level group, check if there's a product-level override for THIS product
-      if (row.product_id === null && row.category_id !== null) {
-        const hasSpecificOverride = addonGroupsData?.some(
-          other => other.product_id === product.id &&
-            (other.group_type === row.group_type || other.name_ar === row.name_ar)
-        );
-        return !hasSpecificOverride;
-      }
-
-      return true;
-    })
-    .map(row => mapAddonGroup(row));
-
-  return {
-    ...product,
-    categoryNameAr: category?.name_ar ?? "",
-    categoryNameEn: category?.name_en ?? "",
-    addonGroups
-  };
 }
 
 export async function getAddonGroups(categoryId?: number | null, productId?: number | null) {
@@ -560,111 +568,125 @@ export async function getAdminData() {
     };
   }
 
-  const supabase = getSupabaseAdmin();
-  const [
-    branchesResult,
-    categoriesResult,
-    productsResult,
-    addonGroupsResult,
-    menuBannersResult,
-    settingsResult,
-    ordersResult,
-    customersResult
-  ] = await Promise.all([
-    supabase.from("branches").select("*").order("sort_order").order("id"),
-    supabase.from("categories").select("*, branches(*)").order("sort_order").order("id"),
-    supabase.from("products").select("*, categories(*), branches(*)").order("sort_order").order("id"),
-    supabase
-      .from("addon_groups")
-      .select("*, addon_group_items(*)")
-      .order("sort_order")
-      .order("id"),
-    supabase.from("menu_banners").select("*").order("sort_order").order("id"),
-    supabase.from("site_settings").select("*").limit(1).maybeSingle(),
-    supabase.from("orders").select("*, branches(*), order_items(*)").order("created_at", { ascending: false }).limit(100),
-    supabase.from("customers").select("*").order("created_at", { ascending: false }).limit(100)
-  ]);
+  try {
+    const supabase = getSupabaseAdmin();
+    const [
+      branchesResult,
+      categoriesResult,
+      productsResult,
+      addonGroupsResult,
+      menuBannersResult,
+      settingsResult,
+      ordersResult,
+      customersResult
+    ] = await Promise.all([
+      supabase.from("branches").select("*").order("sort_order").order("id"),
+      supabase.from("categories").select("*, branches(*)").order("sort_order").order("id"),
+      supabase.from("products").select("*, categories(*), branches(*)").order("sort_order").order("id"),
+      supabase
+        .from("addon_groups")
+        .select("*, addon_group_items(*)")
+        .order("sort_order")
+        .order("id"),
+      supabase.from("menu_banners").select("*").order("sort_order").order("id"),
+      supabase.from("site_settings").select("*").limit(1).maybeSingle(),
+      supabase.from("orders").select("*, branches(*), order_items(*)").order("created_at", { ascending: false }).limit(100),
+      supabase.from("customers").select("*").order("created_at", { ascending: false }).limit(100)
+    ]);
 
-  for (const result of [
-    branchesResult,
-    categoriesResult,
-    productsResult,
-    addonGroupsResult,
-    menuBannersResult,
-    settingsResult,
-    ordersResult,
-    customersResult
-  ]) {
-    if (result.error) {
-      throw result.error;
+    for (const result of [
+      branchesResult,
+      categoriesResult,
+      productsResult,
+      addonGroupsResult,
+      menuBannersResult,
+      settingsResult,
+      ordersResult,
+      customersResult
+    ]) {
+      if (result.error) {
+        throw result.error;
+      }
     }
+
+    const branches = (branchesResult.data ?? []).map((row) => mapBranch(row));
+    const categories = (categoriesResult.data ?? []).map((row) => mapCategory(row));
+    const categoriesById = new Map(categories.map((category) => [category.id, category]));
+    const branchesById = new Map(branches.map((branch) => [branch.id, branch]));
+    const products = (productsResult.data ?? []).map((row) => {
+      const product = mapProduct(row);
+      return {
+        ...product,
+        category: categoriesById.get(product.categoryId) || { id: 0, nameAr: "بدون قسم", nameEn: "No Category" } as any,
+        branch: product.branchId ? branchesById.get(product.branchId) ?? null : null
+      };
+    });
+    const productsById = new Map(products.map((product) => [product.id, product]));
+    const addonGroups = (addonGroupsResult.data ?? []).map((row) => {
+      const addonGroup = mapAddonGroup(row);
+      return {
+        ...addonGroup,
+        category: categoriesById.get(addonGroup.categoryId)!,
+        product: addonGroup.productId ? productsById.get(addonGroup.productId) ?? null : null
+      };
+    });
+    const menuBanners = (menuBannersResult.data ?? []).map((row) => mapMenuBanner(row));
+    const settings = settingsResult.data ? mapSettings(settingsResult.data) : null;
+    const orders = (ordersResult.data ?? []).map((row: any) => ({
+      id: Number(row.id),
+      branchId: Number(row.branch_id),
+      customerId: row.customer_id,
+      customerName: String(row.customer_name ?? ""),
+      customerPhone: String(row.customer_phone ?? ""),
+      customerEmail: String(row.customer_email ?? ""),
+      orderType: row.order_type as any,
+      address: row.address,
+      tableNumber: row.table_number,
+      totalAmount: Number(row.total_amount ?? 0),
+      status: row.status as any,
+      paymentMethod: row.payment_method as any,
+      paymentStatus: row.payment_status as any,
+      createdAt: row.created_at,
+      branch: row.branches ? mapBranch(row.branches) : null,
+      items: (row.order_items ?? []).map((item: any) => ({
+        id: Number(item.id),
+        orderId: Number(item.order_id),
+        productId: Number(item.product_id),
+        productNameAr: String(item.product_name_ar),
+        productNameEn: String(item.product_name_en),
+        quantity: Number(item.quantity),
+        price: Number(item.price),
+        addonDetails: item.addon_details
+      }))
+    })) as Order[];
+    const customers = (customersResult.data ?? []) as Customer[];
+
+    return {
+      branches,
+      categories: categories.map((category) => ({
+        ...category,
+        branch: category.branchId ? branchesById.get(category.branchId) ?? null : null
+      })),
+      products,
+      addonGroups,
+      menuBanners,
+      settings,
+      orders,
+      customers
+    };
+  } catch (e) {
+    console.error("Fetch admin data failed, falling back to mock", e);
+    return {
+      branches: mock.mockBranches,
+      categories: mock.mockCategories,
+      products: mock.mockProducts,
+      addonGroups: mock.mockAddonGroups,
+      menuBanners: [],
+      settings: mock.mockSettings,
+      orders: [],
+      customers: []
+    };
   }
-
-  const branches = (branchesResult.data ?? []).map((row) => mapBranch(row));
-  const categories = (categoriesResult.data ?? []).map((row) => mapCategory(row));
-  const categoriesById = new Map(categories.map((category) => [category.id, category]));
-  const branchesById = new Map(branches.map((branch) => [branch.id, branch]));
-  const products = (productsResult.data ?? []).map((row) => {
-    const product = mapProduct(row);
-    return {
-      ...product,
-      category: categoriesById.get(product.categoryId) || { id: 0, nameAr: "بدون قسم", nameEn: "No Category" } as any,
-      branch: product.branchId ? branchesById.get(product.branchId) ?? null : null
-    };
-  });
-  const productsById = new Map(products.map((product) => [product.id, product]));
-  const addonGroups = (addonGroupsResult.data ?? []).map((row) => {
-    const addonGroup = mapAddonGroup(row);
-    return {
-      ...addonGroup,
-      category: categoriesById.get(addonGroup.categoryId)!,
-      product: addonGroup.productId ? productsById.get(addonGroup.productId) ?? null : null
-    };
-  });
-  const menuBanners = (menuBannersResult.data ?? []).map((row) => mapMenuBanner(row));
-  const settings = settingsResult.data ? mapSettings(settingsResult.data) : null;
-  const orders = (ordersResult.data ?? []).map((row: any) => ({
-    id: Number(row.id),
-    branchId: Number(row.branch_id),
-    customerId: row.customer_id,
-    customerName: String(row.customer_name ?? ""),
-    customerPhone: String(row.customer_phone ?? ""),
-    customerEmail: String(row.customer_email ?? ""),
-    orderType: row.order_type as any,
-    address: row.address,
-    tableNumber: row.table_number,
-    totalAmount: Number(row.total_amount ?? 0),
-    status: row.status as any,
-    paymentMethod: row.payment_method as any,
-    paymentStatus: row.payment_status as any,
-    createdAt: row.created_at,
-    branch: row.branches ? mapBranch(row.branches) : null,
-    items: (row.order_items ?? []).map((item: any) => ({
-      id: Number(item.id),
-      orderId: Number(item.order_id),
-      productId: Number(item.product_id),
-      productNameAr: String(item.product_name_ar),
-      productNameEn: String(item.product_name_en),
-      quantity: Number(item.quantity),
-      price: Number(item.price),
-      addonDetails: item.addon_details
-    }))
-  })) as Order[];
-  const customers = (customersResult.data ?? []) as Customer[];
-
-  return {
-    branches,
-    categories: categories.map((category) => ({
-      ...category,
-      branch: category.branchId ? branchesById.get(category.branchId) ?? null : null
-    })),
-    products,
-    addonGroups,
-    menuBanners,
-    settings,
-    orders,
-    customers
-  };
 }
 
 export async function getSalesStats() {
