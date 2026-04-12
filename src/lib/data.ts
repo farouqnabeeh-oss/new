@@ -221,6 +221,7 @@ function mapAdminUser(row: Record<string, unknown>): AdminUser {
 
 export async function getActiveBanners() {
   noStore();
+  if (isMockMode) return mock.mockBanners as MenuBanner[];
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("menu_banners")
@@ -378,6 +379,11 @@ export async function getCategories(branchSlug?: string | null) {
 
 export async function getProducts(branchSlug?: string | null, categoryId?: number | null) {
   noStore();
+  if (isMockMode) {
+    let mockData = mock.mockProducts;
+    if (categoryId) mockData = mockData.filter(p => p.categoryId === categoryId);
+    return mockData as Product[];
+  }
   try {
     const supabase = getSupabaseAdmin();
 
@@ -418,6 +424,16 @@ export async function getProducts(branchSlug?: string | null, categoryId?: numbe
 
 export async function getProductById(id: number) {
   noStore();
+  if (isMockMode) {
+    const product = mock.mockProducts.find(p => p.id === id);
+    if (!product) return null;
+    return {
+      ...product,
+      categoryNameAr: "بدون قسم",
+      categoryNameEn: "No Category",
+      addonGroups: mock.mockAddonGroups.filter(g => g.categoryId === product.categoryId)
+    } as any;
+  }
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("products")
