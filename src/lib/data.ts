@@ -17,7 +17,9 @@ import type {
 import { toNumber } from "@/lib/utils";
 import * as mock from "@/lib/mock";
 const _supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const _supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || "";
 const isMockMode = !_supabaseUrl ||
+    !_supabaseKey ||
     _supabaseUrl.includes("your-project") ||
     _supabaseUrl.includes("your-supabase") ||
     !_supabaseUrl.startsWith("https://") ||
