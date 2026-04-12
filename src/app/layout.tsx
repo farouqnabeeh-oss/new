@@ -12,6 +12,10 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: isAr ? (settings?.siteNameAr || "أبتاون") : (settings?.siteName || "UPTOWN"),
     description: isAr ? (settings?.metaDescriptionAr || "أبتاون - منصة المطاعم الفاخرة") : (settings?.metaDescriptionEn || "UPTOWN - Premium Dining Platform"),
+    icons: {
+      icon: "/logo.jpeg",
+      apple: "/logo.jpeg",
+    },
   };
 }
 
