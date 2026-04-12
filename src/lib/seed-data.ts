@@ -526,6 +526,9 @@ export async function seedRestaurantData() {
   }
 
   // 3. Branches
+  console.log("Deleting 'ramallah' branch if exists...");
+  await supabase.from("branches").delete().eq("slug", "ramallah");
+
   const universalDeliveryZones = [
     { name_ar: "عين منجد", name_en: "Ein Munjed", fee: 18 },
     { name_ar: "الماصيون", name_en: "Al-Masyoun", fee: 16 },

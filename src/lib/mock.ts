@@ -897,7 +897,10 @@ export const mockAddonGroups = [
     items: [
       { id: 601, nameAr: "مخلل", nameEn: "Pickles", price: 0, sortOrder: 1, isActive: true },
       { id: 602, nameAr: "بندورة", nameEn: "Tomato", price: 0, sortOrder: 2, isActive: true },
-      { id: 603, nameAr: "بصل", nameEn: "Onion", price: 0, sortOrder: 3, isActive: true }
+      { id: 603, nameAr: "بصل", nameEn: "Onion", price: 0, sortOrder: 3, isActive: true },
+      { id: 604, nameAr: "جبنة", nameEn: "Cheese", price: 0, sortOrder: 4, isActive: true },
+      { id: 605, nameAr: "خس", nameEn: "Lettuce", price: 0, sortOrder: 5, isActive: true },
+      { id: 606, nameAr: "صوص", nameEn: "Sauce", price: 0, sortOrder: 6, isActive: true }
     ]
   },
   // Wings (103)
