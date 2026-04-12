@@ -446,26 +446,34 @@ export async function getProductById(id: number) {
       .eq("is_active", true)
       .order("sort_order");
 
-    // Filter out category groups that are overridden by product-specific groups
-    // e.g. if there's a Size group for product 87 specifically, don't show the category-wide Size group
-    const addonGroups = (addonGroupsData ?? [])
-      .filter(row => {
-        // 1. If this group is assigned to a DIFFERENT product, exclude it
-        if (row.product_id !== null && row.product_id !== product.id) {
-          return false;
-        }
+    // Deduplicate by Name (Ar) to prevent issues like "النوع" appearing twice
+    const deduplicatedGroupsMap = new Map<string, any>();
+    (addonGroupsData ?? []).forEach(row => {
+      // 1. If this group is assigned to a DIFFERENT product, skip it
+      if (row.product_id !== null && row.product_id !== product.id) {
+        return;
+      }
 
-        // 2. If this is a category-level group, check if there's a product-level override for THIS product
-        if (row.product_id === null && row.category_id !== null) {
-          const hasSpecificOverride = addonGroupsData?.some(
-            other => other.product_id === product.id &&
-              (other.group_type === row.group_type || other.name_ar === row.name_ar)
-          );
-          return !hasSpecificOverride;
-        }
+      // 2. Identify if this is a product-specific group or category fallback
+      // Normalize key by trimming to prevent variations like "بدون " and "بدون"
+      const rowKey = (row.name_ar ? row.name_ar.trim() : (row.name_en ? row.name_en.trim() : row.id.toString()));
+      const existing = deduplicatedGroupsMap.get(rowKey);
 
-        return true;
-      })
+      // Priority: Product-specific group > Category group
+      if (!existing || (row.product_id !== null && existing.product_id === null)) {
+         // Check if this category group is explicitly overridden by another group of the same type/name
+         if (row.product_id === null && row.category_id !== null) {
+            const hasSpecificOverride = addonGroupsData?.some(
+              other => other.product_id === product.id &&
+                (other.group_type === row.group_type || other.name_ar === row.name_ar)
+            );
+            if (hasSpecificOverride) return;
+         }
+         deduplicatedGroupsMap.set(rowKey, row);
+      }
+    });
+
+    const addonGroups = Array.from(deduplicatedGroupsMap.values())
       .map(row => mapAddonGroup(row));
 
     return {

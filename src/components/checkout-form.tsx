@@ -58,7 +58,8 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                 const dAmount = (itemsTotal * dPercent) / 100;
 
                 // Delivery Logic
-                let effectiveFee = deliveryFee;
+                let effectiveFee = orderType === 'delivery' ? (deliveryFee || settings.deliveryFee || 0) : 0;
+                
                 if (branch.freeDelivery) {
                     effectiveFee = 0;
                 } else if (branch.deliveryDiscountPercent && branch.deliveryDiscountPercent > 0) {
@@ -402,10 +403,12 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                                     <span>-{(deliveryFee * (branch.deliveryDiscountPercent || 0) / 100).toFixed(2)} {settings.currencySymbol}</span>
                                 </div>
                             )}
-                            {branch.freeDelivery && deliveryFee > 0 && (
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#059669', fontWeight: 700, marginBottom: '8px' }}>
-                                    <span>{isAr ? 'عرض التوصيل المجاني' : 'Free Delivery Offer'}</span>
-                                    <span>-{deliveryFee.toFixed(2)} {settings.currencySymbol}</span>
+                                </div>
+                            )}
+                            {orderType === 'delivery' && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#666', marginBottom: '8px' }}>
+                                    <span>{isAr ? 'رسوم التوصيل' : 'Delivery Fee'}</span>
+                                    <span>{(deliveryFee || settings.deliveryFee || 0).toFixed(2)} {settings.currencySymbol}</span>
                                 </div>
                             )}
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.2rem', color: '#8B0000', fontWeight: 900, marginTop: '10px' }}>

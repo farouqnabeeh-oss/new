@@ -41,6 +41,12 @@ export function AdminProductsTab({ products, categories, branches, settings, add
   const typeEnRef = useRef<HTMLInputElement>(null);
   const typePriceRef = useRef<HTMLInputElement>(null);
 
+  const [showExtrasModal, setShowExtrasModal] = useState(false);
+  const [activeExtraTab, setActiveExtraTab] = useState<'sizes' | 'types' | 'addons'>('sizes');
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [isSaving, setIsSaving] = useState(false);
+
   const resetForm = useCallback(() => {
     formRef.current?.reset();
     setEditId(0);
@@ -48,21 +54,64 @@ export function AdminProductsTab({ products, categories, branches, settings, add
     setSizes([]);
     setTypes([]);
     setSelectedAddonGroupIds([]);
+    setShowExtrasModal(false);
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
   }, []);
 
-  const handleSave = async (formData: FormData) => {
-    formData.set("Id", String(editId));
-    formData.set("sizesJson", JSON.stringify(sizes));
-    formData.set("typesJson", JSON.stringify(types));
-    formData.set("linkedAddonGroupsJson", JSON.stringify(selectedAddonGroupIds));
-    const result: ActionResult = await saveProductAction(formData);
+  const handleSave = useCallback(async (formData?: FormData) => {
+    const data = formData || new FormData(formRef.current!);
+    data.set("Id", String(editId));
+    data.set("sizesJson", JSON.stringify(sizes));
+    data.set("typesJson", JSON.stringify(types));
+    data.set("linkedAddonGroupsJson", JSON.stringify(selectedAddonGroupIds));
+
+    // Check if we have minimal data before auto-saving
+    if (!data.get("NameAr") && !data.get("NameEn")) return;
+
+    setIsSaving(true);
+    const result: ActionResult = await saveProductAction(data);
+    setIsSaving(false);
+
+    if (autoSaveTimerRef.current) autoSaveTimerRef.current = null;
+
     if (result.success) {
-      showToast(editId === 0 ? "Product created successfully!" : "Product updated successfully!");
-      resetForm();
-      router.refresh();
+      if (!formData) {
+        // Auto-save logic
+        console.log("Auto-saved product", editId);
+        router.refresh();
+      } else {
+        showToast(editId === 0 ? "Product created successfully!" : "Product updated successfully!");
+        resetForm();
+        router.refresh();
+      }
     } else {
       showToast(result.error || "Failed to save product.", "error");
     }
+  }, [editId, sizes, types, selectedAddonGroupIds, resetForm, router, showToast]);
+
+  const handleFormChange = useCallback(() => {
+    if (editId === 0) return; // Only auto-save existing products
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(() => {
+      handleSave();
+    }, 2000); // 2 second debounce
+  }, [editId, handleSave]);
+
+  // Skip auto-save during initial data loading
+  const skipAutoSaveRef = useRef(false);
+
+  // Wrapped setters that trigger auto-save only if not currently loading
+  const updateSizes = (val: SizeEntry[] | ((prev: SizeEntry[]) => SizeEntry[])) => {
+    setSizes(val);
+    if (!skipAutoSaveRef.current) handleFormChange();
+  };
+  const updateTypes = (val: TypeEntry[] | ((prev: TypeEntry[]) => TypeEntry[])) => {
+    setTypes(val);
+    if (!skipAutoSaveRef.current) handleFormChange();
+  };
+  const updateAddons = (val: number[] | ((prev: number[]) => number[])) => {
+    setSelectedAddonGroupIds(val);
+    if (!skipAutoSaveRef.current) handleFormChange();
   };
 
   const handleDelete = async (formData: FormData) => {
@@ -84,7 +133,9 @@ export function AdminProductsTab({ products, categories, branches, settings, add
       if (!res.ok) throw new Error("Failed to load product");
       const data = await res.json();
 
-      containerRef.current.style.display = "block";
+      // Prevent auto-save while we're populating the form
+      skipAutoSaveRef.current = true;
+
       setEditId(data.id);
       const form = formRef.current;
       (form.elements.namedItem("NameAr") as HTMLInputElement).value = data.nameAr || "";
@@ -107,10 +158,16 @@ export function AdminProductsTab({ products, categories, branches, settings, add
       setTypes((data.types || []).map((t: { nameAr?: string; nameEn?: string; price?: number; description?: string | null }) => ({
         NameAr: t.nameAr || "", NameEn: t.nameEn || "", Price: Number(t.price || 0), Description: t.description || null
       })));
-      
+
       setSelectedAddonGroupIds((data.addonGroups || []).map((g: any) => g.id));
 
+      containerRef.current.style.display = "block";
       containerRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+
+      // Re-enable auto-save after the form is ready
+      setTimeout(() => {
+        skipAutoSaveRef.current = false;
+      }, 500);
     } catch {
       showToast("Failed to load product for editing.", "error");
     } finally {
@@ -146,7 +203,7 @@ export function AdminProductsTab({ products, categories, branches, settings, add
     const nameEn = sizeEnRef.current?.value.trim() || "";
     const price = parseFloat(sizePriceRef.current?.value || "") || 0;
     if (!nameAr && !nameEn) return;
-    setSizes((prev) => [...prev, { NameAr: nameAr, NameEn: nameEn, Price: price }]);
+    updateSizes((prev) => [...prev, { NameAr: nameAr, NameEn: nameEn, Price: price }]);
     if (sizeArRef.current) sizeArRef.current.value = "";
     if (sizeEnRef.current) sizeEnRef.current.value = "";
     if (sizePriceRef.current) sizePriceRef.current.value = "";
@@ -157,7 +214,7 @@ export function AdminProductsTab({ products, categories, branches, settings, add
     const nameEn = typeEnRef.current?.value.trim() || "";
     const price = parseFloat(typePriceRef.current?.value || "") || 0;
     if (!nameAr && !nameEn) return;
-    setTypes((prev) => [...prev, { NameAr: nameAr, NameEn: nameEn, Price: price, Description: null }]);
+    updateTypes((prev) => [...prev, { NameAr: nameAr, NameEn: nameEn, Price: price, Description: null }]);
     if (typeArRef.current) typeArRef.current.value = "";
     if (typeEnRef.current) typeEnRef.current.value = "";
     if (typePriceRef.current) typePriceRef.current.value = "";
@@ -179,211 +236,519 @@ export function AdminProductsTab({ products, categories, branches, settings, add
       )}
 
       <div ref={containerRef} style={{ display: "none", marginBottom: 20 }}>
-        <form ref={formRef} action={handleSave}>
-          <input type="hidden" name="Id" value={editId} readOnly />
-          <div className="form-row">
-            <div className="form-group">
-              <label>{t('nameAr')}</label>
-              <input name="NameAr" required />
-            </div>
-            <div className="form-group">
-              <label>{t('nameEn')}</label>
-              <input name="NameEn" required />
-            </div>
-          </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label>{t('descAr')}</label>
-              <textarea name="DescriptionAr" rows={2} />
-            </div>
-            <div className="form-group">
-              <label>{t('descEn')}</label>
-              <textarea name="DescriptionEn" rows={2} />
-            </div>
-          </div>
-          <div className="form-row-3">
-            <div className="form-group">
-              <label>Base Price</label>
-              <input type="number" name="BasePrice" step="0.01" min="0" defaultValue="0" required />
-            </div>
-            <div className="form-group">
-              <label>Discount %</label>
-              <input type="number" name="Discount" step="0.01" min="0" max="100" defaultValue="0" />
-            </div>
-            <div className="form-group">
-              <label>Sort Order</label>
-              <input type="number" name="SortOrder" defaultValue="0" />
-            </div>
-          </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label>Category</label>
-              <select name="CategoryId" required defaultValue="">
-                <option value="">Select Category</option>
-                {categories.map((cat) => (
-                  <option value={cat.id} key={cat.id}>
-                    {cat.nameEn} ({cat.branch?.nameEn ?? "All"})
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Branch</label>
-              <select name="BranchId" defaultValue="">
-                <option value="">— (use AllBranches)</option>
-                {branches.map((branch) => (
-                  <option value={branch.id} key={branch.id}>{branch.nameEn}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label>Image</label>
-              <input type="file" name="productImage" accept="image/*" />
-            </div>
-            <div className="form-group" style={{ display: "flex", flexDirection: "column", gap: 8, paddingTop: 20 }}>
-              <label><input type="checkbox" name="AllBranches" value="true" defaultChecked /> All Branches</label>
-              <label><input type="checkbox" name="HasMealOption" value="true" /> Has Meal Option</label>
-              <label><input type="checkbox" name="HasDonenessOption" value="true" /> Has Doneness</label>
-              <label><input type="checkbox" name="IsActive" value="true" defaultChecked /> Active</label>
-            </div>
-          </div>
+        <div className="admin-form-container">
+          <form ref={formRef} action={handleSave} onChange={handleFormChange}>
+            <input type="hidden" name="Id" value={editId} readOnly />
 
-          {/* Sizes */}
-          <div className="admin-card" style={{ marginTop: 12 }}>
-            <h4 style={{ fontWeight: 700, marginBottom: 8 }}>Sizes</h4>
-            <div>
-              {sizes.map((s, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 10px", background: "var(--bg-surface)", borderRadius: 8, marginBottom: 4 }}>
-                  <span>{s.NameAr} / {s.NameEn} - {s.Price}</span>
-                  <button type="button" className="btn btn-danger btn-sm" onClick={() => setSizes((prev) => prev.filter((_, idx) => idx !== i))}>×</button>
+            {/* Section 1: Identity */}
+            <div className="form-section">
+              <div className="form-section-title">📦 {t('productIdentity') || 'Product Identity'}</div>
+              <div className="form-row">
+                <div className="premium-input-group">
+                  <label>{t('nameAr')}</label>
+                  <input name="NameAr" className="premium-input" required onChange={handleFormChange} />
                 </div>
-              ))}
-            </div>
-            <div className="form-row-3 mt-2">
-              <input ref={sizeArRef} placeholder="Arabic name" />
-              <input ref={sizeEnRef} placeholder="English name" />
-              <div style={{ display: "flex", gap: 8 }}>
-                <input ref={sizePriceRef} type="number" step="0.01" placeholder="Price" />
-                <button type="button" className="btn btn-outline" onClick={addSize}>+</button>
+                <div className="premium-input-group">
+                  <label>{t('nameEn')}</label>
+                  <input name="NameEn" className="premium-input" required onChange={handleFormChange} />
+                </div>
+              </div>
+              <div className="form-row" style={{ marginTop: '15px' }}>
+                <div className="premium-input-group">
+                  <label>{t('descAr')}</label>
+                  <textarea name="DescriptionAr" className="premium-textarea" rows={2} onChange={handleFormChange} />
+                </div>
+                <div className="premium-input-group">
+                  <label>{t('descEn')}</label>
+                  <textarea name="DescriptionEn" className="premium-textarea" rows={2} onChange={handleFormChange} />
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Types */}
-          <div className="admin-card" style={{ marginTop: 12 }}>
-            <h4 style={{ fontWeight: 700, marginBottom: 8 }}>Types</h4>
-            <div>
-              {types.map((t, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 10px", background: "var(--bg-surface)", borderRadius: 8, marginBottom: 4 }}>
-                  <span>{t.NameAr} / {t.NameEn} - {t.Price}</span>
-                  <button type="button" className="btn btn-danger btn-sm" onClick={() => setTypes((prev) => prev.filter((_, idx) => idx !== i))}>×</button>
+            {/* Section 2: Pricing & Sorting */}
+            <div className="form-section">
+              <div className="form-section-title">💰 {t('pricingAndOrganization') || 'Pricing & Sorting'}</div>
+              <div className="form-row-3">
+                <div className="premium-input-group">
+                  <label>Base Price</label>
+                  <input type="number" name="BasePrice" className="premium-input" step="0.01" min="0" defaultValue="0" required onChange={handleFormChange} />
                 </div>
-              ))}
-            </div>
-            <div className="form-row-3 mt-2">
-              <input ref={typeArRef} placeholder="Arabic name" />
-              <input ref={typeEnRef} placeholder="English name" />
-              <div style={{ display: "flex", gap: 8 }}>
-                <input ref={typePriceRef} type="number" step="0.01" placeholder="Price" />
-                <button type="button" className="btn btn-outline" onClick={addType}>+</button>
+                <div className="premium-input-group">
+                  <label>Discount %</label>
+                  <input type="number" name="Discount" className="premium-input" step="0.01" min="0" max="100" defaultValue="0" onChange={handleFormChange} />
+                </div>
+                <div className="premium-input-group">
+                  <label>Sort Order</label>
+                  <input type="number" name="SortOrder" className="premium-input" defaultValue="0" onChange={handleFormChange} />
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Addon Groups Linking */}
-          <div className="admin-card" style={{ marginTop: 12 }}>
-            <h4 style={{ fontWeight: 700, marginBottom: 8 }}>🔗 {t('linkedAddons') || 'Linked Addon Groups'}</h4>
-            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 12 }}>
-              {t('linkAddonsDesc') || 'Select which extra addon groups should appear for this product specifically. Category-wide groups apply automatically.'}
-            </p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
-              {addonGroups.map(group => {
-                const isSelected = selectedAddonGroupIds.includes(group.id);
-                const isCategoryWide = group.categoryId === Number(formRef.current?.CategoryId?.value) && !group.productId;
-                
-                return (
-                  <label key={group.id} style={{ 
-                    display: "flex", 
-                    alignItems: "center", 
-                    gap: 8, 
-                    padding: '8px 12px', 
-                    borderRadius: '8px', 
-                    background: isSelected ? 'rgba(var(--primary-rgb), 0.1)' : 'var(--bg-surface)', 
-                    border: isSelected ? '1px solid var(--primary)' : '1px solid transparent',
-                    cursor: 'pointer',
-                    opacity: isCategoryWide ? 0.6 : 1
-                  }}>
-                    <input 
-                      type="checkbox" 
-                      checked={isSelected}
-                      disabled={isCategoryWide}
-                      onChange={(e) => {
-                        if (e.target.checked) setSelectedAddonGroupIds(prev => [...prev, group.id]);
-                        else setSelectedAddonGroupIds(prev => prev.filter(id => id !== group.id));
-                      }}
-                    />
-                    <span style={{ fontSize: '14px' }}>
-                      {group.nameAr || group.nameEn}
-                      {isCategoryWide && <small style={{ display: 'block', color: 'var(--text-secondary)' }}>(Category-wide)</small>}
-                    </span>
+            {/* Section 3: Classification & Logic */}
+            <div className="form-section">
+              <div className="form-section-title">📂 {t('classification') || 'Classification & Location'}</div>
+              <div className="form-row">
+                <div className="premium-input-group">
+                  <label>Category</label>
+                  <select name="CategoryId" className="premium-select" required defaultValue="" onChange={handleFormChange}>
+                    <option value="">Select Category</option>
+                    {categories.map((cat) => (
+                      <option value={cat.id} key={cat.id}>
+                        {cat.nameEn} ({cat.branch?.nameEn ?? "Global"})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="premium-input-group">
+                  <label>Specific Branch</label>
+                  <select name="BranchId" className="premium-select" defaultValue="" onChange={handleFormChange}>
+                    <option value="">— (Category Default)</option>
+                    {branches.map((branch) => (
+                      <option value={branch.id} key={branch.id}>{branch.nameEn}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 4: Advanced Extras */}
+            <div className="form-section">
+              <div className="form-section-title">✨ {t('customization') || 'Smart Customization'}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '20px' }}>
+                <button
+                  type="button"
+                  className="extras-smart-btn"
+                  onClick={() => setShowExtrasModal(true)}
+                >
+                  🛠️ {t('extrasAndAddons') || 'Configure Extras & Add-ons'}
+                  <span className="extras-count">
+                    {sizes.length + types.length + selectedAddonGroupIds.length}
+                  </span>
+                </button>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <label className="status-chip">
+                    <input type="checkbox" name="AllBranches" defaultChecked onChange={handleFormChange} />
+                    <span>Global</span>
                   </label>
-                );
-              })}
+                  <label className="status-chip">
+                    <input type="checkbox" name="IsActive" defaultChecked onChange={handleFormChange} />
+                    <span>Active</span>
+                  </label>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                <label className="status-chip" style={{ flex: 1 }}>
+                  <input type="checkbox" name="HasMealOption" onChange={handleFormChange} />
+                  <span>Meal Support</span>
+                </label>
+                <label className="status-chip" style={{ flex: 1 }}>
+                  <input type="checkbox" name="HasDonenessOption" onChange={handleFormChange} />
+                  <span>Doneness (Meat)</span>
+                </label>
+              </div>
             </div>
-          </div>
 
-          <div style={{ marginTop: 16 }}>
-            <AdminSubmitButton label={editId ? "Update Product" : "Save Product"} pendingLabel="Saving…" />
-            <button type="button" className="btn btn-outline" style={{ marginLeft: 8 }} onClick={resetForm}>Cancel</button>
-          </div>
-        </form>
+            {/* Section 5: Media */}
+            <div className="form-section">
+              <div className="form-section-title">🖼️ {t('productMedia') || 'Product Media'}</div>
+              <div className="image-upload-card" onClick={() => formRef.current?.querySelector<HTMLInputElement>('input[name="productImage"]')?.click()}>
+                <div style={{ fontSize: '30px', marginBottom: '5px' }}>📸</div>
+                <div style={{ fontWeight: 700, fontSize: '14px', color: '#666' }}>Click to upload product image</div>
+                <input type="file" name="productImage" accept="image/*" style={{ display: 'none' }} />
+              </div>
+            </div>
+
+            <div className="save-bar">
+              {isSaving && (
+                <span style={{ fontSize: '13px', color: 'var(--primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="spinner-mini"></span> {t('saving') || 'Syncing changes...'}
+                </span>
+              )}
+              <button type="button" className="btn btn-outline" style={{ borderRadius: '12px', padding: '12px 25px' }} onClick={resetForm}>Discard</button>
+              <AdminSubmitButton label={editId ? "Update Product" : "Create Product"} pendingLabel="Saving…" />
+            </div>
+          </form>
+        </div>
       </div>
 
-      <table className="admin-table">
-        <thead>
-          <tr>
-            <th>Image</th>
-            <th>Name</th>
-            <th>Category</th>
-            <th>Price</th>
-            <th>Sizes</th>
-            <th>Types</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {products.map((product) => (
-            <tr key={product.id}>
-              <td>
-                <img 
-                  src={product.imagePath || '/images/classic-cheeseburger__0x1e3y1qv68eiip.jpg'} 
-                  alt="" 
-                  style={{ width: "40px", height: "40px", objectFit: "cover", borderRadius: "8px" }} 
-                />
-              </td>
-              <td>
-                {product.nameAr} / {product.nameEn}
-                {product.discount > 0 ? <span className="badge badge-primary">{product.discount}%</span> : null}
-              </td>
-              <td>{product.category?.nameEn || "No Category"}</td>
-              <td>{Number(product.basePrice || 0).toFixed(0)}{settings?.currencySymbol}</td>
-              <td>{product.sizes?.length || 0}</td>
-              <td>{product.types?.length || 0}</td>
-              <td>
-                <button type="button" className="btn btn-outline btn-sm" onClick={() => editProduct(product)}>
-                  {t('edit')}
+      {/* Nice Extras Modal */}
+      {showExtrasModal && (
+        <div className="extras-modal-overlay">
+          <div className="extras-modal-container">
+            <div className="extras-modal-header">
+              <h3>{t('manageExtras') || 'Product Customization'}</h3>
+              <button onClick={() => setShowExtrasModal(false)} className="close-btn">&times;</button>
+            </div>
+
+            <div className="extras-modal-tabs">
+              {(['sizes', 'types', 'addons'] as const).map(tab => (
+                <button
+                  key={tab}
+                  className={`tab-btn ${activeExtraTab === tab ? 'active' : ''}`}
+                  onClick={() => setActiveExtraTab(tab)}
+                >
+                  {tab === 'sizes' ? 'Sizes' : tab === 'types' ? 'Types' : 'Addon Groups'}
                 </button>
-                <form action={handleDelete} style={{ display: "inline" }}>
-                  <input type="hidden" name="id" value={product.id} />
-                  <AdminDeleteButton confirmMessage={t('confirmDelete')} />
-                </form>
-              </td>
+              ))}
+            </div>
+
+            <div className="extras-modal-body">
+              {activeExtraTab === 'sizes' && (
+                <div className="extra-tab-content">
+                  <div className="extra-list">
+                    {sizes.map((s, i) => (
+                      <div key={i} className="extra-item">
+                        <span className="item-name">{s.NameAr} / {s.NameEn}</span>
+                        <div className="item-actions">
+                          <span className="item-price">{s.Price}</span>
+                          <button type="button" className="remove-btn" onClick={() => updateSizes((prev) => prev.filter((_, idx) => idx !== i))}>&times;</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="extra-form-row">
+                    <input ref={sizeArRef} placeholder="Arabic" />
+                    <input ref={sizeEnRef} placeholder="English" />
+                    <div className="input-with-button">
+                      <input ref={sizePriceRef} type="number" step="0.1" placeholder="Price" />
+                      <button type="button" onClick={addSize} className="add-btn">+</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeExtraTab === 'types' && (
+                <div className="extra-tab-content">
+                  <div className="extra-list">
+                    {types.map((t, i) => (
+                      <div key={i} className="extra-item">
+                        <span className="item-name">{t.NameAr} / {t.NameEn}</span>
+                        <div className="item-actions">
+                          <span className="item-price">{t.Price}</span>
+                          <button type="button" className="remove-btn" onClick={() => updateTypes((prev) => prev.filter((_, idx) => idx !== i))}>&times;</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="extra-form-row">
+                    <input ref={typeArRef} placeholder="Arabic" />
+                    <input ref={typeEnRef} placeholder="English" />
+                    <div className="input-with-button">
+                      <input ref={typePriceRef} type="number" step="0.1" placeholder="Price" />
+                      <button type="button" onClick={addType} className="add-btn">+</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeExtraTab === 'addons' && (
+                <div className="addons-grid">
+                  {addonGroups.map(group => {
+                    const isSelected = selectedAddonGroupIds.includes(group.id);
+                    return (
+                      <label key={group.id} className={`addon-label ${isSelected ? 'selected' : ''}`}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={(e) => {
+                            if (e.target.checked) updateAddons(prev => [...prev, group.id]);
+                            else updateAddons(prev => prev.filter(id => id !== group.id));
+                          }}
+                        />
+                        <span className="addon-name">{group.nameAr || group.nameEn}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="extras-modal-footer">
+              <button
+                onClick={() => setShowExtrasModal(false)}
+                className="done-btn"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="table-responsive" style={{ marginTop: 20 }}>
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Image</th>
+              <th>Name</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Extras</th>
+              <th>Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {products.map((product) => (
+              <tr key={product.id}>
+                <td>
+                  <img
+                    src={product.imagePath || '/images/classic-cheeseburger__0x1e3y1qv68eiip.jpg'}
+                    alt=""
+                    style={{ width: "45px", height: "45px", objectFit: "cover", borderRadius: "10px" }}
+                  />
+                </td>
+                <td>
+                  <div className="font-bold">{product.nameAr} / {product.nameEn}</div>
+                  {product.discount > 0 && <span className="discount-badge">-{product.discount}%</span>}
+                </td>
+                <td><span className="category-tag">{product.category?.nameEn || "No Category"}</span></td>
+                <td><span className="price-text">{Number(product.basePrice || 0).toFixed(0)}{settings?.currencySymbol}</span></td>
+                <td>
+                  <div className="flex gap-1">
+                    {product.sizes && product.sizes.length > 0 && <span className="badge-s">S:{product.sizes.length}</span>}
+                    {product.types && product.types.length > 0 && <span className="badge-t">T:{product.types.length}</span>}
+                  </div>
+                </td>
+                <td>
+                  <div className="flex gap-2">
+                    <button type="button" className="btn btn-outline btn-sm" style={{ border: 'none', background: '#f5f5f5' }} onClick={() => editProduct(product)}>
+                      {t('edit')}
+                    </button>
+                    <form action={handleDelete} style={{ display: "inline" }}>
+                      <input type="hidden" name="id" value={product.id} />
+                      <AdminDeleteButton confirmMessage={t('confirmDelete')} />
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <style jsx>{`
+        .admin-form-container {
+          background: #fff;
+          border-radius: 24px;
+          padding: 30px;
+          box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08);
+          border: 1px solid #f0f0f0;
+          margin-bottom: 30px;
+          animation: slideDown 0.4s ease-out;
+        }
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .form-section {
+          margin-bottom: 30px;
+        }
+        .form-section-title {
+          font-size: 14px;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          color: #999;
+          font-weight: 800;
+          margin-bottom: 15px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .form-section-title::after {
+          content: "";
+          flex: 1;
+          height: 1px;
+          background: #eee;
+        }
+        
+        .discount-badge {
+          background: #ff4757;
+          color: #fff;
+          font-size: 11px;
+          font-weight: 800;
+          padding: 3px 8px;
+          border-radius: 8px;
+          box-shadow: 0 4px 10px rgba(255, 71, 87, 0.3);
+          display: inline-block;
+          margin-top: 4px;
+        }
+        .price-text {
+          font-weight: 800;
+          color: #2f3542;
+          font-size: 16px;
+        }
+        .category-tag {
+          background: #f1f2f6;
+          color: #57606f;
+          padding: 4px 10px;
+          border-radius: 10px;
+          font-size: 12px;
+          font-weight: 700;
+        }
+        .premium-input-group {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+        .premium-input-group label {
+          font-size: 13px;
+          font-weight: 700;
+          color: #444;
+          margin-inline-start: 4px;
+        }
+        .premium-input, .premium-select, .premium-textarea {
+          width: 100%;
+          padding: 12px 16px;
+          background: #fdfdfd;
+          border: 2px solid #f0f0f0;
+          border-radius: 14px;
+          font-size: 15px;
+          color: #111;
+          transition: 0.3s;
+          outline: none;
+        }
+        .premium-input:focus, .premium-select:focus, .premium-textarea:focus {
+          border-color: var(--primary);
+          background: #fff;
+          box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.1);
+        }
+        
+        .image-upload-card {
+          width: 100%;
+          border: 2px dashed #e0e0e0;
+          border-radius: 20px;
+          padding: 20px;
+          text-align: center;
+          cursor: pointer;
+          transition: 0.3s;
+          background: #fafafa;
+        }
+        .image-upload-card:hover {
+          border-color: var(--primary);
+          background: rgba(var(--primary-rgb), 0.02);
+        }
+        
+        .extras-smart-btn {
+          width: 100%;
+          padding: 18px;
+          background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);
+          color: #fff;
+          border: none;
+          border-radius: 18px;
+          font-weight: 800;
+          font-size: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          cursor: pointer;
+          transition: 0.3s;
+          box-shadow: 0 10px 20px -5px rgba(0,0,0,0.2);
+        }
+        .extras-smart-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 15px 30px -10px rgba(0,0,0,0.3);
+        }
+        .extras-count {
+          background: var(--primary);
+          padding: 2px 10px;
+          border-radius: 20px;
+          font-size: 12px;
+        }
+        
+        .status-chip {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 12px 18px;
+          background: #fff;
+          border: 1px solid #eee;
+          border-radius: 12px;
+          cursor: pointer;
+          transition: 0.2s;
+        }
+        .status-chip:hover { background: #f9f9f9; }
+        .status-chip input { width: 18px; height: 18px; accent-color: var(--primary); }
+        .status-chip span { font-weight: 700; font-size: 14px; }
+
+        .extras-modal-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 3000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(0, 0, 0, 0.5);
+          backdrop-filter: blur(4px);
+          padding: 20px;
+        }
+        .extras-modal-container {
+          width: 100%;
+          max-width: 600px;
+          background: #fff;
+          border-radius: 30px;
+          overflow: hidden;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+          animation: modalEnter 0.3s ease-out;
+        }
+        @keyframes modalEnter {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        .extras-modal-header {
+          padding: 25px;
+          border-bottom: 1px solid #eee;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .extras-modal-header h3 { font-weight: 900; margin: 0; font-size: 1.4rem; }
+        .close-btn { background: #f5f5f5; border: none; width: 36px; height: 36px; border-radius: 12px; font-size: 1.5rem; cursor: pointer; color: #666; display: flex; align-items: center; justify-content: center; }
+        
+        .extras-modal-tabs { display: flex; padding: 10px; background: #f9f9f9; border-bottom: 1px solid #eee; gap: 8px; }
+        .tab-btn { flex: 1; padding: 12px; border: none; background: transparent; font-weight: 800; color: #777; cursor: pointer; border-radius: 12px; transition: 0.3s; }
+        .tab-btn.active { color: #fff; background: var(--primary); box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3); }
+        
+        .extras-modal-body { padding: 25px; max-height: 60vh; overflow-y: auto; }
+        .extra-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+        .extra-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #fff; border: 1px solid #eee; border-radius: 16px; transition: 0.2s; }
+        .extra-item:hover { border-color: #ddd; transform: translateX(5px); }
+        .item-name { font-weight: 800; font-size: 0.95rem; }
+        .item-actions { display: flex; align-items: center; gap: 12px; }
+        .item-price { font-weight: 900; color: var(--primary); background: rgba(var(--primary-rgb), 0.05); padding: 4px 10px; border-radius: 10px; }
+        .remove-btn { color: #ff4d4d; border: none; background: #fff1f1; width: 28px; height: 28px; border-radius: 8px; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        
+        .extra-form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .extra-form-row input { padding: 14px; border: 2px solid #f0f0f0; border-radius: 14px; font-size: 14px; font-weight: 600; outline: none; }
+        .extra-form-row input:focus { border-color: var(--primary); }
+        .add-btn { background: #000; color: #fff; border: none; min-width: 48px; border-radius: 14px; cursor: pointer; font-size: 1.5rem; }
+        
+        .addons-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .addon-label { display: flex; align-items: center; gap: 10px; padding: 15px; border: 2px solid #f0f0f0; border-radius: 16px; cursor: pointer; transition: 0.3s; }
+        .addon-label.selected { border-color: var(--primary); background: rgba(var(--primary-rgb), 0.03); }
+        .addon-name { font-size: 14px; font-weight: 800; }
+        
+        .save-bar {
+          position: sticky;
+          bottom: -2px;
+          background: rgba(255,255,255,0.9);
+          backdrop-filter: blur(10px);
+          padding: 20px;
+          border-top: 1px solid #eee;
+          display: flex;
+          justify-content: flex-end;
+          align-items: center;
+          gap: 15px;
+          margin: 0 -30px -30px;
+          border-radius: 0 0 24px 24px;
+        }
+
+        .category-tag { font-size: 12px; font-weight: 800; color: #666; background: #f0f0f0; padding: 4px 10px; border-radius: 20px; }
+        .badge-s { background: #eff6ff; color: #2563eb; font-size: 11px; padding: 4px 10px; border-radius: 20px; font-weight: 800; }
+        .badge-t { background: #ecfdf5; color: #059669; font-size: 11px; padding: 4px 10px; border-radius: 20px; font-weight: 800; }
+        .spinner-mini { width: 14px; height: 14px; border: 2px solid rgba(var(--primary-rgb), 0.2); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
 }

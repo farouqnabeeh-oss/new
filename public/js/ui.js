@@ -295,7 +295,8 @@ const UI = {
                 html += `<div class="product-modal-desc">${desc}</div>`;
             }
 
-            if (product.sizes?.length) {
+            const hasSizeGroup = getVisibleGroups().some(g => g.groupType === 'Size' || g.groupType === 'sizes' || g.nameAr?.includes('الحجم') || g.nameEn?.toLowerCase().includes('size'));
+            if (product.sizes?.length && !hasSizeGroup) {
                 html += `
                     <div class="option-group">
                         <div class="option-group-title" style="font-size:15px">${Lang.t('size')}</div>
@@ -317,7 +318,8 @@ const UI = {
                 `;
             }
 
-            if (product.types?.length) {
+            const hasTypeGroup = getVisibleGroups().some(g => g.groupType === 'Type' || g.groupType === 'types' || g.nameAr?.includes('النوع') || g.nameEn?.toLowerCase().includes('type'));
+            if (product.types?.length && !hasTypeGroup) {
                 const selectedSizePrice = state.selectedSize?.price || product.basePrice || 0;
                 html += `
                     <div class="option-group">

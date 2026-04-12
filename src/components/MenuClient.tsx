@@ -50,29 +50,29 @@ export default function MenuClient({ categories, allProducts, branch, isAr, curr
           <h2 class="up-sec-title">${isAr ? cat.nameAr : cat.nameEn}</h2>
           <div class="up-grid">`;
         
-        prods.forEach(p => {
-          const priceRaw = Number(p.basePrice || 0);
-          const disc = Number(p.discount || 0);
-          const finalPrice = Math.round(priceRaw * (1 - disc / 100));
-          const image = p.imagePath || '/images/classic-cheeseburger__0x1e3y1qv68eiip.jpg';
-          
-          content += `
-            <div class="up-card" data-pid="${p.id}">
-              ${disc > 0 ? `<div class="up-fire-badge">🔥 -${disc}%</div>` : ''}
-              <div class="up-img-wrap" onclick="window.viewP('${p.id}')" style="cursor:pointer"><img src="${image}" class="up-img" loading="lazy" /></div>
-              <div class="up-body">
-                <div class="up-title" onclick="window.viewP('${p.id}')" style="cursor:pointer">${isAr ? p.nameAr : p.nameEn}</div>
-                <div class="up-desc">${isAr ? (p.descriptionAr || '') : (p.descriptionEn || '')}</div>
-                <div class="up-footer">
-                  <div class="up-price-box">
-                    <span class="up-price-tag">${finalPrice}${currency}</span>
-                    ${disc > 0 ? `<span class="up-price-old">${Math.round(priceRaw)}${currency}</span>` : ''}
+          prods.forEach(p => {
+            const priceRaw = Number(p.basePrice || 0);
+            const disc = Number(p.discount || 0);
+            const finalPrice = Math.round(priceRaw * (1 - disc / 100));
+            const image = p.imagePath || '/images/classic-cheeseburger__0x1e3y1qv68eiip.jpg';
+            
+            content += `
+              <div class="up-card" data-pid="${p.id}">
+                ${disc > 0 ? `<div class="up-fire-badge">🔥 ${isAr ? 'خصم' : 'OFF'} ${disc}%</div>` : ''}
+                <div class="up-img-wrap" onclick="window.viewP('${p.id}')" style="cursor:pointer"><img src="${image}" class="up-img" loading="lazy" /></div>
+                <div class="up-body">
+                  <div class="up-title" onclick="window.viewP('${p.id}')" style="cursor:pointer">${isAr ? p.nameAr : p.nameEn}</div>
+                  <div class="up-desc">${isAr ? (p.descriptionAr || '') : (p.descriptionEn || '')}</div>
+                  <div class="up-footer">
+                    <div class="up-price-box">
+                      <span class="up-price-tag">${finalPrice}${currency}</span>
+                      ${disc > 0 ? `<span class="up-price-old">${Math.round(priceRaw)}${currency}</span>` : ''}
+                    </div>
+                    <button class="up-add-pill" onclick="event.stopPropagation(); window.viewP('${p.id}')">${isAr ? "أضف للسلة" : "Add to Cart"}</button>
                   </div>
-                  <button class="up-add-pill" onclick="event.stopPropagation(); window.viewP('${p.id}')">${isAr ? "أضف للسلة" : "Add to Cart"}</button>
                 </div>
-              </div>
-            </div>`;
-        });
+              </div>`;
+          });
         content += "</div></div>";
       });
 

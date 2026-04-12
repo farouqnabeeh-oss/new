@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { type Branch } from "@/lib/types";
 import { calculateDistance } from "@/lib/location-utils";
@@ -141,11 +142,14 @@ export function BranchGrid({ branches, lang = "ar" }: Props) {
               {/* Media Section */}
               <div className="branch-card-media-shell" style={{ position: 'relative', height: '240px', overflow: 'hidden' }}>
                   <a href={`/menu/${branch.slug}`} onClick={() => localStorage.setItem("uptown-preferred-branch", branch.slug)}>
-                    <img
+                    <Image
                         src={branch.bannerImagePath || "/images/panar2.jpeg"}
-                        alt={branchName}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        alt={branchName || ""}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        style={{ objectFit: 'cover' }}
                         className="branch-img"
+                        priority={branch.slug === 'al-irsal'}
                     />
                   </a>
                   

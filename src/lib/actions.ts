@@ -469,6 +469,7 @@ export async function saveSettingsAction(formData: FormData): Promise<ActionResu
       site_email: String(formData.get("SiteEmail") ?? "") || null,
       site_phone: String(formData.get("SitePhone") ?? "") || null,
       site_address: String(formData.get("SiteAddress") ?? "") || null,
+      delivery_fee: toNumber(formData.get("DeliveryFee")),
       updated_at: new Date().toISOString()
     };
 
@@ -649,6 +650,14 @@ export type CreateOrderInput = {
 
 export async function createOrderAction(input: CreateOrderInput): Promise<{ success: boolean; orderId?: number; error?: string }> {
   const supabase = getSupabaseAdmin();
+  
+  // Fetch delivery fee from settings
+  let deliveryFee = 0;
+  const { data: settings } = await supabase.from("site_settings").select("delivery_fee").eq("id", 1).single();
+  if (settings && input.orderType === "Delivery") {
+    deliveryFee = Number(settings.delivery_fee || 0);
+  }
+
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert({
@@ -659,7 +668,8 @@ export async function createOrderAction(input: CreateOrderInput): Promise<{ succ
       order_type: input.orderType,
       address: input.address ?? null,
       table_number: input.tableNumber ?? null,
-      total_amount: input.totalAmount,
+      total_amount: input.totalAmount, // Usually frontend already includes fee, but we record internal fee too
+      delivery_fee: deliveryFee,
       status: "Pending",
       payment_method: input.paymentMethod,
       payment_status: "Pending",

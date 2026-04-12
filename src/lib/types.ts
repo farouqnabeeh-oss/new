@@ -178,6 +178,7 @@ export type SiteSettings = {
   siteEmail?: string | null;
   sitePhone?: string | null;
   siteAddress?: string | null;
+  deliveryFee: number;
   updatedAt: string;
 };
 
