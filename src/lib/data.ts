@@ -1,4 +1,4 @@
-import { unstable_noStore as noStore } from "next/cache";
+// import { unstable_noStore as noStore } from "next/cache"; 
 import { getSupabaseAdmin } from "@/lib/supabase";
 import type {
   AddonGroup,
@@ -221,7 +221,7 @@ function mapAdminUser(row: Record<string, unknown>): AdminUser {
 }
 
 export async function getActiveBanners() {
-  noStore();
+  // noStore();
   if (isMockMode) return mock.mockBanners as MenuBanner[];
   try {
     const supabase = getSupabaseAdmin();
@@ -242,7 +242,7 @@ export async function getActiveBanners() {
 }
 
 export async function getSiteSettings() {
-  noStore();
+  // noStore();
   if (isMockMode) return mock.mockSettings as SiteSettings;
   try {
     const supabase = getSupabaseAdmin();
@@ -259,7 +259,7 @@ export async function getSiteSettings() {
 }
 
 export async function getActiveBranches() {
-  noStore();
+  // noStore();
   if (isMockMode) return mock.mockBranches as Branch[];
   try {
     const supabase = getSupabaseAdmin();
@@ -280,7 +280,7 @@ export async function getActiveBranches() {
 }
 
 export async function getBranchBySlug(slug: string) {
-  noStore();
+  // noStore();
   if (isMockMode) return mock.mockBranches.find(b => b.slug === slug) as Branch | null;
   try {
     const supabase = getSupabaseAdmin();
@@ -302,7 +302,7 @@ export async function getBranchBySlug(slug: string) {
 }
 
 export async function getMenuBanners() {
-  noStore();
+  // noStore();
   if (isMockMode) return mock.mockBanners as MenuBanner[];
   try {
     const supabase = getSupabaseAdmin();
@@ -324,7 +324,7 @@ export async function getMenuBanners() {
 }
 
 export async function getCategories(branchSlug?: string | null) {
-  noStore();
+  // noStore();
   if (isMockMode) return [...mock.mockCategories].sort((a, b) => a.sortOrder - b.sortOrder) as unknown as (Category & { productCount: number })[];
   try {
     const supabase = getSupabaseAdmin();
@@ -363,7 +363,7 @@ export async function getCategories(branchSlug?: string | null) {
 }
 
 export async function getProducts(branchSlug?: string | null, categoryId?: number | null) {
-  noStore();
+  // noStore();
   if (isMockMode) {
     let mockData = mock.mockProducts;
     if (categoryId) mockData = mockData.filter(p => p.categoryId === categoryId);
@@ -410,7 +410,7 @@ export async function getProducts(branchSlug?: string | null, categoryId?: numbe
 }
 
 export async function getProductById(id: number) {
-  noStore();
+  // noStore();
   if (isMockMode) {
     const product = mock.mockProducts.find(p => p.id === id);
     if (!product) return null;
@@ -489,7 +489,7 @@ export async function getProductById(id: number) {
 }
 
 export async function getAddonGroups(categoryId?: number | null, productId?: number | null) {
-  noStore();
+  // noStore();
 
   try {
     const supabase = getSupabaseAdmin();
@@ -538,7 +538,7 @@ export async function getAddonGroups(categoryId?: number | null, productId?: num
 }
 
 export async function getAdminData() {
-  noStore();
+  // noStore();
   if (isMockMode) {
     return {
       branches: mock.mockBranches,
@@ -673,7 +673,7 @@ export async function getAdminData() {
 }
 
 export async function getSalesStats() {
-  noStore();
+  // noStore();
   if (isMockMode) return { total: 12500, daily: 450, weekly: 3200, monthly: 12500 };
 
   try {
@@ -697,7 +697,7 @@ export async function getSalesStats() {
 }
 
 export async function getAdminUserByEmail(email: string) {
-  noStore();
+  // noStore();
   if (isMockMode) return null;
   try {
     const supabase = getSupabaseAdmin();

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+export const revalidate = 20;
 import { BodyClassName } from "@/components/body-class-name";
 import { getBranchBySlug, getMenuBanners, getSiteSettings, getCategories, getProducts } from "@/lib/data";
 import type { Category, Product, Branch, SiteSettings, MenuBanner } from "@/lib/types";

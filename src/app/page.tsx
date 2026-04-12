@@ -1,4 +1,5 @@
 import { getActiveBranches, getActiveBanners } from "@/lib/data";
+export const revalidate = 20;
 import { BodyClassName } from "@/components/body-class-name";
 import { LocationInitializer } from "@/components/location-initializer";
 import { BranchGrid } from "@/components/branch-grid";
