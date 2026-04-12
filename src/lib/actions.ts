@@ -334,6 +334,21 @@ export async function saveProductAction(formData: FormData): Promise<ActionResul
       if (error) return { success: false, error: error.message };
     }
 
+    // --- Link Addon Groups ---
+    const linkedAddonGroups = parseJson<number[]>(formData.get("linkedAddonGroupsJson")) ?? [];
+    
+    // First, clear groups previously linked to this product (but NOT category-wide groups)
+    await supabase.from("addon_groups").update({ product_id: null }).eq("product_id", productId);
+    
+    if (linkedAddonGroups.length) {
+      const { error } = await supabase
+        .from("addon_groups")
+        .update({ product_id: productId })
+        .in("id", linkedAddonGroups);
+      if (error) return { success: false, error: error.message };
+    }
+    // -------------------------
+
     revalidatePath("/Admin");
     return { success: true };
   } catch (err) {

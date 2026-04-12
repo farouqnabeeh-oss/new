@@ -59,7 +59,7 @@ export default async function AdminPage() {
             intelligence: <AdminIntelligenceTab orders={orders} branches={branches} />,
             branches: <AdminBranchesTab branches={branches} />,
             categories: <AdminCategoriesTab categories={categories} branches={branches} />,
-            products: <AdminProductsTab products={products as any} categories={categories} branches={branches} settings={settings as any} />,
+            products: <AdminProductsTab products={products as any} categories={categories} branches={branches} settings={settings as any} addonGroups={addonGroups as any} />,
             addons: <AdminAddonsTab addonGroups={addonGroups as any} categories={categories} products={products as any} />,
             customers: <AdminCustomersTab customers={customers} />,
             settings: <AdminSettingsTab settings={settings as any} menuBanners={menuBanners} />,

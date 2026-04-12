@@ -468,7 +468,12 @@ export async function getProductById(id: number) {
   // e.g. if there's a Size group for product 87 specifically, don't show the category-wide Size group
   const addonGroups = (addonGroupsData ?? [])
     .filter(row => {
-      // If this is a category-level group, check if there's a product-level group with same name/type
+      // 1. If this group is assigned to a DIFFERENT product, exclude it
+      if (row.product_id !== null && row.product_id !== product.id) {
+        return false;
+      }
+
+      // 2. If this is a category-level group, check if there's a product-level override for THIS product
       if (row.product_id === null && row.category_id !== null) {
         const hasSpecificOverride = addonGroupsData?.some(
           other => other.product_id === product.id &&
@@ -476,6 +481,7 @@ export async function getProductById(id: number) {
         );
         return !hasSpecificOverride;
       }
+
       return true;
     })
     .map(row => mapAddonGroup(row));

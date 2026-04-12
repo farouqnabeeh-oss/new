@@ -6,7 +6,7 @@ import { useAdminTranslation } from "@/lib/useAdminTranslation";
 import { useToast } from "@/components/admin/AdminToast";
 import { AdminSubmitButton, AdminDeleteButton } from "@/components/admin/AdminSubmitButton";
 import { saveProductAction, deleteProductAction, type ActionResult } from "@/lib/actions";
-import type { Branch, Category, Product, SiteSettings } from "@/lib/types";
+import type { Branch, Category, Product, SiteSettings, AddonGroup } from "@/lib/types";
 
 type SizeEntry = { NameAr: string; NameEn: string; Price: number };
 type TypeEntry = { NameAr: string; NameEn: string; Price: number; Description: string | null };
@@ -18,9 +18,10 @@ type Props = {
   categories: (Category & { branch?: Branch | null })[];
   branches: Branch[];
   settings: SiteSettings | null;
+  addonGroups: AddonGroup[];
 };
 
-export function AdminProductsTab({ products, categories, branches, settings }: Props) {
+export function AdminProductsTab({ products, categories, branches, settings, addonGroups }: Props) {
   const { t } = useAdminTranslation();
   const router = useRouter();
   const { showToast } = useToast();
@@ -30,6 +31,7 @@ export function AdminProductsTab({ products, categories, branches, settings }: P
 
   const [sizes, setSizes] = useState<SizeEntry[]>([]);
   const [types, setTypes] = useState<TypeEntry[]>([]);
+  const [selectedAddonGroupIds, setSelectedAddonGroupIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
 
   const sizeArRef = useRef<HTMLInputElement>(null);
@@ -45,12 +47,14 @@ export function AdminProductsTab({ products, categories, branches, settings }: P
     if (containerRef.current) containerRef.current.style.display = "none";
     setSizes([]);
     setTypes([]);
+    setSelectedAddonGroupIds([]);
   }, []);
 
   const handleSave = async (formData: FormData) => {
     formData.set("Id", String(editId));
     formData.set("sizesJson", JSON.stringify(sizes));
     formData.set("typesJson", JSON.stringify(types));
+    formData.set("linkedAddonGroupsJson", JSON.stringify(selectedAddonGroupIds));
     const result: ActionResult = await saveProductAction(formData);
     if (result.success) {
       showToast(editId === 0 ? "Product created successfully!" : "Product updated successfully!");
@@ -103,6 +107,8 @@ export function AdminProductsTab({ products, categories, branches, settings }: P
       setTypes((data.types || []).map((t: { nameAr?: string; nameEn?: string; price?: number; description?: string | null }) => ({
         NameAr: t.nameAr || "", NameEn: t.nameEn || "", Price: Number(t.price || 0), Description: t.description || null
       })));
+      
+      setSelectedAddonGroupIds((data.addonGroups || []).map((g: any) => g.id));
 
       containerRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     } catch {
@@ -120,6 +126,7 @@ export function AdminProductsTab({ products, categories, branches, settings }: P
       setEditId(0);
       setSizes([]);
       setTypes([]);
+      setSelectedAddonGroupIds([]);
       const form = formRef.current;
       if (form) {
         (form.elements.namedItem("AllBranches") as HTMLInputElement).checked = true;
@@ -282,6 +289,48 @@ export function AdminProductsTab({ products, categories, branches, settings }: P
                 <input ref={typePriceRef} type="number" step="0.01" placeholder="Price" />
                 <button type="button" className="btn btn-outline" onClick={addType}>+</button>
               </div>
+            </div>
+          </div>
+
+          {/* Addon Groups Linking */}
+          <div className="admin-card" style={{ marginTop: 12 }}>
+            <h4 style={{ fontWeight: 700, marginBottom: 8 }}>🔗 {t('linkedAddons') || 'Linked Addon Groups'}</h4>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 12 }}>
+              {t('linkAddonsDesc') || 'Select which extra addon groups should appear for this product specifically. Category-wide groups apply automatically.'}
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
+              {addonGroups.map(group => {
+                const isSelected = selectedAddonGroupIds.includes(group.id);
+                const isCategoryWide = group.categoryId === Number(formRef.current?.CategoryId?.value) && !group.productId;
+                
+                return (
+                  <label key={group.id} style={{ 
+                    display: "flex", 
+                    alignItems: "center", 
+                    gap: 8, 
+                    padding: '8px 12px', 
+                    borderRadius: '8px', 
+                    background: isSelected ? 'rgba(var(--primary-rgb), 0.1)' : 'var(--bg-surface)', 
+                    border: isSelected ? '1px solid var(--primary)' : '1px solid transparent',
+                    cursor: 'pointer',
+                    opacity: isCategoryWide ? 0.6 : 1
+                  }}>
+                    <input 
+                      type="checkbox" 
+                      checked={isSelected}
+                      disabled={isCategoryWide}
+                      onChange={(e) => {
+                        if (e.target.checked) setSelectedAddonGroupIds(prev => [...prev, group.id]);
+                        else setSelectedAddonGroupIds(prev => prev.filter(id => id !== group.id));
+                      }}
+                    />
+                    <span style={{ fontSize: '14px' }}>
+                      {group.nameAr || group.nameEn}
+                      {isCategoryWide && <small style={{ display: 'block', color: 'var(--text-secondary)' }}>(Category-wide)</small>}
+                    </span>
+                  </label>
+                );
+              })}
             </div>
           </div>
 
