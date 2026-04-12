@@ -595,6 +595,10 @@ export async function seedRestaurantData() {
   // 4. Addon Groups
   const burgerCatId = categoryMap["Burgers"];
   if (burgerCatId) {
+    // Clear existing groups first to ensure fresh data and avoid conflicts
+    console.log("Cleaning up Burger groups...");
+    await supabase.from("addon_groups").delete().eq("category_id", burgerCatId);
+
     const addonGroups = [
       { name_ar: "الحجم", name_en: "Size", category_id: burgerCatId, group_type: "sizes", is_required: true, allow_multiple: false, sort_order: 1 },
       { name_ar: "النوع", name_en: "Type", category_id: burgerCatId, group_type: "types", is_required: true, allow_multiple: false, sort_order: 2 },
@@ -669,6 +673,10 @@ export async function seedRestaurantData() {
   // 4.0 Sandwiches Addon Groups
   const sandwichCatId = categoryMap["Sandwiches"];
   if (sandwichCatId) {
+    // Clear existing groups first to ensure fresh data and avoid conflicts
+    console.log("Cleaning up Sandwich groups...");
+    await supabase.from("addon_groups").delete().eq("category_id", sandwichCatId);
+
     const addonGroups = [
       { name_ar: "النوع", name_en: "Type", category_id: sandwichCatId, group_type: "types", is_required: true, allow_multiple: false, sort_order: 1 },
       { name_ar: "➕ الإضافات", name_en: "Addons", category_id: sandwichCatId, group_type: "addons", is_required: false, allow_multiple: true, sort_order: 2 },

@@ -417,6 +417,20 @@ export async function getProducts(branchSlug?: string | null, categoryId?: numbe
 
 export async function getProductById(id: number) {
   noStore();
+  
+  if (isMockMode) {
+    const product = mock.mockProducts.find((p) => p.id === id);
+    if (!product) return null;
+    const cat = mock.mockCategories.find(c => c.id === product.categoryId);
+    const addonGroups = await getAddonGroups(product.categoryId, product.id);
+    return {
+      ...product,
+      categoryNameAr: cat?.nameAr ?? "",
+      categoryNameEn: cat?.nameEn ?? "",
+      addonGroups
+    } as any;
+  }
+
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("products")
