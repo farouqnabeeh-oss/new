@@ -111,28 +111,6 @@ export const mockBranches = [
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
-  {
-    id: 3,
-    slug: "ramallah",
-    nameAr: "فلسطين - رام الله",
-    nameEn: "Palestine - Ramallah",
-    phone: "0599000000",
-    whatsApp: "+970599000000",
-    bannerImagePath: "/images/panar1.jpeg",
-    discountPercent: 0,
-    isActive: true,
-    sortOrder: 3,
-    latitude: 31.9029,
-    longitude: 35.2031,
-    openingTime: "10:00",
-    closingTime: "00:00",
-    deliveryFee: 10,
-    deliveryZones: [
-      { name: "فلسطين - رام الله", fee: 10 }
-    ],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  }
 ];
 
 export const mockCategories = [

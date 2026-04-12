@@ -579,7 +579,6 @@ export async function seedRestaurantData() {
   const branches = [
     { name_ar: "الأرسال", name_en: "Al-Irsal", slug: "al-irsal", latitude: 31.9148, longitude: 35.2016, is_active: true, sort_order: 1, banner_image_path: "/images/alirsal.webp", delivery_zones: universalDeliveryZones },
     { name_ar: "الطيرة", name_en: "Al-Tira", slug: "al-tira", latitude: 31.9056, longitude: 35.1950, is_active: true, sort_order: 2, banner_image_path: "/images/altira.webp", delivery_zones: universalDeliveryZones },
-    { name_ar: "فلسطين - رام الله", name_en: "Palestine - Ramallah", slug: "ramallah", latitude: 31.9029, longitude: 35.2031, is_active: true, sort_order: 3, banner_image_path: "/images/panar1.jpeg", delivery_zones: universalDeliveryZones },
   ];
   await supabase.from("branches").upsert(branches, { onConflict: 'slug' });
 
