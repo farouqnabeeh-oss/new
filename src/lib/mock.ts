@@ -127,8 +127,9 @@ export const mockCategories = [
   { id: 110, nameAr: "حلويات", nameEn: "Desserts", branchId: null, sortOrder: 10, iconClass: "🍰", isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), productCount: 9 },
   { id: 111, nameAr: "مشروبات باردة", nameEn: "Cold Drinks", branchId: null, sortOrder: 11, iconClass: "🥤", isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), productCount: 18 },
   { id: 112, nameAr: "أراجيل", nameEn: "Hookah", branchId: null, sortOrder: 12, iconClass: "💨", isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), productCount: 1 },
-  { id: 114, nameAr: "مقبلات", nameEn: "Appetizers", branchId: null, sortOrder: 14, iconClass: "🍟", isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), productCount: 11 },
-  { id: 115, nameAr: "باستا", nameEn: "Pasta", branchId: null, sortOrder: 15, iconClass: "🍝", isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), productCount: 3 }
+  { id: 114, nameAr: "مقبلات", nameEn: "Appetizers", branchId: null, sortOrder: 14, iconClass: "🍟", isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), productCount: 13 },
+  { id: 115, nameAr: "باستا", nameEn: "Pasta", branchId: null, sortOrder: 15, iconClass: "🍝", isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), productCount: 3 },
+  { id: 116, nameAr: "وجبات عائلية", nameEn: "Family Meals", branchId: null, sortOrder: 16, iconClass: "👨‍👩‍👧‍👦", isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), productCount: 4 }
 ];
 
 export const mockProducts = [
@@ -168,7 +169,7 @@ export const mockProducts = [
   {
     id: 1021, nameAr: "ستيك دجاج مشوي", nameEn: "Grilled Chicken Steak", descriptionAr: "خضار سوتيه . ماشد بوتيتو", descriptionEn: "Sautéed vegetables, mashed potatoes",
     basePrice: 45, discount: 10, categoryId: 102, branchId: null, allBranches: true, hasMealOption: false, hasDonenessOption: false, sortOrder: 1, isActive: true,
-    types: []
+    imagePath: "/images/grilled-chicken-steak__1i9bertljdazgo6.jpg", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), sizes: [], types: []
   },
   {
     id: 1022, nameAr: "ريب أي ستيك", nameEn: "Ribeye Steak", descriptionAr: "ستيك ريب أي . خضار سوتيه . ماشد بوتيتو . وايت صوص", descriptionEn: "Ribeye steak, sautéed vegetables, mashed potatoes, and white sauce",
@@ -277,7 +278,7 @@ export const mockProducts = [
   {
     id: 1042, nameAr: "كيدز بيرجر دجاج", nameEn: "Kids Chicken Burger", descriptionAr: "الوجبة تشمل بطاطا مقلية وعصير", descriptionEn: "Meal includes french fries and juice",
     basePrice: 23, discount: 10, categoryId: 104, branchId: null, allBranches: true, hasMealOption: false, hasDonenessOption: false, sortOrder: 2, isActive: true,
-    types: []
+    imagePath: "/images/kids-beef-burger__vhek3ygzet469f2.jpg", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), sizes: [], types: []
   },
   {
     id: 1043, nameAr: "بوب كورن دجاج", nameEn: "Chicken Popcorn", descriptionAr: "الوجبة تشمل بطاطا مقلية وعصير", descriptionEn: "Meal includes french fries and juice",
@@ -368,26 +369,26 @@ export const mockProducts = [
   {
     id: 1071, nameAr: "سموذي طبيعي", nameEn: "Natural Smoothie", descriptionAr: "تشكيلة سموذي فواكه طبيعية", descriptionEn: "Assorted natural fruit smoothies",
     basePrice: 17, discount: 10, categoryId: 107, branchId: null, allBranches: true, hasMealOption: false, hasDonenessOption: false, sortOrder: 1, isActive: true,
-    types: []
+    imagePath: "/images/natural-smoothie__c9pnbwbvwhncuvs.jpg", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), sizes: [], types: []
   },
 
   // Milkshake (108)
   {
     id: 1081, nameAr: "ميلك شيك", nameEn: "Milkshake", descriptionAr: "ميلك شيك غني بعدة نكهات", descriptionEn: "Rich milkshakes in various flavors",
     basePrice: 17, discount: 10, categoryId: 108, branchId: null, allBranches: true, hasMealOption: false, hasDonenessOption: false, sortOrder: 1, isActive: true,
-    types: []
+    imagePath: "/images/milkshakes__pgt1ljcxf6qma9t.jpg", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), sizes: [], types: []
   },
 
   // Hot Drinks (109)
   {
     id: 1091, nameAr: "شاي", nameEn: "Tea", descriptionAr: "شاي كلاسيكي ساخن", descriptionEn: "Classic hot tea",
     basePrice: 8, discount: 10, categoryId: 109, branchId: null, allBranches: true, hasMealOption: false, hasDonenessOption: false, sortOrder: 1, isActive: true,
-    types: []
+    imagePath: "/images/tea__68ipsqrolope9un.jpg", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), sizes: [], types: []
   },
   {
     id: 1092, nameAr: "اسبريسو", nameEn: "Espresso", descriptionAr: "اسبريسو كلاسيكي", descriptionEn: "Classic espresso",
     basePrice: 8, discount: 10, categoryId: 109, branchId: null, allBranches: true, hasMealOption: false, hasDonenessOption: false, sortOrder: 2, isActive: true,
-    types: []
+    imagePath: "/images/espresso__e6jr0mu46qix1iw.jpg", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), sizes: [], types: []
   },
   {
     id: 1093, nameAr: "قهوة عربية", nameEn: "Arabic Coffee", descriptionAr: "قهوة عربية أصيلة", descriptionEn: "Authentic Arabic coffee",
@@ -703,13 +704,13 @@ export const mockProducts = [
   {
     id: 11405, nameAr: "حلقات بصل", nameEn: "Onion Rings", descriptionAr: "ثمانية حلقات بصل مقلية مقرمشة", descriptionEn: "Eight crispy fried onion rings",
     basePrice: 10, discount: 10, categoryId: 114, branchId: null, allBranches: true, hasMealOption: false, hasDonenessOption: false, sortOrder: 5, isActive: true,
-    imagePath: "/images/onion-rings__h7c0z7e9sc37r4j.jpg",
+    imagePath: "/images/onion-rings-8-pcs__6yyl6nhstlciej0.jpg",
     createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), sizes: [], types: []
   },
   {
     id: 11406, nameAr: "بطاطا مقلية", nameEn: "French Fries", descriptionAr: "بطاطا مقلية كلاسيكية", descriptionEn: "Classic crispy french fries",
     basePrice: 7, discount: 10, categoryId: 114, branchId: null, allBranches: true, hasMealOption: false, hasDonenessOption: false, sortOrder: 6, isActive: true,
-    imagePath: "/images/french-fries__c5eiz0v8y8m9ihc.jpg",
+    imagePath: "/images/french-fries__15besvty49y4dw2.jpg",
     createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), sizes: [], types: []
   },
   {
@@ -721,7 +722,7 @@ export const mockProducts = [
   {
     id: 11408, nameAr: "بطاطا", nameEn: "Specialty Potato", descriptionAr: "بطاطا اب تاون الخاصة", descriptionEn: "Special Uptown style potatoes",
     basePrice: 12, discount: 10, categoryId: 114, branchId: null, allBranches: true, hasMealOption: false, hasDonenessOption: false, sortOrder: 8, isActive: true,
-    imagePath: "/images/specialty-potato__8b3q7u0970t9n9s.jpg",
+    imagePath: "/images/potato__4suuqycxpjbx1k9.jpg",
     createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), sizes: [], types: []
   },
   {
@@ -733,13 +734,53 @@ export const mockProducts = [
   {
     id: 11410, nameAr: "فيليه تشيز ستيك", nameEn: "Philly Cheese Steak", descriptionAr: "180 غرام . لحم عجل فيليه مشوي . جبنة تشيدر . جبنة موزاريلا . صوص رانش . فلفل", descriptionEn: "180g veal fillet, cheddar, mozzarella, ranch, peppers",
     basePrice: 36, discount: 10, categoryId: 114, branchId: null, allBranches: true, hasMealOption: true, hasDonenessOption: false, sortOrder: 10, isActive: true,
-    imagePath: "/images/philly-cheesesteak__7f59d0v89t5x0ou.jpg",
+    imagePath: "/images/philly-cheesesteak-sandwich__zse9y6u7vbvhagu.jpg",
     createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), sizes: [], types: []
   },
   {
     id: 11411, nameAr: "تورتيلا دجاج مقلي مقرمش", nameEn: "Crispy Chicken Tortilla", descriptionAr: "140 غرام . كريسبي راب او مشوي . خس . مخلل . بصل . صوص مكسيكي . صوص اب تاون", descriptionEn: "140g crispy/grilled chicken, lettuce, pickles, onions, mexican sauce",
     basePrice: 18, discount: 10, categoryId: 114, branchId: null, allBranches: true, hasMealOption: true, hasDonenessOption: false, sortOrder: 11, isActive: true,
-    imagePath: "/images/crispy-chicken-tortilla__8f8rsw0xpv9z5rk.jpg",
+    imagePath: "/images/crispy-chicken-tortilla-wrap__uij6r0qhdp8qpni.jpg",
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), sizes: [], types: []
+  },
+
+  // More Appetizers (114)
+  {
+    id: 11413, nameAr: "أصابع دجاج 5 قطع", nameEn: "Chicken Fingers 5pcs", descriptionAr: "5 قطع من أصابع الدجاج المقلية المقرمشة", descriptionEn: "5 pieces of crispy fried chicken finger sticks",
+    basePrice: 22, discount: 10, categoryId: 114, branchId: null, allBranches: true, hasMealOption: false, hasDonenessOption: false, sortOrder: 13, isActive: true,
+    imagePath: "/images/chicken-fingers-5-pcs__1sqwat9myfpnpzw.jpg",
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), sizes: [], types: []
+  },
+  {
+    id: 11414, nameAr: "تشيكن اند فرايز", nameEn: "Chicken and Fries", descriptionAr: "قطع دجاج مقلية مقرمشة مع بطاطا مقلية", descriptionEn: "Crispy fried chicken pieces with french fries",
+    basePrice: 30, discount: 10, categoryId: 114, branchId: null, allBranches: true, hasMealOption: false, hasDonenessOption: false, sortOrder: 14, isActive: true,
+    imagePath: "/images/popcorn-chicken__19q2tjl7h9lr4st.jpg",
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), sizes: [], types: []
+  },
+
+  // Family Meals (116)
+  {
+    id: 11601, nameAr: "وجبة عائلية برجر", nameEn: "Family Burger Meal", descriptionAr: "4 برجر كلاسيك تشيز + 4 بطاطا مقلية + 4 مشروبات غازية", descriptionEn: "4 classic cheeseburgers + 4 french fries + 4 soft drinks",
+    basePrice: 120, discount: 10, categoryId: 116, branchId: null, allBranches: true, hasMealOption: false, hasDonenessOption: false, sortOrder: 1, isActive: true,
+    imagePath: "/images/classic-cheeseburger__0x1e3y1qv68eiip.jpg",
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), sizes: [], types: []
+  },
+  {
+    id: 11602, nameAr: "وجبة عائلية دجاج مشوي", nameEn: "Family Grilled Chicken Meal", descriptionAr: "4 ساندويش دجاج مشوي + 4 بطاطا مقلية + 4 مشروبات غازية", descriptionEn: "4 grilled chicken sandwiches + 4 french fries + 4 soft drinks",
+    basePrice: 130, discount: 10, categoryId: 116, branchId: null, allBranches: true, hasMealOption: false, hasDonenessOption: false, sortOrder: 2, isActive: true,
+    imagePath: "/images/grilled-chicken-sandwich__0p8n3eb1fxkz4e1.jpg",
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), sizes: [], types: []
+  },
+  {
+    id: 11603, nameAr: "وجبة عائلية أجنحة", nameEn: "Family Wings Meal", descriptionAr: "20 جناح مقلي مقرمش بالصوص + 2 بطاطا كبيرة + 4 مشروبات غازية", descriptionEn: "20 crispy fried wings with sauce + 2 large fries + 4 soft drinks",
+    basePrice: 140, discount: 10, categoryId: 116, branchId: null, allBranches: true, hasMealOption: false, hasDonenessOption: false, sortOrder: 3, isActive: true,
+    imagePath: "/images/crispy-fried-wings__8a79zxxqhvr0ihm.jpg",
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), sizes: [], types: []
+  },
+  {
+    id: 11604, nameAr: "وجبة عائلية مشكلة", nameEn: "Mixed Family Meal", descriptionAr: "2 برجر + 2 ساندويش دجاج + 20 جناح + 4 بطاطا + 4 مشروبات", descriptionEn: "2 burgers + 2 chicken sandwiches + 20 wings + 4 fries + 4 drinks",
+    basePrice: 200, discount: 10, categoryId: 116, branchId: null, allBranches: true, hasMealOption: false, hasDonenessOption: false, sortOrder: 4, isActive: true,
+    imagePath: "/images/smashed-burger__f4vm70uiqpdg28s.jpg",
     createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), sizes: [], types: []
   }
 ];
