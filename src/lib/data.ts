@@ -230,14 +230,12 @@ export async function getActiveBanners() {
       .eq("is_active", true)
       .order("sort_order");
 
-    if (error) {
-      console.error("Error fetching banners:", error);
+    if (error || !data) {
       return mock.mockBanners as MenuBanner[];
     }
 
     return (data ?? []).map((row) => mapMenuBanner(row));
   } catch (e) {
-    console.error("Fetch banners failed, falling back to mock", e);
     return mock.mockBanners as MenuBanner[];
   }
 }
@@ -249,17 +247,12 @@ export async function getSiteSettings() {
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase.from("site_settings").select("*").limit(1).maybeSingle();
 
-    if (error) {
-      console.error("Error fetching site settings:", error);
-    }
-
     if (error || !data) {
       return mock.mockSettings as SiteSettings;
     }
 
     return mapSettings(data);
   } catch (e) {
-    console.error("Fetch site settings failed, falling back to mock", e);
     return mock.mockSettings as SiteSettings;
   }
 }
@@ -277,12 +270,10 @@ export async function getActiveBranches() {
       .order("id");
 
     if (error || !data || data.length === 0) {
-      console.warn("DB branches empty or error, falling back to mock");
       return mock.mockBranches as Branch[];
     }
     return data.map((row) => mapBranch(row));
   } catch (e) {
-    console.error("Fetch branches failed, falling back to mock", e);
     return mock.mockBranches as Branch[];
   }
 }
@@ -300,13 +291,11 @@ export async function getBranchBySlug(slug: string) {
       .maybeSingle();
 
     if (error) {
-      console.error("Error fetching branch by slug:", error);
       return mock.mockBranches.find(b => b.slug === slug) as Branch | null;
     }
 
     return data ? mapBranch(data) : (mock.mockBranches.find(b => b.slug === slug) as Branch | null);
   } catch (e) {
-    console.error("Fetch branch by slug failed, falling back to mock", e);
     return mock.mockBranches.find(b => b.slug === slug) as Branch | null;
   }
 }
@@ -324,13 +313,11 @@ export async function getMenuBanners() {
       .order("id");
 
     if (error) {
-      console.error("Error fetching menu banners:", error);
       return mock.mockBanners as MenuBanner[];
     }
 
     return (data ?? []).map((row) => mapMenuBanner(row));
   } catch (e) {
-    console.error("Fetch menu banners failed, falling back to mock", e);
     return mock.mockBanners as MenuBanner[];
   }
 }
@@ -361,7 +348,6 @@ export async function getCategories(branchSlug?: string | null) {
     const { data, error } = await query;
 
     if (error || !data || data.length === 0) {
-      console.warn("DB categories empty or error, falling back to mock");
       return mock.mockCategories as unknown as (Category & { productCount: number })[];
     }
 
@@ -371,7 +357,6 @@ export async function getCategories(branchSlug?: string | null) {
       return { ...category, productCount };
     });
   } catch (e) {
-    console.error("Fetch categories failed, falling back to mock", e);
     return mock.mockCategories as unknown as (Category & { productCount: number })[];
   }
 }
@@ -410,7 +395,6 @@ export async function getProducts(branchSlug?: string | null, categoryId?: numbe
     const { data, error } = await query;
 
     if (error || !data || data.length === 0) {
-      console.warn("DB products empty or error, falling back to mock");
       let mockData = mock.mockProducts;
       if (categoryId) mockData = mockData.filter(p => p.categoryId === categoryId);
       return mockData as unknown as Product[];
@@ -418,7 +402,6 @@ export async function getProducts(branchSlug?: string | null, categoryId?: numbe
 
     return data.map((row) => mapProduct(row));
   } catch (e) {
-    console.error("Fetch products failed, falling back to mock", e);
     let mockData = mock.mockProducts;
     if (categoryId) mockData = mockData.filter(p => p.categoryId === categoryId);
     return mockData as unknown as Product[];
@@ -448,12 +431,7 @@ export async function getProductById(id: number) {
       .eq("id", id)
       .maybeSingle();
 
-    if (error) {
-      console.error("Error fetching product by id:", error);
-      return null;
-    }
-
-    if (!data) {
+    if (error || !data) {
       return null;
     }
 
@@ -497,7 +475,6 @@ export async function getProductById(id: number) {
       addonGroups
     };
   } catch (e) {
-    console.error("Fetch product by id failed", e);
     return null;
   }
 }
@@ -537,7 +514,6 @@ export async function getAddonGroups(categoryId?: number | null, productId?: num
     const { data, error } = await query;
 
     if (error || !data || data.length === 0) {
-      console.warn("DB addon groups empty or error, falling back to mock");
       const mockGroups = mock.mockAddonGroups.filter(g => {
         if (g.categoryId !== effectiveCategoryId) return false;
         if (productId) return g.productId === null || g.productId === productId;
@@ -548,7 +524,6 @@ export async function getAddonGroups(categoryId?: number | null, productId?: num
 
     return data.map((row) => mapAddonGroup(row));
   } catch (e) {
-    console.error("Fetch addon groups failed, falling back to mock", e);
     return [];
   }
 }
@@ -675,7 +650,6 @@ export async function getAdminData() {
       customers
     };
   } catch (e) {
-    console.error("Fetch admin data failed, falling back to mock", e);
     return {
       branches: mock.mockBranches,
       categories: mock.mockCategories,
@@ -693,36 +667,43 @@ export async function getSalesStats() {
   noStore();
   if (isMockMode) return { total: 12500, daily: 450, weekly: 3200, monthly: 12500 };
 
-  const supabase = getSupabaseAdmin();
-  // We'll calculate stats from the orders table
-  const { data: orders, error } = await supabase.from("orders").select("total_amount, created_at");
-  if (error || !orders) return { total: 0, daily: 0, weekly: 0, monthly: 0 };
+  try {
+    const supabase = getSupabaseAdmin();
+    // We'll calculate stats from the orders table
+    const { data: orders, error } = await supabase.from("orders").select("total_amount, created_at");
+    if (error || !orders) return { total: 0, daily: 0, weekly: 0, monthly: 0 };
 
-  const now = new Date();
-  const today = now.toISOString().split('T')[0];
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
 
-  const total = orders.reduce((sum, o) => sum + Number(o.total_amount), 0);
-  const daily = orders
-    .filter(o => o.created_at.startsWith(today))
-    .reduce((sum, o) => sum + Number(o.total_amount), 0);
+    const total = orders.reduce((sum, o) => sum + Number(o.total_amount), 0);
+    const daily = orders
+      .filter(o => o.created_at.startsWith(today))
+      .reduce((sum, o) => sum + Number(o.total_amount), 0);
 
-  return { total, daily, weekly: total * 0.4, monthly: total }; // Rough estimates for now
+    return { total, daily, weekly: total * 0.4, monthly: total }; // Rough estimates for now
+  } catch (e) {
+    return { total: 0, daily: 0, weekly: 0, monthly: 0 };
+  }
 }
 
 export async function getAdminUserByEmail(email: string) {
   noStore();
   if (isMockMode) return null;
-  const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("aspnet_users")
-    .select("*")
-    .eq("normalized_email", email.trim().toUpperCase())
-    .maybeSingle();
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("aspnet_users")
+      .select("*")
+      .eq("normalized_email", email.trim().toUpperCase())
+      .maybeSingle();
 
-  if (error) {
-    console.error("Error fetching admin user by email:", error);
+    if (error) {
+      return null;
+    }
+
+    return data ? mapAdminUser(data) : null;
+  } catch (e) {
     return null;
   }
-
-  return data ? mapAdminUser(data) : null;
 }
