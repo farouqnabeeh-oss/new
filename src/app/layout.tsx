@@ -167,9 +167,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <a href="/policies/privacy" style={{ color: '#8b0000', textDecoration: 'none', fontWeight: 700 }}>{isAr ? "سياسة الخصوصية" : "Privacy Policy"}</a>
           <a href="/policies/return" style={{ color: '#8b0000', textDecoration: 'none', fontWeight: 700 }}>{isAr ? "سياسة الإرجاع والتبديل" : "Return & Exchange Policy"}</a>
         </div>
-        <a href="/Admin" style={{ display: 'inline-flex', alignItems: 'center', opacity: 1, gap: '6px', color: '#666', background: 'none', padding: '4px', fontSize: '14px', fontWeight: 900, textDecoration: 'none', transition: '0.3s' }}>
-          uptown
-        </a>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '15px', gap: '5px' }}>
+          <a href="/Admin" style={{ display: 'inline-flex', alignItems: 'center', opacity: 1, gap: '6px', color: '#666', background: 'none', padding: '4px', fontSize: '14px', fontWeight: 900, textDecoration: 'none', transition: '0.3s' }}>
+            uptown
+          </a>
+          <span style={{ fontSize: '13px', color: '#999', fontWeight: 600 }}>by menuna</span>
+        </div>
       </div>
     </footer>
   );

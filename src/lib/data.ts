@@ -241,10 +241,10 @@ export async function getSiteSettings() {
   const { data, error } = await supabase.from("site_settings").select("*").limit(1).maybeSingle();
 
   if (error) {
-    throw error;
+    console.error("Error fetching site settings:", error);
   }
 
-  if (!data) {
+  if (error || !data) {
     return {
       id: 0,
       siteName: "UPTOWN",
@@ -307,7 +307,8 @@ export async function getBranchBySlug(slug: string) {
     .maybeSingle();
 
   if (error) {
-    throw error;
+    console.error("Error fetching branch by slug:", error);
+    return null;
   }
 
   return data ? mapBranch(data) : null;
@@ -325,7 +326,8 @@ export async function getMenuBanners() {
     .order("id");
 
   if (error) {
-    throw error;
+    console.error("Error fetching menu banners:", error);
+    return [];
   }
 
   return (data ?? []).map((row) => mapMenuBanner(row));
@@ -655,7 +657,8 @@ export async function getAdminUserByEmail(email: string) {
     .maybeSingle();
 
   if (error) {
-    throw error;
+    console.error("Error fetching admin user by email:", error);
+    return null;
   }
 
   return data ? mapAdminUser(data) : null;
