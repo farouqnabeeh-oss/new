@@ -85,6 +85,7 @@ export type Product = {
   branch?: Branch | null;
   sizes: ProductSize[];
   types: ProductType[];
+  addonGroups?: AddonGroup[];
 };
 
 export type OrderStatus = "Pending" | "Paid" | "Preparing" | "Dispatched" | "Delivered" | "Cancelled";

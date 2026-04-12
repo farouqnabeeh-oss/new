@@ -403,8 +403,6 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                                     <span>-{(deliveryFee * (branch.deliveryDiscountPercent || 0) / 100).toFixed(2)} {settings.currencySymbol}</span>
                                 </div>
                             )}
-                                </div>
-                            )}
                             {orderType === 'delivery' && (
                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#666', marginBottom: '8px' }}>
                                     <span>{isAr ? 'رسوم التوصيل' : 'Delivery Fee'}</span>

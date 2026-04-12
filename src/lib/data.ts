@@ -181,6 +181,7 @@ function mapSettings(row: Record<string, unknown>): SiteSettings {
     siteEmail: (row.site_email as string | null) ?? null,
     sitePhone: (row.site_phone as string | null) ?? null,
     siteAddress: (row.site_address as string | null) ?? null,
+    deliveryFee: toNumber(row.delivery_fee),
     updatedAt: String(row.updated_at ?? "")
   };
 }
