@@ -460,8 +460,6 @@ export async function seedRestaurantData() {
     // Cold Drinks
     { name_ar: "كولا", name_en: "Cola", description_ar: "علبة كولا", description_en: "Cola Can", base_price: 6, discount: 10, category_id: categoryMap["Cold Drinks"], is_active: true, all_branches: true, image_path: "/images/cola__f6o1p5tywou44t7.jpg" },
     { name_ar: "كولا زيرو", name_en: "Cola Zero", description_ar: "علبة كولا زيرو", description_en: "Cola Zero Can", base_price: 6, discount: 10, category_id: categoryMap["Cold Drinks"], is_active: true, all_branches: true, image_path: "/images/cola__f6o1p5tywou44t7.jpg" },
-    { name_ar: "كولا تشات", name_en: "Cola Chat", description_ar: "علبة كولا تشات", description_en: "Cola Chat Can", base_price: 6, discount: 10, category_id: categoryMap["Cold Drinks"], is_active: true, all_branches: true, image_path: "/images/cola__f6o1p5tywou44t7.jpg" },
-    { name_ar: "كولا تشات زيرو", name_en: "Cola Chat Zero", description_ar: "علبة كولا تشات زيرو", description_en: "Cola Chat Zero Can", base_price: 6, discount: 10, category_id: categoryMap["Cold Drinks"], is_active: true, all_branches: true, image_path: "/images/cola__f6o1p5tywou44t7.jpg" },
     { name_ar: "سبرايت دايت", name_en: "Sprite Diet", description_ar: "علبة سبرايت دايت", description_en: "Sprite Diet Can", base_price: 6, discount: 10, category_id: categoryMap["Cold Drinks"], is_active: true, all_branches: true, image_path: "/images/sprite__i4s36gw3g0d9m6i.jpg" },
     { name_ar: "كابي", name_en: "Cappy Juice", description_ar: "عصير كابي", description_en: "Cappy Juice bottle", base_price: 6, discount: 10, category_id: categoryMap["Cold Drinks"], is_active: true, all_branches: true, image_path: "/images/file-e09e95f3-e7b0-4c7e-8fc2-a0afa1d97e09.jpg" },
     { name_ar: "سبرايت", name_en: "Sprite", description_ar: "علبة سبرايت", description_en: "Sprite Can", base_price: 6, discount: 10, category_id: categoryMap["Cold Drinks"], is_active: true, all_branches: true, image_path: "/images/sprite__i4s36gw3g0d9m6i.jpg" },
@@ -653,8 +651,6 @@ export async function seedRestaurantData() {
         { addon_group_id: agMap["MealDrink"], name_ar: "سبرايت دايت", name_en: "Sprite Diet", price: 0, sort_order: 5, is_active: true },
         { addon_group_id: agMap["MealDrink"], name_ar: "كابي", name_en: "Cappy", price: 0, sort_order: 6, is_active: true },
         { addon_group_id: agMap["MealDrink"], name_ar: "ماء", name_en: "Water", price: 0, sort_order: 7, is_active: true },
-        { addon_group_id: agMap["MealDrink"], name_ar: "كولا تشات", name_en: "Cola Chat", price: 0, sort_order: 8, is_active: true },
-        { addon_group_id: agMap["MealDrink"], name_ar: "كولا تشات زيرو", name_en: "Cola Chat Zero", price: 0, sort_order: 9, is_active: true },
         { addon_group_id: agMap["MealDrink"], name_ar: "سبرايت تشات", name_en: "Sprite Chat", price: 0, sort_order: 10, is_active: true },
         // Drink Upgrades
         { addon_group_id: agMap["MealDrinkUpgrade"], name_ar: "XL", name_en: "XL", price: 4, sort_order: 1, is_active: true },
@@ -720,8 +716,6 @@ export async function seedRestaurantData() {
         { addon_group_id: agMap["MealDrink"], name_ar: "سبرايت دايت", name_en: "Sprite Diet", price: 0, sort_order: 5, is_active: true },
         { addon_group_id: agMap["MealDrink"], name_ar: "كابي", name_en: "Cappy", price: 0, sort_order: 6, is_active: true },
         { addon_group_id: agMap["MealDrink"], name_ar: "ماء", name_en: "Water", price: 0, sort_order: 7, is_active: true },
-        { addon_group_id: agMap["MealDrink"], name_ar: "كولا تشات", name_en: "Cola Chat", price: 0, sort_order: 8, is_active: true },
-        { addon_group_id: agMap["MealDrink"], name_ar: "كولا تشات زيرو", name_en: "Cola Chat Zero", price: 0, sort_order: 9, is_active: true },
         { addon_group_id: agMap["MealDrink"], name_ar: "سبرايت تشات", name_en: "Sprite Chat", price: 0, sort_order: 10, is_active: true },
         // Swaps
         { addon_group_id: agMap["MealDrinkUpgrade"], name_ar: "XL", name_en: "XL", price: 4, sort_order: 1, is_active: true },

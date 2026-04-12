@@ -520,12 +520,10 @@ export const mockProducts = [
     imagePath: "/images/cola__f6o1p5tywou44t7.jpg", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), sizes: [], types: []
   },
   {
-    id: 1113, nameAr: "كولا تشات", nameEn: "Cola Chat", descriptionAr: "علبة ", descriptionEn: "Cola Chat Can",
     basePrice: 5, discount: 10, categoryId: 111, branchId: null, allBranches: true, hasMealOption: false, hasDonenessOption: false, sortOrder: 3, isActive: true,
     imagePath: "/images/cola__f6o1p5tywou44t7.jpg", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), sizes: [], types: []
   },
   {
-    id: 1114, nameAr: "كولا تشات زيرو", nameEn: "Cola Chat Zero", descriptionAr: "علبة كولا تشات زيرو", descriptionEn: "Cola Chat Zero Can",
     basePrice: 5, discount: 10, categoryId: 111, branchId: null, allBranches: true, hasMealOption: false, hasDonenessOption: false, sortOrder: 4, isActive: true,
     imagePath: "/images/cola__f6o1p5tywou44t7.jpg", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), sizes: [], types: []
   },
@@ -841,8 +839,6 @@ export const mockAddonGroups = [
       { id: 505, nameAr: "سبرايت دايت", nameEn: "Sprite Diet", price: 0, sortOrder: 5, isActive: true },
       { id: 506, nameAr: "كابي", nameEn: "Cappy", price: 0, sortOrder: 6, isActive: true },
       { id: 507, nameAr: "ماء", nameEn: "Water", price: 0, sortOrder: 7, isActive: true },
-      { id: 508, nameAr: "كولا تشات", nameEn: "Cola Chat", price: 0, sortOrder: 8, isActive: true },
-      { id: 509, nameAr: "كولا تشات زيرو", nameEn: "Cola Chat Zero", price: 0, sortOrder: 9, isActive: true },
       { id: 510, nameAr: "سبرايت تشات", nameEn: "Sprite Chat", price: 0, sortOrder: 10, isActive: true }
     ]
   },
@@ -881,8 +877,6 @@ export const mockAddonGroups = [
       { id: 905, nameAr: "سبرايت دايت", nameEn: "Sprite Diet", price: 0, sortOrder: 5, isActive: true },
       { id: 906, nameAr: "كابي", nameEn: "Cappy", price: 0, sortOrder: 6, isActive: true },
       { id: 907, nameAr: "ماء", nameEn: "Water", price: 0, sortOrder: 7, isActive: true },
-      { id: 908, nameAr: "كولا تشات", nameEn: "Cola Chat", price: 0, sortOrder: 8, isActive: true },
-      { id: 909, nameAr: "كولا تشات زيرو", nameEn: "Cola Chat Zero", price: 0, sortOrder: 9, isActive: true },
       { id: 910, nameAr: "سبرايت تشات", nameEn: "Sprite Chat", price: 0, sortOrder: 10, isActive: true }
     ]
   },
