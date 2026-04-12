@@ -53,7 +53,7 @@ export default function MenuClient({ categories, allProducts, branch, isAr, curr
         prods.forEach(p => {
           const priceRaw = Number(p.basePrice || 0);
           const disc = Number(p.discount || 0);
-          const finalPrice = priceRaw * (1 - disc / 100);
+          const finalPrice = Math.round(priceRaw * (1 - disc / 100));
           const image = p.imagePath || '/images/classic-cheeseburger__0x1e3y1qv68eiip.jpg';
           
           content += `
@@ -65,8 +65,8 @@ export default function MenuClient({ categories, allProducts, branch, isAr, curr
                 <div class="up-desc">${isAr ? (p.descriptionAr || '') : (p.descriptionEn || '')}</div>
                 <div class="up-footer">
                   <div class="up-price-box">
-                    <span class="up-price-tag">${finalPrice % 1 === 0 ? finalPrice.toFixed(0) : finalPrice.toFixed(1)}${currency}</span>
-                    ${disc > 0 ? `<span class="up-price-old">${priceRaw.toFixed(0)}${currency}</span>` : ''}
+                    <span class="up-price-tag">${finalPrice}${currency}</span>
+                    ${disc > 0 ? `<span class="up-price-old">${Math.round(priceRaw)}${currency}</span>` : ''}
                   </div>
                   <button class="up-add-pill" onclick="event.stopPropagation(); window.viewP('${p.id}')">${isAr ? "أضف للسلة" : "Add to Cart"}</button>
                 </div>
