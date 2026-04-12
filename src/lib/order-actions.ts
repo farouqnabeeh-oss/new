@@ -287,7 +287,7 @@ ${itemsList}
 ----------------------------------------
 تواصل معنا / Contact: uptownramallah@gmail.com
 الهاتف / Phone: 022950505
-رام الله - فلسطين / Ramallah - Palestine
+فلسطين - رام الله / Ramallah - Palestine
 ========================================
     `;
 

@@ -90,7 +90,7 @@ export async function seedRestaurantData() {
       name_en: "Asado Sandwich",
       description_ar: "لحم عجل مطهو لأكثر من 5 ساعات . خس . بندورة وبصل مشوي . مخلل . صوص",
       description_en: "Slow-cooked veal for over 5 hours, lettuce, grilled tomato and onions, pickles, and sauce",
-      base_price: 36, discount: 10,
+      base_price: 36, discount: 0,
       category_id: categoryMap["Sandwiches"],
       is_active: true,
       all_branches: true,
@@ -106,7 +106,7 @@ export async function seedRestaurantData() {
       category_id: categoryMap["Sandwiches"],
       is_active: true,
       all_branches: true,
-      has_meal_option: false,
+      has_meal_option: true,
       image_path: "/images/halloumi-sandwich__1vuq1k5kk4zhdtn.jpg"
     },
 
@@ -481,7 +481,8 @@ export async function seedRestaurantData() {
     { name_ar: "أرجيلة", name_en: "Hookah", description_ar: "أرجيلة بنكهات متنوعة", description_en: "Hookah with various flavors", base_price: 30, discount: 10, category_id: categoryMap["Hookah"], is_active: true, all_branches: true, image_path: "/images/shisha__3rtwtm1vhjem729.jpg" },
 
     // Burgers
-    { name_ar: "كلاسيك تشيز بيرجر", name_en: "Classic Cheese Burger", description_ar: "120 غرام . جبنة تشيدر . خس . بندورة . بصل . صوص اب تاون", description_en: "120g, cheddar, lettuce, tomato, onions, uptown sauce", base_price: 23, discount: 10, category_id: categoryMap["Burgers"], is_active: true, all_branches: true, has_meal_option: true, image_path: "/images/classic-cheeseburger__0x1e3y1qv68eiip.jpg" },
+    // Burgers
+    { name_ar: "كلاسيك تشيز بيرجر", name_en: "Classic Cheese Burger", description_ar: "120 غرام . جبنة تشيدر . خس . بندورة . بصل . صوص اب تاون", description_en: "120g, cheddar, lettuce, tomato, onions, uptown sauce", base_price: 25, discount: 10, category_id: categoryMap["Burgers"], is_active: true, all_branches: true, has_meal_option: true, image_path: "/images/classic-cheeseburger__0x1e3y1qv68eiip.jpg" },
     { name_ar: "سماش بيرجر", name_en: "Smash Burger", description_ar: "240 غرام . جبنة تشيدر . بندورة . بصل . صوص اب تاون", description_en: "240g, double cheddar, tomato, onions, uptown sauce", base_price: 35, discount: 10, category_id: categoryMap["Burgers"], is_active: true, all_branches: true, has_meal_option: true, image_path: "/images/smashed-burger__f4vm70uiqpdg28s.jpg" },
     { name_ar: "باربيكيو بيرجر", name_en: "BBQ Burger", description_ar: "150 غرام . خس . جبنة موزاريلا . مخلل . بصل . باربيكيو . صوص اب تاون", description_en: "150g, mozzarella, pickles, onions, bbq sauce, uptown sauce", base_price: 25, discount: 10, category_id: categoryMap["Burgers"], is_active: true, all_branches: true, has_meal_option: true, image_path: "/images/bbq-burger__qw0nxdtpwc5rbst.jpg" },
     { name_ar: "سويس مشروم بيرجر", name_en: "Swiss Mushroom Burger", description_ar: "150 غرام . جبنة سويسرية . خس . بندورة . بصل . مشروم. مخلل . صوص اب تاون", description_en: "150g, swiss cheese, lettuce, tomato, mushroom, onions, uptown sauce", base_price: 30, discount: 10, category_id: categoryMap["Burgers"], is_active: true, all_branches: true, has_meal_option: true, image_path: "/images/swiss-mushroom-burger__txtxxp1aifr4j8i.jpg" },
@@ -578,6 +579,7 @@ export async function seedRestaurantData() {
   const branches = [
     { name_ar: "الأرسال", name_en: "Al-Irsal", slug: "al-irsal", latitude: 31.9148, longitude: 35.2016, is_active: true, sort_order: 1, banner_image_path: "/images/alirsal.webp", delivery_zones: universalDeliveryZones },
     { name_ar: "الطيرة", name_en: "Al-Tira", slug: "al-tira", latitude: 31.9056, longitude: 35.1950, is_active: true, sort_order: 2, banner_image_path: "/images/altira.webp", delivery_zones: universalDeliveryZones },
+    { name_ar: "فلسطين - رام الله", name_en: "Palestine - Ramallah", slug: "ramallah", latitude: 31.9029, longitude: 35.2031, is_active: true, sort_order: 3, banner_image_path: "/images/panar1.jpeg", delivery_zones: universalDeliveryZones },
   ];
   await supabase.from("branches").upsert(branches, { onConflict: 'slug' });
 
@@ -596,6 +598,10 @@ export async function seedRestaurantData() {
       { name_ar: "النوع", name_en: "Type", category_id: burgerCatId, group_type: "types", is_required: true, allow_multiple: false, sort_order: 2 },
       { name_ar: "إضافات", name_en: "Addons", category_id: burgerCatId, group_type: "addons", is_required: false, allow_multiple: true, sort_order: 3 },
       { name_ar: "بدون", name_en: "Without", category_id: burgerCatId, group_type: "without", is_required: false, allow_multiple: true, sort_order: 4 },
+      // Meal Specific Selections
+      { name_ar: "🥤 اختر المشروب", name_en: "Select Drink", category_id: burgerCatId, group_type: "MealDrink", is_required: true, allow_multiple: false, sort_order: 5 },
+      { name_ar: "🔄 تبديل المشروب", name_en: "Swap Drink", category_id: burgerCatId, group_type: "MealDrinkUpgrade", is_required: false, allow_multiple: false, sort_order: 6 },
+      { name_ar: "🍟 تبديل البطاطا", name_en: "Swap Fries", category_id: burgerCatId, group_type: "MealFries", is_required: false, allow_multiple: false, sort_order: 7 },
     ];
 
     const { data: agData, error: agError } = await supabase.from("addon_groups").upsert(addonGroups, { onConflict: 'name_en,category_id' }).select();
@@ -605,13 +611,13 @@ export async function seedRestaurantData() {
       // Item mappings
       const items = [
         // Sizes
-        { addon_group_id: agMap["sizes"], name_ar: "120 غرام", name_en: "120g", price: 23, sort_order: 1, is_active: true },
-        { addon_group_id: agMap["sizes"], name_ar: "150 غرام", name_en: "150g", price: 25, sort_order: 2, is_active: true },
+        { addon_group_id: agMap["sizes"], name_ar: "120 غرام", name_en: "120g", price: 25, sort_order: 1, is_active: true },
+        { addon_group_id: agMap["sizes"], name_ar: "150 غرام", name_en: "150g", price: 27, sort_order: 2, is_active: true },
         { addon_group_id: agMap["sizes"], name_ar: "240 غرام", name_en: "240g", price: 35, sort_order: 3, is_active: true },
         { addon_group_id: agMap["sizes"], name_ar: "300 غرام", name_en: "300g", price: 40, sort_order: 4, is_active: true },
         // Types
         { addon_group_id: agMap["types"], name_ar: "بيرجر", name_en: "Burger", price: 0, sort_order: 1, is_active: true },
-        { addon_group_id: agMap["types"], name_ar: "وجبة ( مع بطاطا ومشروب غازي )", name_en: "Meal (Fries & Drink)", price: 9, sort_order: 2, is_active: true },
+        { addon_group_id: agMap["types"], name_ar: "وجبة (مع بطاطا ومشروب غازي)", name_en: "Meal (Fries & Drink)", price: 9, sort_order: 2, is_active: true },
         // Addons
         { addon_group_id: agMap["addons"], name_ar: "قطعة لحمة 120 غرام", name_en: "Extra Meat 120g", price: 12, sort_order: 1, is_active: true },
         { addon_group_id: agMap["addons"], name_ar: "قطعة لحمة 150 غرام", name_en: "Extra Meat 150g", price: 15, sort_order: 2, is_active: true },
@@ -633,6 +639,88 @@ export async function seedRestaurantData() {
         { addon_group_id: agMap["without"], name_ar: "جبنة", name_en: "Cheese", price: 0, sort_order: 4, is_active: true },
         { addon_group_id: agMap["without"], name_ar: "خس", name_en: "Lettuce", price: 0, sort_order: 5, is_active: true },
         { addon_group_id: agMap["without"], name_ar: "صوص", name_en: "Sauce", price: 0, sort_order: 6, is_active: true },
+        // Drink Selection
+        { addon_group_id: agMap["MealDrink"], name_ar: "كولا", name_en: "Cola", price: 0, sort_order: 1, is_active: true },
+        { addon_group_id: agMap["MealDrink"], name_ar: "كولا زيرو", name_en: "Cola Zero", price: 0, sort_order: 2, is_active: true },
+        { addon_group_id: agMap["MealDrink"], name_ar: "فانتا", name_en: "Fanta", price: 0, sort_order: 3, is_active: true },
+        { addon_group_id: agMap["MealDrink"], name_ar: "سبرايت", name_en: "Sprite", price: 0, sort_order: 4, is_active: true },
+        { addon_group_id: agMap["MealDrink"], name_ar: "سبرايت دايت", name_en: "Sprite Diet", price: 0, sort_order: 5, is_active: true },
+        { addon_group_id: agMap["MealDrink"], name_ar: "كابي", name_en: "Cappy", price: 0, sort_order: 6, is_active: true },
+        { addon_group_id: agMap["MealDrink"], name_ar: "ماء", name_en: "Water", price: 0, sort_order: 7, is_active: true },
+        { addon_group_id: agMap["MealDrink"], name_ar: "كولا تشات", name_en: "Cola Chat", price: 0, sort_order: 8, is_active: true },
+        { addon_group_id: agMap["MealDrink"], name_ar: "كولا تشات زيرو", name_en: "Cola Chat Zero", price: 0, sort_order: 9, is_active: true },
+        { addon_group_id: agMap["MealDrink"], name_ar: "سبرايت تشات", name_en: "Sprite Chat", price: 0, sort_order: 10, is_active: true },
+        // Drink Upgrades
+        { addon_group_id: agMap["MealDrinkUpgrade"], name_ar: "XL", name_en: "XL", price: 4, sort_order: 1, is_active: true },
+        { addon_group_id: agMap["MealDrinkUpgrade"], name_ar: "بافاريا", name_en: "Bavaria", price: 4, sort_order: 2, is_active: true },
+        { addon_group_id: agMap["MealDrinkUpgrade"], name_ar: "صودا", name_en: "Soda", price: 4, sort_order: 3, is_active: true },
+        // Fries Upgrades
+        { addon_group_id: agMap["MealFries"], name_ar: "كيرلي", name_en: "Curly Fries", price: 5, sort_order: 1, is_active: true },
+        { addon_group_id: agMap["MealFries"], name_ar: "ويدجز", name_en: "Wedges", price: 5, sort_order: 2, is_active: true },
+        { addon_group_id: agMap["MealFries"], name_ar: "بطاطا حلوة", name_en: "Sweet Potato", price: 5, sort_order: 3, is_active: true },
+        { addon_group_id: agMap["MealFries"], name_ar: "كرات بطاطا", name_en: "Potato Balls", price: 5, sort_order: 4, is_active: true },
+      ];
+      await supabase.from("addon_group_items").upsert(items, { onConflict: 'addon_group_id,name_en' });
+    }
+  }
+
+  // 4.0 Sandwiches Addon Groups
+  const sandwichCatId = categoryMap["Sandwiches"];
+  if (sandwichCatId) {
+    const addonGroups = [
+      { name_ar: "النوع", name_en: "Type", category_id: sandwichCatId, group_type: "types", is_required: true, allow_multiple: false, sort_order: 1 },
+      { name_ar: "إضافات", name_en: "Addons", category_id: sandwichCatId, group_type: "addons", is_required: false, allow_multiple: true, sort_order: 2 },
+      { name_ar: "بدون", name_en: "Without", category_id: sandwichCatId, group_type: "without", is_required: false, allow_multiple: true, sort_order: 3 },
+      { name_ar: "🥤 اختر المشروب", name_en: "Select Drink", category_id: sandwichCatId, group_type: "MealDrink", is_required: true, allow_multiple: false, sort_order: 4 },
+      { name_ar: "🔄 تبديل المشروب", name_en: "Swap Drink", category_id: sandwichCatId, group_type: "MealDrinkUpgrade", is_required: false, allow_multiple: false, sort_order: 5 },
+      { name_ar: "🍟 تبديل البطاطا", name_en: "Swap Fries", category_id: sandwichCatId, group_type: "MealFries", is_required: false, allow_multiple: false, sort_order: 6 },
+    ];
+    const { data: agData, error: agError } = await supabase.from("addon_groups").upsert(addonGroups, { onConflict: 'name_en,category_id' }).select();
+    if (!agError && agData) {
+      const agMap = Object.fromEntries(agData.map(g => [g.group_type, g.id]));
+      const items = [
+        { addon_group_id: agMap["types"], name_ar: "ساندويش", name_en: "Sandwich", price: 0, sort_order: 1, is_active: true },
+        { addon_group_id: agMap["types"], name_ar: "وجبة (مع بطاطا ومشروب غازي)", name_en: "Meal (Fries & Drink)", price: 9, sort_order: 2, is_active: true },
+        // Addons
+        { addon_group_id: agMap["addons"], name_ar: "قطعة لحمة 120 غرام", name_en: "Extra Meat 120g", price: 12, sort_order: 1, is_active: true },
+        { addon_group_id: agMap["addons"], name_ar: "قطعة لحمة 150 غرام", name_en: "Extra Meat 150g", price: 15, sort_order: 2, is_active: true },
+        { addon_group_id: agMap["addons"], name_ar: "بورشن ريب آي", name_en: "Ribeye Portion", price: 15, sort_order: 3, is_active: true },
+        { addon_group_id: agMap["addons"], name_ar: "بورشن فيليه", name_en: "Fillet Portion", price: 12, sort_order: 4, is_active: true },
+        { addon_group_id: agMap["addons"], name_ar: "جبنة على البرغر", name_en: "Extra Cheese", price: 3, sort_order: 5, is_active: true },
+        { addon_group_id: agMap["addons"], name_ar: "بصل مكرمل", name_en: "Caramelized Onion", price: 3, sort_order: 6, is_active: true },
+        { addon_group_id: agMap["addons"], name_ar: "ماشروم", name_en: "Mushroom", price: 3, sort_order: 7, is_active: true },
+        { addon_group_id: agMap["addons"], name_ar: "خبز خالي من الجلوتين", name_en: "Gluten Free Bread", price: 5, sort_order: 8, is_active: true },
+        { addon_group_id: agMap["addons"], name_ar: "أفوكادو", name_en: "Avocado", price: 5, sort_order: 9, is_active: true },
+        { addon_group_id: agMap["addons"], name_ar: "هالبينو", name_en: "Jalapeno", price: 3, sort_order: 10, is_active: true },
+        { addon_group_id: agMap["addons"], name_ar: "أصبعين موزاريلا", name_en: "2 Mozzarella Sticks", price: 8, sort_order: 11, is_active: true },
+        { addon_group_id: agMap["addons"], name_ar: "3 حلقات بصل", name_en: "3 Onion Rings", price: 5, sort_order: 12, is_active: true },
+        { addon_group_id: agMap["addons"], name_ar: "وايت صوص", name_en: "White Sauce", price: 5, sort_order: 13, is_active: true },
+        // Without
+        { addon_group_id: agMap["without"], name_ar: "مخلل", name_en: "Pickles", price: 0, sort_order: 1, is_active: true },
+        { addon_group_id: agMap["without"], name_ar: "بندورة", name_en: "Tomato", price: 0, sort_order: 2, is_active: true },
+        { addon_group_id: agMap["without"], name_ar: "بصل", name_en: "Onion", price: 0, sort_order: 3, is_active: true },
+        { addon_group_id: agMap["without"], name_ar: "جبنة", name_en: "Cheese", price: 0, sort_order: 4, is_active: true },
+        { addon_group_id: agMap["without"], name_ar: "خس", name_en: "Lettuce", price: 0, sort_order: 5, is_active: true },
+        { addon_group_id: agMap["without"], name_ar: "صوص", name_en: "Sauce", price: 0, sort_order: 6, is_active: true },
+        // Drinks
+        { addon_group_id: agMap["MealDrink"], name_ar: "كولا", name_en: "Cola", price: 0, sort_order: 1, is_active: true },
+        { addon_group_id: agMap["MealDrink"], name_ar: "كولا زيرو", name_en: "Cola Zero", price: 0, sort_order: 2, is_active: true },
+        { addon_group_id: agMap["MealDrink"], name_ar: "فانتا", name_en: "Fanta", price: 0, sort_order: 3, is_active: true },
+        { addon_group_id: agMap["MealDrink"], name_ar: "سبرايت", name_en: "Sprite", price: 0, sort_order: 4, is_active: true },
+        { addon_group_id: agMap["MealDrink"], name_ar: "سبرايت دايت", name_en: "Sprite Diet", price: 0, sort_order: 5, is_active: true },
+        { addon_group_id: agMap["MealDrink"], name_ar: "كابي", name_en: "Cappy", price: 0, sort_order: 6, is_active: true },
+        { addon_group_id: agMap["MealDrink"], name_ar: "ماء", name_en: "Water", price: 0, sort_order: 7, is_active: true },
+        { addon_group_id: agMap["MealDrink"], name_ar: "كولا تشات", name_en: "Cola Chat", price: 0, sort_order: 8, is_active: true },
+        { addon_group_id: agMap["MealDrink"], name_ar: "كولا تشات زيرو", name_en: "Cola Chat Zero", price: 0, sort_order: 9, is_active: true },
+        { addon_group_id: agMap["MealDrink"], name_ar: "سبرايت تشات", name_en: "Sprite Chat", price: 0, sort_order: 10, is_active: true },
+        // Swaps
+        { addon_group_id: agMap["MealDrinkUpgrade"], name_ar: "XL", name_en: "XL", price: 4, sort_order: 1, is_active: true },
+        { addon_group_id: agMap["MealDrinkUpgrade"], name_ar: "بافاريا", name_en: "Bavaria", price: 4, sort_order: 2, is_active: true },
+        { addon_group_id: agMap["MealDrinkUpgrade"], name_ar: "صودا", name_en: "Soda", price: 4, sort_order: 3, is_active: true },
+        { addon_group_id: agMap["MealFries"], name_ar: "كيرلي", name_en: "Curly Fries", price: 5, sort_order: 1, is_active: true },
+        { addon_group_id: agMap["MealFries"], name_ar: "ويدجز", name_en: "Wedges", price: 5, sort_order: 2, is_active: true },
+        { addon_group_id: agMap["MealFries"], name_ar: "بطاطا حلوة", name_en: "Sweet Potato", price: 5, sort_order: 3, is_active: true },
+        { addon_group_id: agMap["MealFries"], name_ar: "كرات بطاطا", name_en: "Potato Balls", price: 5, sort_order: 4, is_active: true },
       ];
       await supabase.from("addon_group_items").upsert(items, { onConflict: 'addon_group_id,name_en' });
     }

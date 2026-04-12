@@ -29,7 +29,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const whatsapp = "970222950505";
   const phone = "022950505";
   const email = "uptownramallah@gmail.com";
-  const address = isAr ? "رام الله - فلسطين" : "Ramallah - Palestine";
+  const address = isAr ? "فلسطين - رام الله" : "Palestine - Ramallah";
 
   const header = (
     <header className="premium-header" id="site-header" style={{ borderBottom: '1px solid #eee', background: '#fff', padding: '2px 0', position: 'sticky', top: 0, zIndex: 2000 }}>
@@ -101,7 +101,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <img src="/logo.jpeg" alt={siteName} style={{ height: '70px', width: 'auto', marginBottom: '15px' }} />
           </div>
           <p style={{ color: '#666', fontSize: '15px', lineHeight: '1.6', maxWidth: '300px', fontWeight: 600 }}>
-            {isAr ? "ساعات العمل:" : "Working Hours:"}<br/>
+            {isAr ? "ساعات العمل:" : "Working Hours:"}<br />
             <span style={{ color: '#cf1f28', fontWeight: 800 }}>{isAr ? "١٠:٠٠ صباحاً - ١٢:٠٠ منتصف الليل" : "10:00 AM - 12:00 AM"}</span>
           </p>
         </div>
@@ -116,6 +116,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <li style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px', color: '#555' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
               <span>{email}</span>
+            </li>
+            <li style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px', color: '#555' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+              <span>{address}</span>
             </li>
           </ul>
         </div>

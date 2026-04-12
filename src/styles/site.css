@@ -176,8 +176,8 @@ textarea:focus {
   width: 45px;
   height: 45px;
   border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  background: transparent;
+  box-shadow: none;
   transition: all 0.3s ease;
 }
 
