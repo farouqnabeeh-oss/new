@@ -1089,6 +1089,67 @@ export const mockAddonGroups = [
     items: [
       { id: 2301, nameAr: "دجاج", nameEn: "Chicken", price: 8, sortOrder: 1, isActive: true }
     ]
+  },
+  // Hot Drinks (109) - General addons for all hot drinks
+  {
+    id: 24, nameAr: "الحجم", nameEn: "Size", categoryId: 109, productId: null, groupType: "sizes", isRequired: true, allowMultiple: false, sortOrder: 3, isActive: true,
+    items: [
+      { id: 2401, nameAr: "صغير", nameEn: "Small", price: 0, sortOrder: 1, isActive: true },
+      { id: 2402, nameAr: "وسط", nameEn: "Medium", price: 2, sortOrder: 2, isActive: true },
+      { id: 2403, nameAr: "كبير", nameEn: "Large", price: 4, sortOrder: 3, isActive: true }
+    ]
+  },
+  {
+    id: 25, nameAr: "نوع الحليب", nameEn: "Milk Type", categoryId: 109, productId: null, groupType: "addons", isRequired: false, allowMultiple: false, sortOrder: 4, isActive: true,
+    items: [
+      { id: 2501, nameAr: "حليب عادي", nameEn: "Regular Milk", price: 0, sortOrder: 1, isActive: true },
+      { id: 2502, nameAr: "حليب شوفان", nameEn: "Oat Milk", price: 3, sortOrder: 2, isActive: true },
+      { id: 2503, nameAr: "حليب لوز", nameEn: "Almond Milk", price: 3, sortOrder: 3, isActive: true },
+      { id: 2504, nameAr: "حليب خالٍ من الدسم", nameEn: "Skim Milk", price: 0, sortOrder: 4, isActive: true }
+    ]
+  },
+  {
+    id: 26, nameAr: "السكر", nameEn: "Sugar", categoryId: 109, productId: null, groupType: "addons", isRequired: false, allowMultiple: false, sortOrder: 5, isActive: true,
+    items: [
+      { id: 2601, nameAr: "بدون سكر", nameEn: "No Sugar", price: 0, sortOrder: 1, isActive: true },
+      { id: 2602, nameAr: "سكر عادي", nameEn: "Regular Sugar", price: 0, sortOrder: 2, isActive: true },
+      { id: 2603, nameAr: "سكر مضاعف", nameEn: "Extra Sugar", price: 0, sortOrder: 3, isActive: true }
+    ]
+  },
+  // Cold Coffee (106) - General addons
+  {
+    id: 27, nameAr: "الحجم", nameEn: "Size", categoryId: 106, productId: null, groupType: "sizes", isRequired: true, allowMultiple: false, sortOrder: 1, isActive: true,
+    items: [
+      { id: 2701, nameAr: "صغير", nameEn: "Small", price: 0, sortOrder: 1, isActive: true },
+      { id: 2702, nameAr: "وسط", nameEn: "Medium", price: 2, sortOrder: 2, isActive: true },
+      { id: 2703, nameAr: "كبير", nameEn: "Large", price: 4, sortOrder: 3, isActive: true }
+    ]
+  },
+  {
+    id: 28, nameAr: "نوع الحليب", nameEn: "Milk Type", categoryId: 106, productId: null, groupType: "addons", isRequired: false, allowMultiple: false, sortOrder: 2, isActive: true,
+    items: [
+      { id: 2801, nameAr: "حليب عادي", nameEn: "Regular Milk", price: 0, sortOrder: 1, isActive: true },
+      { id: 2802, nameAr: "حليب شوفان", nameEn: "Oat Milk", price: 3, sortOrder: 2, isActive: true },
+      { id: 2803, nameAr: "حليب لوز", nameEn: "Almond Milk", price: 3, sortOrder: 3, isActive: true },
+      { id: 2804, nameAr: "حليب خالٍ من الدسم", nameEn: "Skim Milk", price: 0, sortOrder: 4, isActive: true }
+    ]
+  },
+  {
+    id: 29, nameAr: "الثلج", nameEn: "Ice Level", categoryId: 106, productId: null, groupType: "addons", isRequired: false, allowMultiple: false, sortOrder: 3, isActive: true,
+    items: [
+      { id: 2901, nameAr: "بدون ثلج", nameEn: "No Ice", price: 0, sortOrder: 1, isActive: true },
+      { id: 2902, nameAr: "ثلج عادي", nameEn: "Regular Ice", price: 0, sortOrder: 2, isActive: true },
+      { id: 2903, nameAr: "ثلج مضاعف", nameEn: "Extra Ice", price: 0, sortOrder: 3, isActive: true }
+    ]
+  },
+  // Salads (105) - Addons
+  {
+    id: 30, nameAr: "إضافات", nameEn: "Addons", categoryId: 105, productId: null, groupType: "addons", isRequired: false, allowMultiple: true, sortOrder: 1, isActive: true,
+    items: [
+      { id: 3001, nameAr: "دجاج مشوي", nameEn: "Grilled Chicken", price: 8, sortOrder: 1, isActive: true },
+      { id: 3002, nameAr: "جبنة فيتا", nameEn: "Feta Cheese", price: 5, sortOrder: 2, isActive: true },
+      { id: 3003, nameAr: "جبنة حلومي", nameEn: "Halloumi", price: 7, sortOrder: 3, isActive: true }
+    ]
   }
 ];
 
