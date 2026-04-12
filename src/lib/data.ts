@@ -431,7 +431,10 @@ export async function getProductById(id: number) {
       ...product,
       categoryNameAr: "بدون قسم",
       categoryNameEn: "No Category",
-      addonGroups: mock.mockAddonGroups.filter(g => g.categoryId === product.categoryId)
+      addonGroups: mock.mockAddonGroups.filter(g =>
+        g.categoryId === product.categoryId &&
+        (g.productId === null || g.productId === product.id)
+      )
     } as any;
   }
   const supabase = getSupabaseAdmin();
