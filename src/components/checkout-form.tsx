@@ -80,7 +80,6 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!isOpen) return alert(isAr ? "عذراً، المطعم مغلق حالياً ولا يمكن استقبال الطلبات." : "Sorry, the restaurant is currently closed and cannot receive orders.");
         if (cartItems.length === 0) return alert(isAr ? "السلة فارغة" : "Cart is empty");
 
         const name = (document.getElementById('customer-name') as HTMLInputElement).value.trim();
@@ -471,15 +470,15 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                         <button 
                             type="submit" 
                             className="uptown-btn red-gradient" 
-                            disabled={isPending || !isOpen || (!!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && !captchaToken)} 
+                            disabled={isPending || (!!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && !captchaToken)} 
                             style={{ 
-                                opacity: (!isOpen || (!!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && !captchaToken)) ? 0.6 : 1, 
-                                cursor: (!isOpen || (!!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && !captchaToken)) ? 'not-allowed' : 'pointer' 
+                                opacity: (isPending || (!!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && !captchaToken)) ? 0.6 : 1, 
+                                cursor: (isPending || (!!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && !captchaToken)) ? 'not-allowed' : 'pointer' 
                             }}
                         >
                             <CheckCircle2 color="#fff" />
                             {!isOpen
-                                ? (isAr ? 'المطعم مغلق حالياً' : 'Restaurant Closed')
+                                ? (isAr ? 'إرسال الطلب (المطعم مغلق)' : 'Send Order (Closed Now)')
                                 : (isPending
                                     ? (isAr ? 'جاري المعالجة...' : 'Processing...')
                                     : (paymentMethod === 'palpay'
