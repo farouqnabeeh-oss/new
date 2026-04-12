@@ -762,7 +762,7 @@ export const mockAddonGroups = [
     ]
   },
   {
-    id: 3, nameAr: "إضافات", nameEn: "Addons", categoryId: 113, productId: null, groupType: "addons", isRequired: false, allowMultiple: true, sortOrder: 3, isActive: true,
+    id: 3, nameAr: "➕ الإضافات", nameEn: "Addons", categoryId: 113, productId: null, groupType: "addons", isRequired: false, allowMultiple: true, sortOrder: 3, isActive: true,
     items: [
       { id: 301, nameAr: "قطعة لحمة 120 غرام", nameEn: "Extra Meat 120g", price: 12, sortOrder: 1, isActive: true },
       { id: 302, nameAr: "قطعة لحمة 150 غرام", nameEn: "Extra Meat 150g", price: 15, sortOrder: 2, isActive: true },
@@ -780,7 +780,7 @@ export const mockAddonGroups = [
     ]
   },
   {
-    id: 4, nameAr: "بدون", nameEn: "Without", categoryId: 113, productId: null, groupType: "without", isRequired: false, allowMultiple: true, sortOrder: 4, isActive: true,
+    id: 4, nameAr: "🚫 بدون", nameEn: "Without", categoryId: 113, productId: null, groupType: "without", isRequired: false, allowMultiple: true, sortOrder: 4, isActive: true,
     items: [
       { id: 401, nameAr: "مخلل", nameEn: "Pickles", price: 0, sortOrder: 1, isActive: true },
       { id: 402, nameAr: "بندورة", nameEn: "Tomato", price: 0, sortOrder: 2, isActive: true },
@@ -791,7 +791,7 @@ export const mockAddonGroups = [
     ]
   },
   {
-    id: 5, nameAr: "🥤 اختر المشروب", nameEn: "Select Drink", categoryId: 113, productId: null, groupType: "MealDrink", isRequired: true, allowMultiple: false, sortOrder: 5, isActive: true,
+    id: 5, nameAr: "🥤 اختر المشروب (مطلوب – للوجبة فقط)", nameEn: "Select Drink", categoryId: 113, productId: null, groupType: "MealDrink", isRequired: true, allowMultiple: false, sortOrder: 5, isActive: true,
     items: [
       { id: 501, nameAr: "كولا", nameEn: "Cola", price: 0, sortOrder: 1, isActive: true },
       { id: 502, nameAr: "كولا زيرو", nameEn: "Cola Zero", price: 0, sortOrder: 2, isActive: true },
@@ -831,7 +831,7 @@ export const mockAddonGroups = [
     ]
   },
   {
-    id: 9, nameAr: "🥤 اختر المشروب", nameEn: "Select Drink", categoryId: 101, productId: null, groupType: "MealDrink", isRequired: true, allowMultiple: false, sortOrder: 3, isActive: true,
+    id: 9, nameAr: "🥤 اختر المشروب (مطلوب – للوجبة فقط)", nameEn: "Select Drink", categoryId: 101, productId: null, groupType: "MealDrink", isRequired: true, allowMultiple: false, sortOrder: 3, isActive: true,
     items: [
       { id: 901, nameAr: "كولا", nameEn: "Cola", price: 0, sortOrder: 1, isActive: true },
       { id: 902, nameAr: "كولا زيرو", nameEn: "Cola Zero", price: 0, sortOrder: 2, isActive: true },
@@ -875,7 +875,7 @@ export const mockAddonGroups = [
   },
   // Sandwiches (101)
   {
-    id: 5, nameAr: "إضافات ساندويشات", nameEn: "Sandwich Addons", categoryId: 101, productId: null, groupType: "addons", isRequired: false, allowMultiple: true, sortOrder: 1, isActive: true,
+    id: 5, nameAr: "➕ الإضافات", nameEn: "Addons", categoryId: 101, productId: null, groupType: "addons", isRequired: false, allowMultiple: true, sortOrder: 1, isActive: true,
     items: [
       { id: 501, nameAr: "قطعة لحمة 120 غرام", nameEn: "Extra Meat 120g", price: 12, sortOrder: 1, isActive: true },
       { id: 502, nameAr: "قطعة لحمة 150 غرام", nameEn: "Extra Meat 150g", price: 15, sortOrder: 2, isActive: true },
@@ -893,7 +893,7 @@ export const mockAddonGroups = [
     ]
   },
   {
-    id: 6, nameAr: "بدون", nameEn: "Without", categoryId: 101, productId: null, groupType: "without", isRequired: false, allowMultiple: true, sortOrder: 2, isActive: true,
+    id: 6, nameAr: "🚫 بدون", nameEn: "Without", categoryId: 101, productId: null, groupType: "without", isRequired: false, allowMultiple: true, sortOrder: 2, isActive: true,
     items: [
       { id: 601, nameAr: "مخلل", nameEn: "Pickles", price: 0, sortOrder: 1, isActive: true },
       { id: 602, nameAr: "بندورة", nameEn: "Tomato", price: 0, sortOrder: 2, isActive: true },

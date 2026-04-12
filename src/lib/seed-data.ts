@@ -598,10 +598,10 @@ export async function seedRestaurantData() {
     const addonGroups = [
       { name_ar: "الحجم", name_en: "Size", category_id: burgerCatId, group_type: "sizes", is_required: true, allow_multiple: false, sort_order: 1 },
       { name_ar: "النوع", name_en: "Type", category_id: burgerCatId, group_type: "types", is_required: true, allow_multiple: false, sort_order: 2 },
-      { name_ar: "إضافات", name_en: "Addons", category_id: burgerCatId, group_type: "addons", is_required: false, allow_multiple: true, sort_order: 3 },
-      { name_ar: "بدون", name_en: "Without", category_id: burgerCatId, group_type: "without", is_required: false, allow_multiple: true, sort_order: 4 },
+      { name_ar: "➕ الإضافات", name_en: "Addons", category_id: burgerCatId, group_type: "addons", is_required: false, allow_multiple: true, sort_order: 3 },
+      { name_ar: "🚫 بدون", name_en: "Without", category_id: burgerCatId, group_type: "without", is_required: false, allow_multiple: true, sort_order: 4 },
       // Meal Specific Selections
-      { name_ar: "🥤 اختر المشروب", name_en: "Select Drink", category_id: burgerCatId, group_type: "MealDrink", is_required: true, allow_multiple: false, sort_order: 5 },
+      { name_ar: "🥤 اختر المشروب (مطلوب – للوجبة فقط)", name_en: "Select Drink", category_id: burgerCatId, group_type: "MealDrink", is_required: true, allow_multiple: false, sort_order: 5 },
       { name_ar: "🔄 تبديل المشروب", name_en: "Swap Drink", category_id: burgerCatId, group_type: "MealDrinkUpgrade", is_required: false, allow_multiple: false, sort_order: 6 },
       { name_ar: "🍟 تبديل البطاطا", name_en: "Swap Fries", category_id: burgerCatId, group_type: "MealFries", is_required: false, allow_multiple: false, sort_order: 7 },
     ];
@@ -671,9 +671,9 @@ export async function seedRestaurantData() {
   if (sandwichCatId) {
     const addonGroups = [
       { name_ar: "النوع", name_en: "Type", category_id: sandwichCatId, group_type: "types", is_required: true, allow_multiple: false, sort_order: 1 },
-      { name_ar: "إضافات", name_en: "Addons", category_id: sandwichCatId, group_type: "addons", is_required: false, allow_multiple: true, sort_order: 2 },
-      { name_ar: "بدون", name_en: "Without", category_id: sandwichCatId, group_type: "without", is_required: false, allow_multiple: true, sort_order: 3 },
-      { name_ar: "🥤 اختر المشروب", name_en: "Select Drink", category_id: sandwichCatId, group_type: "MealDrink", is_required: true, allow_multiple: false, sort_order: 4 },
+      { name_ar: "➕ الإضافات", name_en: "Addons", category_id: sandwichCatId, group_type: "addons", is_required: false, allow_multiple: true, sort_order: 2 },
+      { name_ar: "🚫 بدون", name_en: "Without", category_id: sandwichCatId, group_type: "without", is_required: false, allow_multiple: true, sort_order: 3 },
+      { name_ar: "🥤 اختر المشروب (مطلوب – للوجبة فقط)", name_en: "Select Drink", category_id: sandwichCatId, group_type: "MealDrink", is_required: true, allow_multiple: false, sort_order: 4 },
       { name_ar: "🔄 تبديل المشروب", name_en: "Swap Drink", category_id: sandwichCatId, group_type: "MealDrinkUpgrade", is_required: false, allow_multiple: false, sort_order: 5 },
       { name_ar: "🍟 تبديل البطاطا", name_en: "Swap Fries", category_id: sandwichCatId, group_type: "MealFries", is_required: false, allow_multiple: false, sort_order: 6 },
     ];
