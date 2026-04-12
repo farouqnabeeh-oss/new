@@ -62,9 +62,10 @@ export default function MenuClient({ categories, allProducts, branch, isAr, curr
               <div class="up-img-wrap" onclick="window.viewP('${p.id}')" style="cursor:pointer"><img src="${image}" class="up-img" loading="lazy" /></div>
               <div class="up-body">
                 <div class="up-title" onclick="window.viewP('${p.id}')" style="cursor:pointer">${isAr ? p.nameAr : p.nameEn}</div>
+                <div class="up-desc">${isAr ? (p.descriptionAr || '') : (p.descriptionEn || '')}</div>
                 <div class="up-footer">
                   <div class="up-price-box">
-                    <span class="up-price-tag">${finalPrice.toFixed(0)}${currency}</span>
+                    <span class="up-price-tag">${finalPrice % 1 === 0 ? finalPrice.toFixed(0) : finalPrice.toFixed(1)}${currency}</span>
                     ${disc > 0 ? `<span class="up-price-old">${priceRaw.toFixed(0)}${currency}</span>` : ''}
                   </div>
                   <button class="up-add-pill" onclick="event.stopPropagation(); window.viewP('${p.id}')">${isAr ? "أضف للسلة" : "Add to Cart"}</button>

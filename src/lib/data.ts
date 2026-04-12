@@ -219,7 +219,6 @@ function mapAdminUser(row: Record<string, unknown>): AdminUser {
 
 export async function getActiveBanners() {
   noStore();
-  if (isMockMode) return [] as MenuBanner[];
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("menu_banners")
@@ -358,8 +357,8 @@ export async function getCategories(branchSlug?: string | null) {
     const { data, error } = await query;
 
     if (error || !data || data.length === 0) {
-      console.warn("DB categories empty or error, falling back to mock");
-      return mock.mockCategories as any[];
+      console.warn("DB categories empty or error");
+      return [];
     }
 
     return data.map((row) => {
@@ -368,14 +367,13 @@ export async function getCategories(branchSlug?: string | null) {
       return { ...category, productCount };
     });
   } catch (e) {
-    console.error("Fetch categories failed, falling back to mock", e);
-    return mock.mockCategories as any[];
+    console.error("Fetch categories failed", e);
+    return [];
   }
 }
 
 export async function getProducts(branchSlug?: string | null, categoryId?: number | null) {
   noStore();
-  if (isMockMode) return mock.mockProducts.filter(p => !categoryId || p.categoryId === categoryId) as unknown as Product[];
   try {
     const supabase = getSupabaseAdmin();
 
@@ -403,34 +401,19 @@ export async function getProducts(branchSlug?: string | null, categoryId?: numbe
     const { data, error } = await query;
 
     if (error || !data || data.length === 0) {
-      console.warn("DB products empty or error, falling back to mock");
-      const filtered = mock.mockProducts.filter(p => !categoryId || p.categoryId === categoryId);
-      return filtered as unknown as Product[];
+      console.warn("DB products empty or error");
+      return [];
     }
 
     return data.map((row) => mapProduct(row));
   } catch (e) {
-    console.error("Fetch products failed, falling back to mock", e);
-    return mock.mockProducts.filter(p => !categoryId || p.categoryId === categoryId) as any[];
+    console.error("Fetch products failed", e);
+    return [];
   }
 }
 
 export async function getProductById(id: number) {
   noStore();
-  
-  if (isMockMode) {
-    const product = mock.mockProducts.find((p) => p.id === id);
-    if (!product) return null;
-    const cat = mock.mockCategories.find(c => c.id === product.categoryId);
-    const addonGroups = await getAddonGroups(product.categoryId, product.id);
-    return {
-      ...product,
-      categoryNameAr: cat?.nameAr ?? "",
-      categoryNameEn: cat?.nameEn ?? "",
-      addonGroups
-    } as any;
-  }
-
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("products")
@@ -439,7 +422,8 @@ export async function getProductById(id: number) {
     .maybeSingle();
 
   if (error) {
-    throw error;
+    console.error("Error fetching product by id:", error);
+    return null;
   }
 
   if (!data) {
@@ -455,7 +439,6 @@ export async function getProductById(id: number) {
     .select("*, addon_group_items(*)")
     .eq("category_id", product.categoryId)
     .eq("is_active", true)
-    .or(`product_id.is.null,product_id.eq.${product.id}`)
     .order("sort_order");
 
   const addonGroups = (addonGroupsData ?? []).map(row => mapAddonGroup(row));
@@ -471,37 +454,12 @@ export async function getProductById(id: number) {
 export async function getAddonGroups(categoryId?: number | null, productId?: number | null) {
   noStore();
   
-  if (isMockMode) {
-    let effectiveCategoryId = categoryId ?? null;
-    
-    // If productId is provided but no categoryId, look up the product's category
-    if (productId && !effectiveCategoryId) {
-      const p = mock.mockProducts.find(x => x.id === productId);
-      effectiveCategoryId = p?.categoryId ?? null;
-    }
-
-    if (!effectiveCategoryId) return [];
-
-    return mock.mockAddonGroups.filter(g => {
-      // Must match category
-      if (g.categoryId !== effectiveCategoryId) return false;
-      
-      // If filtering for a specific product, show product-specific groups OR generic category groups
-      if (productId) {
-        return g.productId === null || g.productId === productId;
-      }
-      
-      // If only filtering for category, show generic category groups only
-      return g.productId === null;
-    }) as unknown as AddonGroup[];
-  }
-
   try {
     const supabase = getSupabaseAdmin();
 
     let effectiveCategoryId = categoryId ?? null;
 
-    if (productId) {
+    if (productId && !effectiveCategoryId) {
       const { data } = await supabase
         .from("products")
         .select("category_id")

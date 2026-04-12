@@ -192,9 +192,6 @@ export default async function MenuPage({ params }: MenuPageProps) {
           text-align: center;
           padding: 0 10px;
         }
-
-        /* 🔽 HIDE LIST ELEMENTS */
-        .up-card .up-desc { display: none !important; }
       `}} />
 
       <div className="hero-gap" />
