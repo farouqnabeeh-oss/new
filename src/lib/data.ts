@@ -338,7 +338,7 @@ export async function getMenuBanners() {
 
 export async function getCategories(branchSlug?: string | null) {
   noStore();
-  if (isMockMode) return mock.mockCategories as unknown as (Category & { productCount: number })[];
+  if (isMockMode) return [...mock.mockCategories].sort((a, b) => a.sortOrder - b.sortOrder) as unknown as (Category & { productCount: number })[];
   try {
     const supabase = getSupabaseAdmin();
 
