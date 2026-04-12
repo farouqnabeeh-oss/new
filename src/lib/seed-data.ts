@@ -600,17 +600,17 @@ export async function seedRestaurantData() {
     await supabase.from("addon_groups").delete().eq("category_id", burgerCatId);
 
     const addonGroups = [
-      { name_ar: "الحجم", name_en: "Size", category_id: burgerCatId, group_type: "sizes", is_required: true, allow_multiple: false, sort_order: 1 },
-      { name_ar: "النوع", name_en: "Type", category_id: burgerCatId, group_type: "types", is_required: true, allow_multiple: false, sort_order: 2 },
-      { name_ar: "➕ الإضافات", name_en: "Addons", category_id: burgerCatId, group_type: "addons", is_required: false, allow_multiple: true, sort_order: 3 },
-      { name_ar: "🚫 بدون", name_en: "Without", category_id: burgerCatId, group_type: "without", is_required: false, allow_multiple: true, sort_order: 4 },
+      { name_ar: "الحجم", name_en: "Size", category_id: burgerCatId, group_type: "sizes", is_required: true, allow_multiple: false, sort_order: 1, is_active: true },
+      { name_ar: "النوع", name_en: "Type", category_id: burgerCatId, group_type: "types", is_required: true, allow_multiple: false, sort_order: 2, is_active: true },
+      { name_ar: "➕ الإضافات", name_en: "Addons", category_id: burgerCatId, group_type: "addons", is_required: false, allow_multiple: true, sort_order: 3, is_active: true },
+      { name_ar: "🚫 بدون", name_en: "Without", category_id: burgerCatId, group_type: "without", is_required: false, allow_multiple: true, sort_order: 4, is_active: true },
       // Meal Specific Selections
-      { name_ar: "🥤 اختر المشروب (مطلوب – للوجبة فقط)", name_en: "Select Drink", category_id: burgerCatId, group_type: "MealDrink", is_required: true, allow_multiple: false, sort_order: 5 },
-      { name_ar: "🔄 تبديل المشروب", name_en: "Swap Drink", category_id: burgerCatId, group_type: "MealDrinkUpgrade", is_required: false, allow_multiple: false, sort_order: 6 },
-      { name_ar: "🍟 تبديل البطاطا", name_en: "Swap Fries", category_id: burgerCatId, group_type: "MealFries", is_required: false, allow_multiple: false, sort_order: 7 },
+      { name_ar: "🥤 اختر المشروب (مطلوب – للوجبة فقط)", name_en: "Select Drink", category_id: burgerCatId, group_type: "MealDrink", is_required: true, allow_multiple: false, sort_order: 5, is_active: true },
+      { name_ar: "🔄 تبديل المشروب", name_en: "Swap Drink", category_id: burgerCatId, group_type: "MealDrinkUpgrade", is_required: false, allow_multiple: false, sort_order: 6, is_active: true },
+      { name_ar: "🍟 تبديل البطاطا", name_en: "Swap Fries", category_id: burgerCatId, group_type: "MealFries", is_required: false, allow_multiple: false, sort_order: 7, is_active: true },
     ];
 
-    const { data: agData, error: agError } = await supabase.from("addon_groups").upsert(addonGroups, { onConflict: 'name_en,category_id' }).select();
+    const { data: agData, error: agError } = await supabase.from("addon_groups").insert(addonGroups).select();
     if (!agError && agData) {
       const agMap = Object.fromEntries(agData.map(g => [g.group_type, g.id]));
 
@@ -666,7 +666,7 @@ export async function seedRestaurantData() {
         { addon_group_id: agMap["MealFries"], name_ar: "بطاطا حلوة", name_en: "Sweet Potato", price: 5, sort_order: 3, is_active: true },
         { addon_group_id: agMap["MealFries"], name_ar: "كرات بطاطا", name_en: "Potato Balls", price: 5, sort_order: 4, is_active: true },
       ];
-      await supabase.from("addon_group_items").upsert(items, { onConflict: 'addon_group_id,name_en' });
+      await supabase.from("addon_group_items").insert(items);
     }
   }
 
@@ -678,14 +678,14 @@ export async function seedRestaurantData() {
     await supabase.from("addon_groups").delete().eq("category_id", sandwichCatId);
 
     const addonGroups = [
-      { name_ar: "النوع", name_en: "Type", category_id: sandwichCatId, group_type: "types", is_required: true, allow_multiple: false, sort_order: 1 },
-      { name_ar: "➕ الإضافات", name_en: "Addons", category_id: sandwichCatId, group_type: "addons", is_required: false, allow_multiple: true, sort_order: 2 },
-      { name_ar: "🚫 بدون", name_en: "Without", category_id: sandwichCatId, group_type: "without", is_required: false, allow_multiple: true, sort_order: 3 },
-      { name_ar: "🥤 اختر المشروب (مطلوب – للوجبة فقط)", name_en: "Select Drink", category_id: sandwichCatId, group_type: "MealDrink", is_required: true, allow_multiple: false, sort_order: 4 },
-      { name_ar: "🔄 تبديل المشروب", name_en: "Swap Drink", category_id: sandwichCatId, group_type: "MealDrinkUpgrade", is_required: false, allow_multiple: false, sort_order: 5 },
-      { name_ar: "🍟 تبديل البطاطا", name_en: "Swap Fries", category_id: sandwichCatId, group_type: "MealFries", is_required: false, allow_multiple: false, sort_order: 6 },
+      { name_ar: "النوع", name_en: "Type", category_id: sandwichCatId, group_type: "types", is_required: true, allow_multiple: false, sort_order: 1, is_active: true },
+      { name_ar: "➕ الإضافات", name_en: "Addons", category_id: sandwichCatId, group_type: "addons", is_required: false, allow_multiple: true, sort_order: 2, is_active: true },
+      { name_ar: "🚫 بدون", name_en: "Without", category_id: sandwichCatId, group_type: "without", is_required: false, allow_multiple: true, sort_order: 3, is_active: true },
+      { name_ar: "🥤 اختر المشروب (مطلوب – للوجبة فقط)", name_en: "Select Drink", category_id: sandwichCatId, group_type: "MealDrink", is_required: true, allow_multiple: false, sort_order: 4, is_active: true },
+      { name_ar: "🔄 تبديل المشروب", name_en: "Swap Drink", category_id: sandwichCatId, group_type: "MealDrinkUpgrade", is_required: false, allow_multiple: false, sort_order: 5, is_active: true },
+      { name_ar: "🍟 تبديل البطاطا", name_en: "Swap Fries", category_id: sandwichCatId, group_type: "MealFries", is_required: false, allow_multiple: false, sort_order: 6, is_active: true },
     ];
-    const { data: agData, error: agError } = await supabase.from("addon_groups").upsert(addonGroups, { onConflict: 'name_en,category_id' }).select();
+    const { data: agData, error: agError } = await supabase.from("addon_groups").insert(addonGroups).select();
     if (!agError && agData) {
       const agMap = Object.fromEntries(agData.map(g => [g.group_type, g.id]));
       const items = [
@@ -732,7 +732,7 @@ export async function seedRestaurantData() {
         { addon_group_id: agMap["MealFries"], name_ar: "بطاطا حلوة", name_en: "Sweet Potato", price: 5, sort_order: 3, is_active: true },
         { addon_group_id: agMap["MealFries"], name_ar: "كرات بطاطا", name_en: "Potato Balls", price: 5, sort_order: 4, is_active: true },
       ];
-      await supabase.from("addon_group_items").upsert(items, { onConflict: 'addon_group_id,name_en' });
+      await supabase.from("addon_group_items").insert(items);
     }
   }
 
@@ -747,7 +747,7 @@ export async function seedRestaurantData() {
       const items = [
         { addon_group_id: agData[0].id, name_ar: "صحن أرز", name_en: "Rice Plate", price: 10, sort_order: 1, is_active: true },
       ];
-      await supabase.from("addon_group_items").upsert(items, { onConflict: 'addon_group_id,name_en' });
+      await supabase.from("addon_group_items").insert(items);
     }
   }
 
@@ -790,7 +790,7 @@ export async function seedRestaurantData() {
     const { data: sgData } = await supabase.from("addon_groups").upsert([sizeGroup], { onConflict: 'name_en,category_id' }).select();
     if (sgData) {
       const sizeItems = [
-        { addon_group_id: sgData[0].id, name_ar: "١٠ قطع", name_en: "10 Pieces", price: 0, sort_order: 1, is_active: true },
+        { addon_group_id: sgData[0].id, name_ar: "١٠ قطع", name_en: "10 Pieces", price: 13, sort_order: 1, is_active: true },
         { addon_group_id: sgData[0].id, name_ar: "٢٠ قطعة", name_en: "20 Pieces", price: 25, sort_order: 2, is_active: true }, // Placeholder +25
       ];
       await supabase.from("addon_group_items").upsert(sizeItems, { onConflict: 'addon_group_id,name_en' });
@@ -807,7 +807,7 @@ export async function seedRestaurantData() {
         { addon_group_id: kgData[0].id, name_ar: "مشوي", name_en: "Grilled", price: 0, sort_order: 1, is_active: true },
         { addon_group_id: kgData[0].id, name_ar: "مقلي", name_en: "Fried", price: 0, sort_order: 2, is_active: true },
       ];
-      await supabase.from("addon_group_items").upsert(items, { onConflict: 'addon_group_id,name_en' });
+      await supabase.from("addon_group_items").insert(items);
     }
   }
 
@@ -820,7 +820,7 @@ export async function seedRestaurantData() {
       const items = [
         { addon_group_id: magData[0].id, name_ar: "+1", name_en: "+1", price: 4, sort_order: 1, is_active: true },
       ];
-      await supabase.from("addon_group_items").upsert(items, { onConflict: 'addon_group_id,name_en' });
+      await supabase.from("addon_group_items").insert(items);
     }
   }
 
@@ -837,7 +837,7 @@ export async function seedRestaurantData() {
         { addon_group_id: jugData[0].id, name_ar: "ليمون", name_en: "Lemon", price: 0, sort_order: 2, is_active: true },
         { addon_group_id: jugData[0].id, name_ar: "ليمون و نعنع", name_en: "Lemon & Mint", price: 0, sort_order: 3, is_active: true },
       ];
-      await supabase.from("addon_group_items").upsert(items, { onConflict: 'addon_group_id,name_en' });
+      await supabase.from("addon_group_items").insert(items);
     }
   }
 
@@ -855,7 +855,7 @@ export async function seedRestaurantData() {
         { addon_group_id: smgData[0].id, name_ar: "مانجا مع مسفلورا", name_en: "Mango & Passion Fruit", price: 0, sort_order: 5, is_active: true },
         { addon_group_id: smgData[0].id, name_ar: "بينك ليموند", name_en: "Pink Lemonade", price: 0, sort_order: 6, is_active: true },
       ];
-      await supabase.from("addon_group_items").upsert(items, { onConflict: 'addon_group_id,name_en' });
+      await supabase.from("addon_group_items").insert(items);
     }
   }
 
@@ -873,7 +873,7 @@ export async function seedRestaurantData() {
         { addon_group_id: msgData[0].id, name_ar: "تشوكليت", name_en: "Chocolate", price: 0, sort_order: 5, is_active: true },
         { addon_group_id: msgData[0].id, name_ar: "كوفي كراش", name_en: "Coffee Crush", price: 0, sort_order: 6, is_active: true },
       ];
-      await supabase.from("addon_group_items").upsert(items, { onConflict: 'addon_group_id,name_en' });
+      await supabase.from("addon_group_items").insert(items);
     }
   }
 
@@ -887,7 +887,7 @@ export async function seedRestaurantData() {
         { addon_group_id: esgData[0].id, name_ar: "سنجل", name_en: "Single", price: 0, sort_order: 1, is_active: true },
         { addon_group_id: esgData[0].id, name_ar: "دبل", name_en: "Double", price: 4, sort_order: 2, is_active: true },
       ];
-      await supabase.from("addon_group_items").upsert(items, { onConflict: 'addon_group_id,name_en' });
+      await supabase.from("addon_group_items").insert(items);
     }
   }
 

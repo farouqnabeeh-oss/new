@@ -233,7 +233,7 @@ export const mockProducts = [
     basePrice: 30, discount: 10, categoryId: 103, branchId: null, allBranches: true, hasMealOption: false, hasDonenessOption: false, sortOrder: 1, isActive: true,
     imagePath: "/images/crispy-fried-wings__8a79zxxqhvr0ihm.jpg", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     sizes: [
-      { id: 10311, nameAr: "١٠ قطع", nameEn: "10 Pieces", price: 0 },
+      { id: 10311, nameAr: "١٠ قطع", nameEn: "10 Pieces", price: 13 },
       { id: 10312, nameAr: "٢٠ قطعة", nameEn: "20 Pieces", price: 25 }
     ], types: []
   },
@@ -956,7 +956,7 @@ export const mockAddonGroups = [
   {
     id: 13, nameAr: "الحجم", nameEn: "Size", categoryId: 103, productId: null, groupType: "sizes", isRequired: true, allowMultiple: false, sortOrder: 1, isActive: true,
     items: [
-      { id: 1301, nameAr: "١٠ قطع", nameEn: "10 Pieces", price: 0, sortOrder: 1, isActive: true },
+      { id: 1301, nameAr: "١٠ قطع", nameEn: "10 Pieces", price: 13, sortOrder: 1, isActive: true },
       { id: 1302, nameAr: "٢٠ قطعة", nameEn: "20 Pieces", price: 25, sortOrder: 2, isActive: true }
     ]
   },
