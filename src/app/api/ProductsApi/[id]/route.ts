@@ -33,13 +33,13 @@ export async function GET(_: Request, { params }: RouteContext) {
     hasDonenessOption: product.hasDonenessOption,
     sortOrder: product.sortOrder,
     isActive: product.isActive,
-    sizes: product.sizes.map((size) => ({
+    sizes: product.sizes.map((size: any) => ({
       id: size.id,
       nameAr: size.nameAr,
       nameEn: size.nameEn,
       price: size.price
     })),
-    types: product.types.map((type) => ({
+    types: product.types.map((type: any) => ({
       id: type.id,
       nameAr: type.nameAr,
       nameEn: type.nameEn,

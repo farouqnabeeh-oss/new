@@ -382,7 +382,7 @@ export async function getProducts(branchSlug?: string | null, categoryId?: numbe
   if (isMockMode) {
     let mockData = mock.mockProducts;
     if (categoryId) mockData = mockData.filter(p => p.categoryId === categoryId);
-    return mockData as Product[];
+    return mockData as unknown as Product[];
   }
   try {
     const supabase = getSupabaseAdmin();
