@@ -19,11 +19,11 @@ import * as mock from "@/lib/mock";
 const _supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const _supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || "";
 const isMockMode = !_supabaseUrl ||
-    !_supabaseKey ||
-    _supabaseUrl.includes("your-project") ||
-    _supabaseUrl.includes("your-supabase") ||
-    !_supabaseUrl.startsWith("https://") ||
-    !_supabaseUrl.includes(".supabase.co");
+  !_supabaseKey ||
+  _supabaseUrl.includes("your-project") ||
+  _supabaseUrl.includes("your-supabase") ||
+  !_supabaseUrl.startsWith("https://") ||
+  !_supabaseUrl.includes(".supabase.co");
 
 
 function mapBranch(row: Record<string, unknown>): Branch {
@@ -455,16 +455,30 @@ export async function getProductById(id: number) {
 
   const product = mapProduct(data);
   const category = data.categories as { name_ar?: string; name_en?: string } | null;
-  
+
   // Fetch Addon Groups for this product/category
   const { data: addonGroupsData } = await supabase
     .from("addon_groups")
     .select("*, addon_group_items(*)")
-    .eq("category_id", product.categoryId)
+    .or(`category_id.eq.${product.categoryId},product_id.eq.${product.id}`)
     .eq("is_active", true)
     .order("sort_order");
 
-  const addonGroups = (addonGroupsData ?? []).map(row => mapAddonGroup(row));
+  // Filter out category groups that are overridden by product-specific groups
+  // e.g. if there's a Size group for product 87 specifically, don't show the category-wide Size group
+  const addonGroups = (addonGroupsData ?? [])
+    .filter(row => {
+      // If this is a category-level group, check if there's a product-level group with same name/type
+      if (row.product_id === null && row.category_id !== null) {
+        const hasSpecificOverride = addonGroupsData?.some(
+          other => other.product_id === product.id &&
+            (other.group_type === row.group_type || other.name_ar === row.name_ar)
+        );
+        return !hasSpecificOverride;
+      }
+      return true;
+    })
+    .map(row => mapAddonGroup(row));
 
   return {
     ...product,
@@ -476,7 +490,7 @@ export async function getProductById(id: number) {
 
 export async function getAddonGroups(categoryId?: number | null, productId?: number | null) {
   noStore();
-  
+
   try {
     const supabase = getSupabaseAdmin();
 
@@ -620,14 +634,14 @@ export async function getAdminData() {
     createdAt: row.created_at,
     branch: row.branches ? mapBranch(row.branches) : null,
     items: (row.order_items ?? []).map((item: any) => ({
-        id: Number(item.id),
-        orderId: Number(item.order_id),
-        productId: Number(item.product_id),
-        productNameAr: String(item.product_name_ar),
-        productNameEn: String(item.product_name_en),
-        quantity: Number(item.quantity),
-        price: Number(item.price),
-        addonDetails: item.addon_details
+      id: Number(item.id),
+      orderId: Number(item.order_id),
+      productId: Number(item.product_id),
+      productNameAr: String(item.product_name_ar),
+      productNameEn: String(item.product_name_en),
+      quantity: Number(item.quantity),
+      price: Number(item.price),
+      addonDetails: item.addon_details
     }))
   })) as Order[];
   const customers = (customersResult.data ?? []) as Customer[];
@@ -650,7 +664,7 @@ export async function getAdminData() {
 export async function getSalesStats() {
   noStore();
   if (isMockMode) return { total: 12500, daily: 450, weekly: 3200, monthly: 12500 };
-  
+
   const supabase = getSupabaseAdmin();
   // We'll calculate stats from the orders table
   const { data: orders, error } = await supabase.from("orders").select("total_amount, created_at");
@@ -658,12 +672,12 @@ export async function getSalesStats() {
 
   const now = new Date();
   const today = now.toISOString().split('T')[0];
-  
+
   const total = orders.reduce((sum, o) => sum + Number(o.total_amount), 0);
   const daily = orders
     .filter(o => o.created_at.startsWith(today))
     .reduce((sum, o) => sum + Number(o.total_amount), 0);
-    
+
   return { total, daily, weekly: total * 0.4, monthly: total }; // Rough estimates for now
 }
 
