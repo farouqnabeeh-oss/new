@@ -457,9 +457,11 @@ export function AdminProductsTab({ products, categories, branches, settings, add
                   <div className="addons-scroll-area" style={{ maxHeight: '400px', overflowY: 'auto', padding: '5px' }}>
                     {(() => {
                       const filtered = addonGroups.filter(g => 
-                        (g.nameAr || '').includes(addonSearchTerm) || 
-                        (g.nameEn || '').toLowerCase().includes(addonSearchTerm.toLowerCase()) ||
-                        (g.groupType || '').toLowerCase().includes(addonSearchTerm.toLowerCase())
+                        g.isActive && (
+                          (g.nameAr || '').includes(addonSearchTerm) || 
+                          (g.nameEn || '').toLowerCase().includes(addonSearchTerm.toLowerCase()) ||
+                          (g.groupType || '').toLowerCase().includes(addonSearchTerm.toLowerCase())
+                        )
                       );
                       
                       const groupsByType: Record<string, typeof filtered> = {};
@@ -478,7 +480,7 @@ export function AdminProductsTab({ products, categories, branches, settings, add
                             {items.map(group => {
                               const isSelected = selectedAddonGroupIds.includes(group.id);
                               return (
-                                <label key={group.id} className={`addon-label ${isSelected ? 'selected' : ''}`}>
+                                <label key={group.id} className={`addon-label ${isSelected ? 'selected' : ''}`} title={group.items?.map(i => i.nameAr).join(', ')}>
                                   <input
                                     type="checkbox"
                                     checked={isSelected}
@@ -487,7 +489,12 @@ export function AdminProductsTab({ products, categories, branches, settings, add
                                       else updateAddons(prev => prev.filter(id => id !== group.id));
                                     }}
                                   />
-                                  <span className="addon-name">{group.nameAr || group.nameEn}</span>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    <span className="addon-name">{group.nameAr || group.nameEn}</span>
+                                    <span style={{ fontSize: '10px', color: '#888', fontWeight: 600 }}>
+                                      {group.items?.slice(0, 3).map(i => i.nameAr).join(', ')} {group.items?.length > 3 ? '...' : ''}
+                                    </span>
+                                  </div>
                                 </label>
                               );
                             })}
