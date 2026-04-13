@@ -710,3 +710,47 @@ export async function createOrderAction(input: CreateOrderInput): Promise<{ succ
   if (itemsError) return { success: false, error: itemsError.message };
   return { success: true, orderId: order.id };
 }
+export async function saveCustomerAction(formData: FormData): Promise<ActionResult> {
+  await requireSession();
+  const supabase = getSupabaseAdmin();
+  const id = toNumber(formData.get(" Id\));
+ const name = String(formData.get(\Name\) ?? \\).trim();
+ const email = String(formData.get(\Email\) ?? \\).trim();
+ const phone = String(formData.get(\Phone\) ?? \\).trim();
+
+ if (!name || !phone) {
+ return { success: false, error: \Name and phone are required.\ };
+ }
+
+ const payload = {
+ name,
+ email: email || null,
+ phone,
+ updated_at: new Date().toISOString()
+ };
+
+ if (id === 0) {
+ const { error } = await supabase.from(\customers\).insert(payload);
+ if (error) return { success: false, error: error.message };
+ } else {
+ const { error } = await supabase.from(\customers\).update(payload).eq(\id\, id);
+ if (error) return { success: false, error: error.message };
+ }
+
+ revalidatePath(\/Admin\);
+ return { success: true };
+}
+
+export async function deleteCustomerAction(formData: FormData): Promise<ActionResult> {
+ await requireSession();
+ const supabase = getSupabaseAdmin();
+ const id = toNumber(formData.get(\id\));
+
+ if (!id) return { success: false, error: \Customer ID is required.\ };
+
+ const { error } = await supabase.from(\customers\).delete().eq(\id\, id);
+ if (error) return { success: false, error: error.message };
+
+ revalidatePath(\/Admin\);
+ return { success: true };
+}

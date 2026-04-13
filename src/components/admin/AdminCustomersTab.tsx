@@ -1,7 +1,11 @@
 "use client";
 
-import { type Customer } from "@/lib/types";
-import { useState } from "react";
+import { useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { saveCustomerAction, deleteCustomerAction, type ActionResult } from "@/lib/actions";
+import { AdminSubmitButton, AdminDeleteButton } from "@/components/admin/AdminSubmitButton";
+import { useToast } from "@/components/admin/AdminToast";
+import type { Customer } from "@/lib/types";
 
 type Props = {
   customers: Customer[];
@@ -9,6 +13,43 @@ type Props = {
 
 export function AdminCustomersTab({ customers }: Props) {
   const [search, setSearch] = useState("");
+  const [editId, setEditId] = useState(0);
+  const [isPending, startTransition] = useTransition();
+  const formRef = useRef<HTMLFormElement>(null);
+  const router = useRouter();
+  const { showToast } = useToast();
+
+  const handleEdit = (c: Customer) => {
+    setEditId(c.id);
+    if (formRef.current) {
+        (formRef.current.elements.namedItem("Name") as HTMLInputElement).value = c.name;
+        (formRef.current.elements.namedItem("Email") as HTMLInputElement).value = c.email || "";
+        (formRef.current.elements.namedItem("Phone") as HTMLInputElement).value = c.phone || "";
+    }
+  };
+
+  const handleSave = async (formData: FormData) => {
+    const res = await saveCustomerAction(formData);
+    if (res.success) {
+        showToast(editId === 0 ? "Customer created!" : "Customer updated!");
+        setEditId(0);
+        formRef.current?.reset();
+        router.refresh();
+    } else {
+        showToast(res.error || "Error", "error");
+    }
+  };
+
+  const handleDelete = async (formData: FormData) => {
+    const res = await deleteCustomerAction(formData);
+    if (res.success) {
+        showToast("Customer deleted!");
+        router.refresh();
+    } else {
+        showToast(res.error || "Error", "error");
+    }
+  };
+
 
   const filteredCustomers = customers.filter(c => 
     c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -30,10 +71,31 @@ export function AdminCustomersTab({ customers }: Props) {
                     className="ultra-login-input"
                     style={{ width: '100%', height: '40px', padding: '0 40px 0 20px', borderRadius: '12px' }}
                 />
-                <i data-lucide="search" style={{ position: 'absolute', right: '15px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, width: '18px' }} />
             </div>
-            <button className="btn btn-outline btn-sm">Export CSV</button>
+            <button className="btn btn-primary btn-sm" onClick={() => { setEditId(0); formRef.current?.reset(); }}>+ Add New Customer</button>
         </div>
+      </div>
+
+      <div className="admin-card" style={{ marginBottom: '20px', padding: '20px' }}>
+         <form ref={formRef} action={handleSave} className="admin-form-row" style={{ display: 'flex', gap: '15px', alignItems: 'flex-end' }}>
+             <input type="hidden" name="Id" value={editId} />
+             <div className="premium-input-group" style={{ flex: 1 }}>
+                <label>Customer Name</label>
+                <input name="Name" placeholder="Full Name" required className="premium-input" />
+             </div>
+             <div className="premium-input-group" style={{ flex: 1 }}>
+                <label>Phone Number</label>
+                <input name="Phone" placeholder="05x..." required className="premium-input" />
+             </div>
+             <div className="premium-input-group" style={{ flex: 1 }}>
+                <label>Email (Optional)</label>
+                <input name="Email" type="email" placeholder="example@mail.com" className="premium-input" />
+             </div>
+             <div style={{ paddingBottom: '5px' }}>
+                <AdminSubmitButton>{editId === 0 ? "Add Customer" : "Update Customer"}</AdminSubmitButton>
+                {editId !== 0 && <button type="button" className="btn btn-outline btn-sm" onClick={() => { setEditId(0); formRef.current?.reset(); }} style={{ marginLeft: '10px' }}>Cancel</button>}
+             </div>
+         </form>
       </div>
 
       <div className="admin-card">
@@ -45,7 +107,7 @@ export function AdminCustomersTab({ customers }: Props) {
               <th>Orders</th>
               <th>Total Spent</th>
               <th>Last Seen</th>
-              <th>Status</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -69,17 +131,13 @@ export function AdminCustomersTab({ customers }: Props) {
                 <td style={{ fontWeight: 900 }}>{(c.totalSpent || 0).toFixed(2)} ₪</td>
                 <td style={{ fontSize: '12px', opacity: 0.6 }}>{c.lastOrderAt ? new Date(c.lastOrderAt).toLocaleDateString('ar-EG') : 'Never'}</td>
                 <td>
-                    <span style={{ 
-                        background: '#11a85f15', 
-                        color: '#11a85f', 
-                        padding: '4px 10px', 
-                        borderRadius: '6px', 
-                        fontSize: '11px', 
-                        fontWeight: 900,
-                        textTransform: 'uppercase'
-                    }}>
-                        Active
-                    </span>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                        <button className="btn btn-outline btn-sm" onClick={() => handleEdit(c)}>Edit</button>
+                        <form action={handleDelete}>
+                            <input type="hidden" name="id" value={c.id} />
+                            <AdminDeleteButton confirmMessage="Are you sure you want to delete this customer?" />
+                        </form>
+                    </div>
                 </td>
               </tr>
             )) : (
