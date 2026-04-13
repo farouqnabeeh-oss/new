@@ -401,7 +401,9 @@ export function AdminProductsTab({ products, categories, branches, settings, add
                               </div>
                             </label>
                           );
-                        })()
+                        })
+                    }
+                    )()
                     }
                   </div>
                 </div>
