@@ -141,13 +141,22 @@ export function AdminAddonsTab({ addonGroups, categories, products }: Props) {
               </div>
             </div>
 
-            <div className="form-row-3" style={{ marginTop: '20px' }}>
+            <div className="form-row" style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
               <div className="premium-input-group">
                 <label>{t('category')}</label>
                 <select name="CategoryId" className="premium-select" required defaultValue="">
                   <option value="">{t('selectCategory') || 'Select Category'}</option>
                   {categories.map((cat) => (
                     <option value={cat.id} key={cat.id}>{cat.nameEn} ({cat.branch?.nameEn || 'Global'})</option>
+                  ))}
+                </select>
+              </div>
+              <div className="premium-input-group">
+                <label>Linked Product (Optional)</label>
+                <select name="ProductId" className="premium-select" defaultValue="">
+                  <option value="">General for Category</option>
+                  {products.map((p) => (
+                    <option value={p.id} key={p.id}>📦 {p.nameEn}</option>
                   ))}
                 </select>
               </div>
