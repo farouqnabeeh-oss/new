@@ -33,6 +33,8 @@ export function AdminProductsTab({ products, categories, branches, settings, add
   const [types, setTypes] = useState<TypeEntry[]>([]);
   const [selectedAddonGroupIds, setSelectedAddonGroupIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
+  const editProduct = useMemo(() => products.find(p => p.id === editId), [products, editId]);
+
 
   const sizeArRef = useRef<HTMLInputElement>(null);
   const sizeEnRef = useRef<HTMLInputElement>(null);
@@ -160,8 +162,7 @@ export function AdminProductsTab({ products, categories, branches, settings, add
         NameAr: t.nameAr || "", NameEn: t.nameEn || "", Price: Number(t.price || 0), Description: t.description || null
       })));
 
-      setSelectedAddonGroupIds((data.addonGroups || []).map((g: any) => g.id));
-
+      setSelectedAddonGroupIds(data.addonGroupIds || []);
       containerRef.current.style.display = "block";
       containerRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
 
@@ -364,14 +365,18 @@ export function AdminProductsTab({ products, categories, branches, settings, add
                     onChange={(e) => setAddonSearchTerm(e.target.value)}
                   />
                   <div className="inline-addons-scroll">
-                    {addonGroups.filter(g => g.isActive && (
-                      !g.categoryId || g.categoryId === editProduct?.categoryId
-                    ) && (
-                      (g.nameAr || '').includes(addonSearchTerm) ||
-                      (g.nameEn || '').toLowerCase().includes(addonSearchTerm.toLowerCase())
-                    )).map(group => {
-                      const isCategoryWide = group.categoryId && !group.productId;
-                      const isSelected = isCategoryWide || selectedAddonGroupIds.includes(group.id);
+                    {(() => {
+                      const selectedCategoryIdInForm = formRef.current?.querySelector<HTMLSelectElement>('select[name="CategoryId"]')?.value;
+                      const effectiveCatId = editId !== 0 ? editProduct?.categoryId : (selectedCategoryIdInForm ? Number(selectedCategoryIdInForm) : null);
+                      
+                      return addonGroups.filter(g => g.isActive && (
+                        !g.categoryId || g.categoryId === effectiveCatId
+                      ) && (
+                        (g.nameAr || '').includes(addonSearchTerm) ||
+                        (g.nameEn || '').toLowerCase().includes(addonSearchTerm.toLowerCase())
+                      )).map(group => {
+                        const isCategoryWide = group.categoryId && !group.productId;
+                        const isSelected = isCategoryWide || selectedAddonGroupIds.includes(group.id);
                       return (
                         <label key={group.id} className={`inline-addon-chip ${isSelected ? 'active' : ''}`}>
                           <input
@@ -393,7 +398,7 @@ export function AdminProductsTab({ products, categories, branches, settings, add
                           </div>
                         </label>
                       );
-                    })}
+                    })()}
                   </div>
                 </div>
               </div>
