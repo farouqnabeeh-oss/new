@@ -128,7 +128,7 @@ export function AdminProductsTab({ products, categories, branches, settings, add
     }
   };
 
-  const editProduct = useCallback(async (product: AdminProduct) => {
+  const startEditingProduct = useCallback(async (product: AdminProduct) => {
     if (!containerRef.current || !formRef.current) return;
     setLoading(true);
 
@@ -164,7 +164,7 @@ export function AdminProductsTab({ products, categories, branches, settings, add
         NameAr: t.nameAr || "", NameEn: t.nameEn || "", Price: Number(t.price || 0), Description: t.description || null
       })));
 
-      setSelectedAddonGroupIds(data.addonGroupIds || []);
+      setSelectedAddonGroupIds((data.addonGroups || []).map((g: any) => g.id));
       containerRef.current.style.display = "block";
       containerRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
 
@@ -639,7 +639,7 @@ export function AdminProductsTab({ products, categories, branches, settings, add
                 </td>
                 <td>
                   <div className="flex gap-2">
-                    <button type="button" className="btn btn-outline btn-sm" style={{ border: 'none', background: '#f5f5f5' }} onClick={() => editProduct(product)}>
+                    <button type="button" className="btn btn-outline btn-sm" style={{ border: 'none', background: '#f5f5f5' }} onClick={() => startEditingProduct(product)}>
                       {t('edit')}
                     </button>
                     <form action={handleDelete} style={{ display: "inline" }}>
