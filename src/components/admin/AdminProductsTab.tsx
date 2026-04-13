@@ -34,7 +34,7 @@ export function AdminProductsTab({ products, categories, branches, settings, add
   const [selectedAddonGroupIds, setSelectedAddonGroupIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
   const [formCategoryId, setFormCategoryId] = useState<number | null>(null);
-  const editProduct = useMemo(() => products.find(p => p.id === editId), [products, editId]);
+  const editingProduct = useMemo(() => products.find(p => p.id === editId), [products, editId]);
 
 
   const sizeArRef = useRef<HTMLInputElement>(null);
@@ -370,38 +370,39 @@ export function AdminProductsTab({ products, categories, branches, settings, add
                   />
                   <div className="inline-addons-scroll">
                     {(() => {
-                      const effectiveCatId = editId !== 0 ? (editProduct?.categoryId || formCategoryId) : formCategoryId;
-                      
+                      const effectiveCatId = editId !== 0 ? (editingProduct?.categoryId || formCategoryId) : formCategoryId;
+
                       return addonGroups.filter(g => g.isActive && (
                         !g.categoryId || g.categoryId === effectiveCatId
                       ) && (
-                        (g.nameAr || '').includes(addonSearchTerm) ||
-                        (g.nameEn || '').toLowerCase().includes(addonSearchTerm.toLowerCase())
-                      )).map(group => {
-                        const isCategoryWide = group.categoryId && !group.productId;
-                        const isSelected = isCategoryWide || selectedAddonGroupIds.includes(group.id);
-                      return (
-                        <label key={group.id} className={`inline-addon-chip ${isSelected ? 'active' : ''}`}>
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            disabled={isCategoryWide}
-                            onChange={(e) => {
-                              if (isCategoryWide) return;
-                              if (e.target.checked) updateAddons(prev => [...prev, group.id]);
-                              else updateAddons(prev => prev.filter(id => id !== group.id));
-                            }}
-                          />
-                          <div className="chip-content">
-                            <span className="chip-name">{group.nameAr}</span>
-                            <span className="chip-scope">
-                              {group.productId ? '📦 Product Only' : group.categoryId ? '📂 Category' : '🌐 Global'}
-                            </span>
-                            <span className="chip-items">{group.items?.slice(0, 3).map(it => it.nameAr).join(', ')}</span>
-                          </div>
-                        </label>
-                      );
-                    })()}
+                          (g.nameAr || '').includes(addonSearchTerm) ||
+                          (g.nameEn || '').toLowerCase().includes(addonSearchTerm.toLowerCase())
+                        )).map(group => {
+                          const isCategoryWide = group.categoryId && !group.productId;
+                          const isSelected = isCategoryWide || selectedAddonGroupIds.includes(group.id);
+                          return (
+                            <label key={group.id} className={`inline-addon-chip ${isSelected ? 'active' : ''}`}>
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                disabled={isCategoryWide}
+                                onChange={(e) => {
+                                  if (isCategoryWide) return;
+                                  if (e.target.checked) updateAddons(prev => [...prev, group.id]);
+                                  else updateAddons(prev => prev.filter(id => id !== group.id));
+                                }}
+                              />
+                              <div className="chip-content">
+                                <span className="chip-name">{group.nameAr}</span>
+                                <span className="chip-scope">
+                                  {group.productId ? '📦 Product Only' : group.categoryId ? '📂 Category' : '🌐 Global'}
+                                </span>
+                                <span className="chip-items">{group.items?.slice(0, 3).map(it => it.nameAr).join(', ')}</span>
+                              </div>
+                            </label>
+                          );
+                        })()
+                    }
                   </div>
                 </div>
               </div>
