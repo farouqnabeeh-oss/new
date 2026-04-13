@@ -92,7 +92,7 @@ export function AdminCustomersTab({ customers }: Props) {
                 <input name="Email" type="email" placeholder="example@mail.com" className="premium-input" />
              </div>
              <div style={{ paddingBottom: '5px' }}>
-                <AdminSubmitButton>{editId === 0 ? "Add Customer" : "Update Customer"}</AdminSubmitButton>
+                <AdminSubmitButton label={editId === 0 ? "Add Customer" : "Update Customer"} />
                 {editId !== 0 && <button type="button" className="btn btn-outline btn-sm" onClick={() => { setEditId(0); formRef.current?.reset(); }} style={{ marginLeft: '10px' }}>Cancel</button>}
              </div>
          </form>
