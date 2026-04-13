@@ -156,7 +156,11 @@ const UI = {
 
         const getVisibleGroups = () => addonGroups.filter(group => {
             const type = group.groupType;
-            if (['MealDrink', 'MealDrinkUpgrade', 'MealFries'].includes(type)) {
+            const name = (group.nameAr || '') + ' ' + (group.nameEn || '');
+            const isMealSpecificGroup = ['MealDrink', 'MealDrinkUpgrade', 'MealFries'].includes(type) || 
+                                        name.includes('مشروب') || name.includes('بطاطا') || name.toLowerCase().includes('drink') || name.toLowerCase().includes('fries');
+            
+            if (isMealSpecificGroup) {
                 // Show only if the user explicitly selected a Meal type.
                 // If the product doesn't have types but has hasMealOption, treat it as a meal implicitly
                 if (product.types && product.types.length > 0) {
