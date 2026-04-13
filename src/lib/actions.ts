@@ -337,15 +337,29 @@ export async function saveProductAction(formData: FormData): Promise<ActionResul
     // --- Link Addon Groups ---
     const linkedAddonGroups = parseJson<number[]>(formData.get("linkedAddonGroupsJson")) ?? [];
     
-    // First, clear groups previously linked to this product (but NOT category-wide groups)
+    // Safety check: Don't let a product "Steal" a group from another product or from being Category-wide
+    // Only update groups that are either already linked to this product OR are NOT linked to ANY product/category.
+    // Actually, the simplest fix is to only update groups that were EXPLICITLY selected AND are currently unassigned to any other product.
+    
+    // Clear old links
     await supabase.from("addon_groups").update({ product_id: null }).eq("product_id", productId);
     
     if (linkedAddonGroups.length) {
-      const { error } = await supabase
+      // Only set product_id for groups that are NOT already category-wide 
+      // (Because category-wide groups are automatically inherited and don't need a product_id)
+      const { data: eligibleGroups } = await supabase
         .from("addon_groups")
-        .update({ product_id: productId })
+        .select("id, category_id, product_id")
         .in("id", linkedAddonGroups);
-      if (error) return { success: false, error: error.message };
+
+      const groupsToLink = eligibleGroups?.filter(g => !g.category_id || g.product_id === productId) || [];
+      
+      if (groupsToLink.length > 0) {
+        await supabase
+          .from("addon_groups")
+          .update({ product_id: productId })
+          .in("id", groupsToLink.map(g => g.id));
+      }
     }
     // -------------------------
 

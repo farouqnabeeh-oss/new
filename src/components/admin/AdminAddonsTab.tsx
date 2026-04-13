@@ -126,7 +126,7 @@ export function AdminAddonsTab({ addonGroups, categories, products }: Props) {
         <div className="admin-form-container premium-addon-form">
           <form ref={formRef} action={handleSave}>
             <input type="hidden" name="Id" value={editId} readOnly />
-            
+
             <div className="form-section">
               <div className="form-section-title">📂 {t('groupIdentity') || 'Group Identity'}</div>
               <div className="form-row">
@@ -169,18 +169,18 @@ export function AdminAddonsTab({ addonGroups, categories, products }: Props) {
             </div>
 
             <div className="logic-toggles" style={{ marginTop: '20px' }}>
-                <label className="logic-chip">
-                  <input type="checkbox" name="IsRequired" value="true" />
-                  <span>Required</span>
-                </label>
-                <label className="logic-chip">
-                  <input type="checkbox" name="AllowMultiple" value="true" defaultChecked />
-                  <span>Allow Multiple</span>
-                </label>
-                <label className="logic-chip">
-                  <input type="checkbox" name="IsActive" value="true" defaultChecked />
-                  <span>Is Active</span>
-                </label>
+              <label className="logic-chip">
+                <input type="checkbox" name="IsRequired" value="true" />
+                <span>Required</span>
+              </label>
+              <label className="logic-chip">
+                <input type="checkbox" name="AllowMultiple" value="true" defaultChecked />
+                <span>Allow Multiple</span>
+              </label>
+              <label className="logic-chip">
+                <input type="checkbox" name="IsActive" value="true" defaultChecked />
+                <span>Is Active</span>
+              </label>
             </div>
 
             {/* Items Section */}
@@ -197,7 +197,7 @@ export function AdminAddonsTab({ addonGroups, categories, products }: Props) {
                   </div>
                 ))}
               </div>
-              
+
               <div className="quick-add-item-bar">
                 <input ref={itemArRef} placeholder="Arabic Name" className="premium-input-sm" />
                 <input ref={itemEnRef} placeholder="English Name" className="premium-input-sm" />
@@ -208,7 +208,7 @@ export function AdminAddonsTab({ addonGroups, categories, products }: Props) {
 
             <div className="save-bar-premium">
               <div className="save-bar-info">
-                 <span className="synced-indicator">✨ {editId ? 'Editing Group' : 'New Group'}</span>
+                <span className="synced-indicator">✨ {editId ? 'Editing Group' : 'New Group'}</span>
               </div>
               <div className="save-bar-actions">
                 <button type="button" className="btn-discard" onClick={resetForm}>{t('cancel') || 'Cancel'}</button>
@@ -220,10 +220,10 @@ export function AdminAddonsTab({ addonGroups, categories, products }: Props) {
       </div>
 
       <div className="table-controls" style={{ marginBottom: '15px', display: 'flex', gap: '15px' }}>
-        <input 
-          type="text" 
-          placeholder="Search groups..." 
-          className="premium-input" 
+        <input
+          type="text"
+          placeholder="Search groups..."
+          className="premium-input"
           style={{ maxWidth: '300px' }}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -242,8 +242,8 @@ export function AdminAddonsTab({ addonGroups, categories, products }: Props) {
             </tr>
           </thead>
           <tbody>
-            {addonGroups.filter(g => 
-              (g.nameAr || '').includes(searchTerm) || 
+            {addonGroups.filter(g =>
+              (g.nameAr || '').includes(searchTerm) ||
               (g.nameEn || '').toLowerCase().includes(searchTerm.toLowerCase())
             ).map((group) => (
               <tr key={group.id} className={!group.isActive ? 'row-inactive' : ''}>
@@ -309,7 +309,7 @@ export function AdminAddonsTab({ addonGroups, categories, products }: Props) {
         .premium-input-group label { font-size: 13px; font-weight: 800; color: #555; margin-inline-start: 4px; }
         .form-section-title { font-size: 13px; font-weight: 900; color: #aaa; text-transform: uppercase; margin-bottom: 15px; display: flex; alignItems: center; gap: 10px; }
         .form-section-title::after { content: ""; flex: 1; height: 1px; background: #eee; }
-      `}</style>le>
+      `}</style>
     </div>
   );
 }

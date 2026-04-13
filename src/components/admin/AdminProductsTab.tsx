@@ -365,23 +365,31 @@ export function AdminProductsTab({ products, categories, branches, settings, add
                   />
                   <div className="inline-addons-scroll">
                     {addonGroups.filter(g => g.isActive && (
+                      !g.categoryId || g.categoryId === editProduct?.categoryId
+                    ) && (
                       (g.nameAr || '').includes(addonSearchTerm) ||
                       (g.nameEn || '').toLowerCase().includes(addonSearchTerm.toLowerCase())
                     )).map(group => {
-                      const isSelected = selectedAddonGroupIds.includes(group.id);
+                      const isCategoryWide = group.categoryId && !group.productId;
+                      const isSelected = isCategoryWide || selectedAddonGroupIds.includes(group.id);
                       return (
                         <label key={group.id} className={`inline-addon-chip ${isSelected ? 'active' : ''}`}>
                           <input
                             type="checkbox"
                             checked={isSelected}
+                            disabled={isCategoryWide}
                             onChange={(e) => {
+                              if (isCategoryWide) return;
                               if (e.target.checked) updateAddons(prev => [...prev, group.id]);
                               else updateAddons(prev => prev.filter(id => id !== group.id));
                             }}
                           />
                           <div className="chip-content">
                             <span className="chip-name">{group.nameAr}</span>
-                            <span className="chip-items">{group.items?.slice(0, 2).map(it => it.nameAr).join(', ')}</span>
+                            <span className="chip-scope">
+                              {group.productId ? '📦 Product Only' : group.categoryId ? '📂 Category' : '🌐 Global'}
+                            </span>
+                            <span className="chip-items">{group.items?.slice(0, 3).map(it => it.nameAr).join(', ')}</span>
                           </div>
                         </label>
                       );
@@ -857,8 +865,9 @@ export function AdminProductsTab({ products, categories, branches, settings, add
         .inline-addon-chip { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #fff; border: 1px solid #eee; border-radius: 12px; cursor: pointer; transition: 0.2s; }
         .inline-addon-chip.active { border-color: var(--primary); background: rgba(var(--primary-rgb), 0.05); }
         .chip-content { display: flex; flex-direction: column; line-height: 1.2; }
-        .chip-name { font-size: 12px; font-weight: 800; color: #222; }
-        .chip-items { font-size: 10px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
+        .chip-name { font-size: 11px; font-weight: 800; color: #222; }
+        .chip-scope { font-size: 8px; font-weight: 900; color: var(--primary); text-transform: uppercase; opacity: 0.6; }
+        .chip-items { font-size: 9px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
         
         .logic-toggles { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
         .logic-chip { flex: 1; min-width: 120px; display: flex; alignItems: center; gap: 8px; padding: 10px; background: #fff; border: 1px solid #eee; border-radius: 12px; cursor: pointer; font-size: 12px; font-weight: 700; transition: 0.2s; }
