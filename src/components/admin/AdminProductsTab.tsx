@@ -33,6 +33,7 @@ export function AdminProductsTab({ products, categories, branches, settings, add
   const [types, setTypes] = useState<TypeEntry[]>([]);
   const [selectedAddonGroupIds, setSelectedAddonGroupIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
+  const [formCategoryId, setFormCategoryId] = useState<number | null>(null);
   const editProduct = useMemo(() => products.find(p => p.id === editId), [products, editId]);
 
 
@@ -148,8 +149,9 @@ export function AdminProductsTab({ products, categories, branches, settings, add
       (form.elements.namedItem("BasePrice") as HTMLInputElement).value = String(data.basePrice ?? 0);
       (form.elements.namedItem("Discount") as HTMLInputElement).value = String(data.discount ?? 0);
       (form.elements.namedItem("SortOrder") as HTMLInputElement).value = String(data.sortOrder ?? 0);
-      (form.elements.namedItem("CategoryId") as HTMLSelectElement).value = data.categoryId || "";
-      (form.elements.namedItem("BranchId") as HTMLSelectElement).value = data.branchId || "";
+      (form.elements.namedItem("CategoryId") as HTMLSelectElement).value = String(data.categoryId || "");
+      setFormCategoryId(data.categoryId || null);
+      (form.elements.namedItem("BranchId") as HTMLSelectElement).value = data.branchId != null ? String(data.branchId) : "";
       (form.elements.namedItem("AllBranches") as HTMLInputElement).checked = !!data.allBranches;
       (form.elements.namedItem("HasMealOption") as HTMLInputElement).checked = !!data.hasMealOption;
       (form.elements.namedItem("HasDonenessOption") as HTMLInputElement).checked = !!data.hasDonenessOption;
@@ -183,6 +185,7 @@ export function AdminProductsTab({ products, categories, branches, settings, add
     if (isHidden) {
       formRef.current?.reset();
       setEditId(0);
+      setFormCategoryId(null);
       setSizes([]);
       setTypes([]);
       setSelectedAddonGroupIds([]);
@@ -291,13 +294,14 @@ export function AdminProductsTab({ products, categories, branches, settings, add
               <div className="form-section-title">📂 {t('classification') || 'Classification & Location'}</div>
               <div className="form-row">
                 <div className="premium-input-group">
-                  <label>Category</label>
-                  <select name="CategoryId" className="premium-select" required defaultValue="" onChange={handleFormChange}>
-                    <option value="">Select Category</option>
+                  <label>{t('category')}</label>
+                  <select name="CategoryId" className="premium-select" required defaultValue="" onChange={(e) => {
+                    setFormCategoryId(Number(e.target.value) || null);
+                    handleFormChange();
+                  }}>
+                    <option value="">{t('selectCategory')}</option>
                     {categories.map((cat) => (
-                      <option value={cat.id} key={cat.id}>
-                        {cat.nameEn} ({cat.branch?.nameEn ?? "Global"})
-                      </option>
+                      <option value={cat.id} key={cat.id}>{cat.nameEn} ({cat.branch?.nameEn || 'Global'})</option>
                     ))}
                   </select>
                 </div>
@@ -366,8 +370,7 @@ export function AdminProductsTab({ products, categories, branches, settings, add
                   />
                   <div className="inline-addons-scroll">
                     {(() => {
-                      const selectedCategoryIdInForm = formRef.current?.querySelector<HTMLSelectElement>('select[name="CategoryId"]')?.value;
-                      const effectiveCatId = editId !== 0 ? editProduct?.categoryId : (selectedCategoryIdInForm ? Number(selectedCategoryIdInForm) : null);
+                      const effectiveCatId = editId !== 0 ? (editProduct?.categoryId || formCategoryId) : formCategoryId;
                       
                       return addonGroups.filter(g => g.isActive && (
                         !g.categoryId || g.categoryId === effectiveCatId
