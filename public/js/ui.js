@@ -88,9 +88,9 @@ const UI = {
                             ${item.selectedSize ? `<span class="badge-mini">${Lang.localized(item.selectedSize.nameAr, item.selectedSize.nameEn)}</span>` : ''}
                             ${item.selectedType ? `<span class="badge-mini">${Lang.localized(item.selectedType.nameAr, item.selectedType.nameEn)}</span>` : ''}
                             ${item.selectedAddOns && item.selectedAddOns.length > 0 ? item.selectedAddOns.map(a => {
-                                const isNote = (a.nameAr||'').includes('بدون') || (a.nameEn||'').toLowerCase().includes('without') || (a.nameEn||'').toLowerCase().includes('no ');
-                                return `<span class="badge-mini" style="background: ${isNote ? '#fff' : '#f0f0f0'}; color: ${isNote ? '#e63946' : '#555'}; border: ${isNote ? '1px solid #e63946' : 'none'};">${Lang.localized(a.nameAr, a.nameEn)}</span>`;
-                            }).join('') : ''}
+                const isNote = (a.nameAr || '').includes('بدون') || (a.nameEn || '').toLowerCase().includes('without') || (a.nameEn || '').toLowerCase().includes('no ');
+                return `<span class="badge-mini" style="background: ${isNote ? '#fff' : '#f0f0f0'}; color: ${isNote ? '#e63946' : '#555'}; border: ${isNote ? '1px solid #e63946' : 'none'};">${Lang.localized(a.nameAr, a.nameEn)}</span>`;
+            }).join('') : ''}
                         </div>
                         <div class="cart-item-footer">
                             <div class="cart-qty-control">
@@ -146,36 +146,44 @@ const UI = {
 
         const getSelectedIds = () => new Set(state.selectedAddOns.map(item => item.id));
         const isMealSelection = () => {
-             // 1. Check if a "Product Type" containing 'Meal' is selected
-             const type = state.selectedType;
-             if (type) {
+            // 1. Check if a "Product Type" containing 'Meal' is selected
+            const type = state.selectedType;
+            if (type) {
                 const text = `${type.nameAr || ''} ${type.nameEn || ''}`.toLowerCase();
                 if (text.includes('meal') || text.includes('وجبة')) return true;
                 if (text.includes('sandwich') || text.includes('ساندويش') || text.includes('سندويش')) return false;
-             }
+            }
 
-             // 2. Check if an "Addon Group" of type 'type' has a 'Meal' item selected
-             const typeAddon = state.selectedAddOns.find(item => {
+            // 2. Check if an "Addon Group" of type 'type' has a 'Meal' item selected
+            const typeAddon = state.selectedAddOns.find(item => {
                 const group = findGroupByItemId(item.id);
                 return group && (group.groupType === 'type' || (group.nameAr || '').includes('النوع'));
-             });
-             if (typeAddon) {
+            });
+            if (typeAddon) {
                 const text = `${typeAddon.nameAr || ''} ${typeAddon.nameEn || ''}`.toLowerCase();
                 if (text.includes('meal') || text.includes('وجبة')) return true;
                 if (text.includes('sandwich') || text.includes('ساندويش') || text.includes('سندويش')) return false;
-             }
-             
-             // Fallback if no specific selection yet but product supports both
-             return !!product.hasMealOption;
+            }
+
+            // Fallback if no specific selection yet:
+            // If the product has a 'Type' group with 'Sandwich' options, hide until explicitly chosen.
+            // Otherwise, if it has a meal option flag, we can show it by default.
+            const hasTypeGroupWithSandwich = addonGroups.some(g =>
+                ((g.groupType === 'type' || (g.nameAr || '').includes('النوع'))) &&
+                g.items.some(it => (it.nameAr || '').includes('ساندويش') || (it.nameAr || '').includes('سندويش'))
+            ) || (product.types || []).some(t => (t.nameAr || '').includes('ساندويش') || (t.nameAr || '').includes('سندويش'));
+
+            if (hasTypeGroupWithSandwich) return false;
+            return !!product.hasMealOption;
         };
 
         const findGroupByItemId = (itemId) => addonGroups.find(group => group.items.some(item => item.id === itemId));
 
         const getVisibleGroups = () => {
-             const groups = addonGroups.filter(group => {
+            const groups = addonGroups.filter(group => {
                 const type = group.groupType;
                 const name = (group.nameAr || '') + ' ' + (group.nameEn || '');
-                
+
                 // --- SIZE VISIBILITY ---
                 // User wants to hide Size for "other products", presumably all except the legend (87)
                 const isSizeGroup = (type === 'Size' || type === 'sizes' || name.includes('الحجم') || name.toLowerCase().includes('size'));
@@ -184,39 +192,39 @@ const UI = {
                 }
 
                 // --- MEAL VISIBILITY ---
-                const isMealSpecificGroup = ['MealDrink', 'MealDrinkUpgrade', 'MealFries'].includes(type) || 
-                                            name.includes('مشروب') || name.includes('بطاطا') || name.toLowerCase().includes('drink') || name.toLowerCase().includes('fries');
-                
+                const isMealSpecificGroup = ['MealDrink', 'MealDrinkUpgrade', 'MealFries'].includes(type) ||
+                    name.includes('مشروب') || name.includes('بطاطا') || name.toLowerCase().includes('drink') || name.toLowerCase().includes('fries');
+
                 if (isMealSpecificGroup) {
                     return isMealSelection();
                 }
-                
+
                 // --- DONENESS VISIBILITY ---
                 if (type === 'Doneness' || name.includes('الاستواء')) {
                     return !!product.hasDonenessOption;
                 }
-                
-                return true;
-             });
 
-             // --- CUSTOM ORDERING: Type -> Inside -> Side -> Without ---
-             return groups.sort((a, b) => {
+                return true;
+            });
+
+            // --- CUSTOM ORDERING: Type -> Inside -> Side -> Without ---
+            return groups.sort((a, b) => {
                 const nameA = (a.nameAr || '').toLowerCase();
                 const nameB = (b.nameAr || '').toLowerCase();
-                
+
                 const priority = (name) => {
-                   if (name.includes('النوع')) return 1;
-                   if (name.includes('إضافة داخل') || name.includes('داخل البرغر') || name.includes('inside adds')) return 2;
-                   if (name.includes('على الجنب') || name.includes('إضافة على جنب') || name.includes('side adds')) return 3;
-                   if (name.includes('بدون') || name.includes('without')) return 4;
-                   return 10; // Everything else at the bottom (like Drinks/Fries if meal)
+                    if (name.includes('النوع')) return 1;
+                    if (name.includes('إضافة داخل') || name.includes('داخل البرغر') || name.includes('inside adds')) return 2;
+                    if (name.includes('على الجنب') || name.includes('إضافة على جنب') || name.includes('side adds')) return 3;
+                    if (name.includes('بدون') || name.includes('without')) return 4;
+                    return 10; // Everything else at the bottom (like Drinks/Fries if meal)
                 };
-                
+
                 const pA = priority(nameA);
                 const pB = priority(nameB);
                 if (pA !== pB) return pA - pB;
                 return (a.sortOrder || 0) - (b.sortOrder || 0);
-             });
+            });
         };
 
         const syncVisibleSelections = () => {
@@ -323,7 +331,7 @@ const UI = {
         const render = () => {
             const body = panel.querySelector('.modal-body');
             const scrollPos = body ? body.scrollTop : 0;
-            
+
             syncVisibleSelections();
 
             const selectedIds = getSelectedIds();
@@ -435,7 +443,7 @@ const UI = {
             `;
 
             panel.innerHTML = html;
-            
+
             // Restore scroll with a slight delay to ensure browser layout
             const newBody = panel.querySelector('.modal-body');
             if (newBody && scrollPos > 0) {
@@ -495,13 +503,13 @@ const UI = {
                         );
                         UI.hideModal('product-modal-overlay', 'product-modal');
                         UI.updateCartBadge(branchSlug);
-                        
+
                         // User specifically requested NOT to auto-open the cart when adding items
                         // setTimeout(() => {
                         //     UI.renderCartModal(branchSlug, currency);
                         //     UI.showModal('cart-modal-overlay', 'cart-modal');
                         // }, 300);
-                        
+
                         // Provide feedback inside the site button or custom toast if needed
                     }
                 });
@@ -570,7 +578,7 @@ const bindUIEvents = () => {
         // Find active branch slug
         let branchSlug = '';
         const path = window.location.pathname;
-        
+
         if (path.startsWith('/menu/')) {
             branchSlug = path.split('/')[2];
         } else if (path.startsWith('/checkout/')) {
