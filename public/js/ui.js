@@ -146,10 +146,27 @@ const UI = {
 
         const getSelectedIds = () => new Set(state.selectedAddOns.map(item => item.id));
         const isMealSelection = () => {
-            const type = state.selectedType;
-            if (!product.hasMealOption || !type) return false;
-            const text = `${type.nameAr || ''} ${type.nameEn || ''}`.toLowerCase();
-            return text.includes('meal') || text.includes('وجبة');
+             // 1. Check if a "Product Type" containing 'Meal' is selected
+             const type = state.selectedType;
+             if (type) {
+                const text = `${type.nameAr || ''} ${type.nameEn || ''}`.toLowerCase();
+                if (text.includes('meal') || text.includes('وجبة')) return true;
+                if (text.includes('sandwich') || text.includes('ساندويش') || text.includes('سندويش')) return false;
+             }
+
+             // 2. Check if an "Addon Group" of type 'type' has a 'Meal' item selected
+             const typeAddon = state.selectedAddOns.find(item => {
+                const group = findGroupByItemId(item.id);
+                return group && (group.groupType === 'type' || (group.nameAr || '').includes('النوع'));
+             });
+             if (typeAddon) {
+                const text = `${typeAddon.nameAr || ''} ${typeAddon.nameEn || ''}`.toLowerCase();
+                if (text.includes('meal') || text.includes('وجبة')) return true;
+                if (text.includes('sandwich') || text.includes('ساندويش') || text.includes('سندويش')) return false;
+             }
+             
+             // Fallback if no specific selection yet but product supports both
+             return !!product.hasMealOption;
         };
 
         const findGroupByItemId = (itemId) => addonGroups.find(group => group.items.some(item => item.id === itemId));
@@ -161,14 +178,9 @@ const UI = {
                                         name.includes('مشروب') || name.includes('بطاطا') || name.toLowerCase().includes('drink') || name.toLowerCase().includes('fries');
             
             if (isMealSpecificGroup) {
-                // Show only if the user explicitly selected a Meal type.
-                // If the product doesn't have types but has hasMealOption, treat it as a meal implicitly
-                if (product.types && product.types.length > 0) {
-                    return isMealSelection();
-                }
-                return !!product.hasMealOption;
+                return isMealSelection();
             }
-            if (type === 'Doneness') {
+            if (type === 'Doneness' || name.includes('الاستواء')) {
                 return !!product.hasDonenessOption;
             }
             return true;
