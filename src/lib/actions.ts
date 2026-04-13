@@ -128,7 +128,7 @@ export async function saveBranchAction(formData: FormData): Promise<ActionResult
   try {
     await requireSession();
     const supabase = getSupabaseAdmin();
-    const id = toNumber(formData.get("Id"));
+    const id = String(formData.get("Id") ?? "0");
     const bannerImage = formData.get("bannerImage");
     const values: Record<string, unknown> = {
       name_ar: String(formData.get("NameAr") ?? ""),
@@ -155,7 +155,7 @@ export async function saveBranchAction(formData: FormData): Promise<ActionResult
       values.banner_image_path = await saveUploadedFile(bannerImage, "banners");
     }
 
-    if (id === 0) {
+    if (id === "0") {
       const { error } = await supabase.from("branches").insert({
         ...values,
         created_at: new Date().toISOString()
@@ -177,7 +177,7 @@ export async function deleteBranchAction(formData: FormData): Promise<ActionResu
   try {
     await requireSession();
     const supabase = getSupabaseAdmin();
-    const id = toNumber(formData.get("id"));
+    const id = String(formData.get("id") ?? "");
 
     // Check for related categories/products
     const { count } = await supabase

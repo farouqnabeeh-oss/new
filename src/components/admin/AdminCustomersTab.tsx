@@ -13,7 +13,7 @@ type Props = {
 
 export function AdminCustomersTab({ customers }: Props) {
   const [search, setSearch] = useState("");
-  const [editId, setEditId] = useState(0);
+  const [editId, setEditId] = useState("0");
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
@@ -31,8 +31,8 @@ export function AdminCustomersTab({ customers }: Props) {
   const handleSave = async (formData: FormData) => {
     const res = await saveCustomerAction(formData);
     if (res.success) {
-        showToast(editId === 0 ? "Customer created!" : "Customer updated!");
-        setEditId(0);
+        showToast(editId === "0" ? "Customer created!" : "Customer updated!");
+        setEditId("0");
         formRef.current?.reset();
         router.refresh();
     } else {
@@ -72,7 +72,7 @@ export function AdminCustomersTab({ customers }: Props) {
                     style={{ width: '100%', height: '40px', padding: '0 40px 0 20px', borderRadius: '12px' }}
                 />
             </div>
-            <button className="btn btn-primary btn-sm" onClick={() => { setEditId(0); formRef.current?.reset(); }}>+ Add New Customer</button>
+            <button className="btn btn-primary btn-sm" onClick={() => { setEditId("0"); formRef.current?.reset(); }}>+ Add New Customer</button>
         </div>
       </div>
 
@@ -92,8 +92,8 @@ export function AdminCustomersTab({ customers }: Props) {
                 <input name="Email" type="email" placeholder="example@mail.com" className="premium-input" />
              </div>
              <div style={{ paddingBottom: '5px' }}>
-                <AdminSubmitButton label={editId === 0 ? "Add Customer" : "Update Customer"} />
-                {editId !== 0 && <button type="button" className="btn btn-outline btn-sm" onClick={() => { setEditId(0); formRef.current?.reset(); }} style={{ marginLeft: '10px' }}>Cancel</button>}
+                <AdminSubmitButton label={editId === "0" ? "Add Customer" : "Update Customer"} />
+                {editId !== "0" && <button type="button" className="btn btn-outline btn-sm" onClick={() => { setEditId("0"); formRef.current?.reset(); }} style={{ marginLeft: '10px' }}>Cancel</button>}
              </div>
          </form>
       </div>
