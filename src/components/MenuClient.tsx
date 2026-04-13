@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useCallback } from "react";
-import type { Category, Product, Branch } from "@/lib/types";
+import type { Category, Product, Branch, AddonGroup } from "@/lib/types";
 
 declare global {
   interface Window {
@@ -14,12 +14,13 @@ declare global {
 interface Props {
   categories: Category[];
   allProducts: Product[];
+  allAddonGroups: AddonGroup[];
   branch: Branch;
   isAr: boolean;
   currency: string;
 }
 
-export default function MenuClient({ categories, allProducts, branch, isAr, currency }: Props) {
+export default function MenuClient({ categories, allProducts, allAddonGroups, branch, isAr, currency }: Props) {
   
   const updateBadge = useCallback(() => {
     if (!window.UI || !window.Cart) return;
@@ -62,7 +63,6 @@ export default function MenuClient({ categories, allProducts, branch, isAr, curr
                 <div class="up-img-wrap" onclick="window.viewP('${p.id}')" style="cursor:pointer"><img src="${image}" class="up-img" loading="lazy" /></div>
                 <div class="up-body">
                   <div class="up-title" onclick="window.viewP('${p.id}')" style="cursor:pointer">${isAr ? p.nameAr : p.nameEn}</div>
-                  <div class="up-desc">${isAr ? (p.descriptionAr || '') : (p.descriptionEn || '')}</div>
                   <div class="up-footer">
                     <div class="up-price-box">
                       <span class="up-price-tag">${finalPrice}${currency}</span>
@@ -86,17 +86,38 @@ export default function MenuClient({ categories, allProducts, branch, isAr, curr
           const originalText = btn ? btn.textContent : '';
           
           try {
-            if (btn) btn.textContent = isAr ? 'جاري التحميل...' : 'Loading...';
-            
-            const res = await fetch(`/api/ProductsApi/${id}`);
-            if (!res.ok) throw new Error("Product data fetch failed");
-            
-            const fullProduct = await res.json();
-            window.UI.renderProductModal(fullProduct, fullProduct.addonGroups || [], branch.slug, currency, 0);
-          } catch (e: any) {
-            console.error("[Product Modal] API Error for Product #" + id + ":", e);
             const p = allProducts.find(x => String(x.id) === String(id));
-            if (p) window.UI.renderProductModal(p, [], branch.slug, currency, 0);
+            if (!p) throw new Error("Product data fetch failed");
+            
+            // Filter addons based on category and product, mimicking API rules
+            const deduplicatedGroupsMap = new Map();
+            allAddonGroups.forEach(row => {
+              if (row.productId !== null && String(row.productId) !== String(id)) return;
+              if (row.categoryId !== p.categoryId && row.productId === null) return;
+              
+              const rowKey = row.nameAr ? row.nameAr.trim() : (row.nameEn ? row.nameEn.trim() : String(row.id));
+              const existing = deduplicatedGroupsMap.get(rowKey);
+              if (!existing || (row.productId !== null && existing.productId === null)) {
+                 if (row.productId === null && row.categoryId !== null) {
+                    const hasSpecificOverride = allAddonGroups.some(
+                      other => String(other.productId) === String(id) &&
+                        (other.groupType === row.groupType || other.nameAr === row.nameAr)
+                    );
+                    if (hasSpecificOverride) return;
+                 }
+                 deduplicatedGroupsMap.set(rowKey, row);
+              }
+            });
+            const productAddonGroups = Array.from(deduplicatedGroupsMap.values());
+            
+            // Always show the product modal so the user can see the description (product details)
+            // since it's cached, this is instantaneous!
+            window.UI.renderProductModal(p, productAddonGroups, branch.slug, currency, branch.discountPercent || 0);
+
+          } catch (e: any) {
+            console.error("[Product Modal] Error for Product #" + id + ":", e);
+            const p = allProducts.find(x => String(x.id) === String(id));
+            if (p) window.UI.renderProductModal(p, [], branch.slug, currency, branch.discountPercent || 0);
           } finally {
             if (btn) btn.textContent = originalText;
           }
@@ -198,7 +219,7 @@ export default function MenuClient({ categories, allProducts, branch, isAr, curr
     return () => {
       if (typeof cleanup === 'function') cleanup();
     };
-  }, [categories, allProducts, branch, isAr, currency, updateBadge]);
+  }, [categories, allProducts, allAddonGroups, branch, isAr, currency, updateBadge]);
 
   return null;
 }

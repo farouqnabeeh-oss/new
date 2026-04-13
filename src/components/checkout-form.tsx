@@ -97,6 +97,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
         const policyAccepted = (document.getElementById('policy-accept') as HTMLInputElement).checked;
 
         if (!name || !phone) return alert(isAr ? 'يرجى ملأ جميع الحقول الأساسية (الاسم، الهاتف)' : 'Please fill all required fields (Name, Phone)');
+        if (paymentMethod === 'palpay' && !email) return alert(isAr ? 'يرجى إدخال البريد الإلكتروني لإتمام الدفع بالفيزا' : 'Please enter your email to complete Visa payment');
         if (orderType === 'delivery' && (!selectedZone || !street || !building)) return alert(isAr ? 'يرجى اختيار منطقة التوصيل وإدخال بيانات الشارع والبناية بالتفصيل' : 'Please select a delivery zone and enter street and building details');
         if (orderType === 'inRestaurant' && subType === 'table' && !table) return alert(isAr ? 'يرجى إدخال رقم الطاولة' : 'Please enter table number');
         if (orderType === 'inRestaurant' && subType === 'pickup' && !pickupTime) return alert(isAr ? 'يرجى اختيار وقت الاستلام' : 'Please select pickup time');
@@ -315,8 +316,11 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                             <input type="tel" id="customer-phone" required className="uptown-input" />
                         </div>
                         <div className="uptown-input-group">
-                            <label>{isAr ? 'البريد الإلكتروني' : 'Email'} ({isAr ? 'اختياري' : 'Optional'})</label>
-                            <input type="email" id="customer-email" className="uptown-input" suppressHydrationWarning />
+                            <label>
+                                {isAr ? 'البريد الإلكتروني' : 'Email'} 
+                                {paymentMethod !== 'palpay' ? (isAr ? ' (اختياري)' : ' (Optional)') : ' *'}
+                            </label>
+                            <input type="email" id="customer-email" className="uptown-input" required={paymentMethod === 'palpay'} suppressHydrationWarning />
                         </div>
                         <div className="uptown-input-group">
                             <label>{isAr ? 'تاريخ الميلاد' : 'Birth Date'} ({isAr ? 'اختياري' : 'Optional'})</label>
@@ -366,6 +370,12 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                                 <div className="uptown-input-group" style={{ marginTop: '20px' }}>
                                     <label>{isAr ? 'ملاحظات العنوان' : 'Address Notes'} ({isAr ? 'اختياري' : 'Optional'})</label>
                                     <input type="text" id="customer-address-notes" className="uptown-input" placeholder={isAr ? "مثلاً: قرب سوبرماركت..." : "e.g. Near supermarket..."} />
+                                </div>
+                                <div style={{ marginTop: '20px', padding: '15px', background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <Clock size={20} color="#0284C7" />
+                                    <span style={{ color: '#0369A1', fontWeight: 800, fontSize: '14px' }}>
+                                        {isAr ? 'وقت التوصيل المتوقع: حوالي نصف ساعة (30 دقيقة)' : 'Expected Delivery Time: About 30 minutes'}
+                                    </span>
                                 </div>
                             </div>
                         )}

@@ -26,16 +26,16 @@ export function LocationInitializer({ branches, lang = "ar" }: LocationInitializ
         (position) => {
           const { latitude, longitude } = position.coords;
           const nearest = findNearestBranch(latitude, longitude, branches);
-          
+
           if (nearest) {
             localStorage.setItem("uptown-nearest-branch", nearest.slug);
-            
+
             // Show a toast or notification to the user
             const branchName = isAr ? nearest.nameAr : (nearest.nameEn || nearest.nameAr);
             const msg = isAr ? `تم تحديد موقعك! الفرع الأقرب: ${branchName}` : `Location detected! Nearest branch: ${branchName}`;
-            
+
             if (typeof window !== "undefined" && (window as any).UI?.showToast) {
-                 (window as any).UI.showToast(msg, 'success');
+              (window as any).UI.showToast(msg, 'success');
             }
           }
         },

@@ -2,9 +2,10 @@ import { redirect } from "next/navigation";
 export const revalidate = 20;
 import { BodyClassName } from "@/components/body-class-name";
 import { getBranchBySlug, getMenuBanners, getSiteSettings, getCategories, getProducts } from "@/lib/data";
-import type { Category, Product, Branch, SiteSettings, MenuBanner } from "@/lib/types";
+import type { Category, Product, Branch, SiteSettings, MenuBanner, AddonGroup } from "@/lib/types";
 import { cookies } from "next/headers";
 import MenuClient from "@/components/MenuClient";
+import { getAllAddonGroups } from "@/lib/data";
 
 type MenuPageProps = {
   params: Promise<{
@@ -23,6 +24,7 @@ export default async function MenuPage({ params }: MenuPageProps) {
   let menuBanners: MenuBanner[] = [];
   let categories: Category[] = [];
   let allProducts: Product[] = [];
+  let allAddonGroups: AddonGroup[] = [];
 
   try {
     const responses = await Promise.all([
@@ -30,13 +32,15 @@ export default async function MenuPage({ params }: MenuPageProps) {
       getSiteSettings(),
       getMenuBanners(),
       getCategories(branchSlug),
-      getProducts(branchSlug)
+      getProducts(branchSlug),
+      getAllAddonGroups()
     ]);
     branch = responses[0] as Branch | null;
     settings = responses[1] as SiteSettings | null;
     menuBanners = responses[2] as MenuBanner[];
     categories = responses[3] as Category[];
     allProducts = responses[4] as Product[];
+    allAddonGroups = responses[5] as AddonGroup[];
   } catch (e) {
     console.error("[Menu] Failed to load data:", e);
   }
@@ -226,6 +230,7 @@ export default async function MenuPage({ params }: MenuPageProps) {
       <MenuClient
         categories={categories}
         allProducts={allProducts}
+        allAddonGroups={allAddonGroups}
         branch={branch}
         isAr={isAr}
         currency={currency}

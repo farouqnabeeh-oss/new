@@ -109,9 +109,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <span style={{ color: '#8b0000', fontWeight: 800 }}>{isAr ? "١٠:٠٠ صباحاً - ١٢:٠٠ منتصف الليل" : "10:00 AM - 12:00 AM"}</span>
           </p>
           <div style={{ marginTop: '20px' }}>
-             <p style={{ fontSize: '12px', color: '#999', fontWeight: 700 }}>
-                {isAr ? "جميع المعاملات محمية بتشفير SSL" : "All transactions are protected by SSL encryption"}
-             </p>
           </div>
         </div>
 

@@ -537,6 +537,22 @@ export async function getAddonGroups(categoryId?: number | null, productId?: num
   }
 }
 
+export async function getAllAddonGroups() {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("addon_groups")
+      .select("*, addon_group_items(*)")
+      .eq("is_active", true)
+      .order("sort_order");
+
+    if (error || !data) return [];
+    return data.map((row) => mapAddonGroup(row));
+  } catch (e) {
+    return [];
+  }
+}
+
 export async function getAdminData() {
   // noStore();
   if (isMockMode) {

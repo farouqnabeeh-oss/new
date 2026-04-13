@@ -157,8 +157,12 @@ const UI = {
         const getVisibleGroups = () => addonGroups.filter(group => {
             const type = group.groupType;
             if (['MealDrink', 'MealDrinkUpgrade', 'MealFries'].includes(type)) {
-                // Show if product is marked as a meal OR if the user is currently selecting a meal type
-                return !!product.hasMealOption || isMealSelection();
+                // Show only if the user explicitly selected a Meal type.
+                // If the product doesn't have types but has hasMealOption, treat it as a meal implicitly
+                if (product.types && product.types.length > 0) {
+                    return isMealSelection();
+                }
+                return !!product.hasMealOption;
             }
             if (type === 'Doneness') {
                 return !!product.hasDonenessOption;
@@ -302,7 +306,7 @@ const UI = {
                         <div class="option-group-title" style="font-size:15px">${Lang.t('size')}</div>
                         <div class="option-stack">
                             ${product.sizes.map(size => {
-                    const priceText = size.price > 0 ? `+${size.price}${currency}` : `${currency}`;
+                    const priceText = size.price > 0 ? `${size.price}${currency}` : `${product.basePrice || 0}${currency}`;
                     return `
                                 <div class="option-item ${state.selectedSize?.id === size.id ? 'selected' : ''}" data-action="size" data-id="${size.id}" style="padding:10px 15px">
                                     <span class="option-item-price">${priceText}</span>
@@ -327,7 +331,7 @@ const UI = {
                         <div class="option-stack">
                             ${product.types.map(type => {
                     const priceVal = hasCombinedSizeAndType ? selectedSizePrice + (type.price || 0) : type.price;
-                    const priceText = priceVal > 0 ? `+${priceVal}${currency}` : `${currency}`;
+                    const priceText = priceVal > 0 ? `${priceVal}${currency}` : `${product.basePrice || 0}${currency}`;
                     return `
                                 <div class="option-item ${state.selectedType?.id === type.id ? 'selected' : ''}" data-action="type" data-id="${type.id}" style="padding:10px 15px">
                                     <span class="option-item-price">${priceText}</span>
