@@ -171,20 +171,53 @@ const UI = {
 
         const findGroupByItemId = (itemId) => addonGroups.find(group => group.items.some(item => item.id === itemId));
 
-        const getVisibleGroups = () => addonGroups.filter(group => {
-            const type = group.groupType;
-            const name = (group.nameAr || '') + ' ' + (group.nameEn || '');
-            const isMealSpecificGroup = ['MealDrink', 'MealDrinkUpgrade', 'MealFries'].includes(type) || 
-                                        name.includes('مشروب') || name.includes('بطاطا') || name.toLowerCase().includes('drink') || name.toLowerCase().includes('fries');
-            
-            if (isMealSpecificGroup) {
-                return isMealSelection();
-            }
-            if (type === 'Doneness' || name.includes('الاستواء')) {
-                return !!product.hasDonenessOption;
-            }
-            return true;
-        });
+        const getVisibleGroups = () => {
+             const groups = addonGroups.filter(group => {
+                const type = group.groupType;
+                const name = (group.nameAr || '') + ' ' + (group.nameEn || '');
+                
+                // --- SIZE VISIBILITY ---
+                // User wants to hide Size for "other products", presumably all except the legend (87)
+                const isSizeGroup = (type === 'Size' || type === 'sizes' || name.includes('الحجم') || name.toLowerCase().includes('size'));
+                if (isSizeGroup && product.id !== 87 && [1, 2].includes(product.categoryId)) {
+                    return false;
+                }
+
+                // --- MEAL VISIBILITY ---
+                const isMealSpecificGroup = ['MealDrink', 'MealDrinkUpgrade', 'MealFries'].includes(type) || 
+                                            name.includes('مشروب') || name.includes('بطاطا') || name.toLowerCase().includes('drink') || name.toLowerCase().includes('fries');
+                
+                if (isMealSpecificGroup) {
+                    return isMealSelection();
+                }
+                
+                // --- DONENESS VISIBILITY ---
+                if (type === 'Doneness' || name.includes('الاستواء')) {
+                    return !!product.hasDonenessOption;
+                }
+                
+                return true;
+             });
+
+             // --- CUSTOM ORDERING: Type -> Inside -> Side -> Without ---
+             return groups.sort((a, b) => {
+                const nameA = (a.nameAr || '').toLowerCase();
+                const nameB = (b.nameAr || '').toLowerCase();
+                
+                const priority = (name) => {
+                   if (name.includes('النوع')) return 1;
+                   if (name.includes('إضافة داخل') || name.includes('داخل البرغر') || name.includes('inside adds')) return 2;
+                   if (name.includes('على الجنب') || name.includes('إضافة على جنب') || name.includes('side adds')) return 3;
+                   if (name.includes('بدون') || name.includes('without')) return 4;
+                   return 10; // Everything else at the bottom (like Drinks/Fries if meal)
+                };
+                
+                const pA = priority(nameA);
+                const pB = priority(nameB);
+                if (pA !== pB) return pA - pB;
+                return (a.sortOrder || 0) - (b.sortOrder || 0);
+             });
+        };
 
         const syncVisibleSelections = () => {
             const visibleGroupIds = new Set(getVisibleGroups().map(group => group.id));
@@ -316,7 +349,9 @@ const UI = {
             }
 
             const hasSizeGroup = getVisibleGroups().some(g => g.groupType === 'Size' || g.groupType === 'sizes' || g.nameAr?.includes('الحجم') || g.nameEn?.toLowerCase().includes('size'));
-            if (product.sizes?.length && !hasSizeGroup) {
+            const showSizePills = product.sizes?.length && !hasSizeGroup && (product.id === 87 || ![1, 2].includes(product.categoryId));
+
+            if (showSizePills) {
                 html += `
                     <div class="option-group">
                         <div class="option-group-title" style="font-size:15px">${Lang.t('size')}</div>
