@@ -43,6 +43,7 @@ export function AdminProductsTab({ products, categories, branches, settings, add
 
   const [showExtrasModal, setShowExtrasModal] = useState(false);
   const [activeExtraTab, setActiveExtraTab] = useState<'sizes' | 'types' | 'addons'>('sizes');
+  const [addonSearchTerm, setAddonSearchTerm] = useState("");
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const [isSaving, setIsSaving] = useState(false);
@@ -442,23 +443,59 @@ export function AdminProductsTab({ products, categories, branches, settings, add
               )}
 
               {activeExtraTab === 'addons' && (
-                <div className="addons-grid">
-                  {addonGroups.map(group => {
-                    const isSelected = selectedAddonGroupIds.includes(group.id);
-                    return (
-                      <label key={group.id} className={`addon-label ${isSelected ? 'selected' : ''}`}>
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={(e) => {
-                            if (e.target.checked) updateAddons(prev => [...prev, group.id]);
-                            else updateAddons(prev => prev.filter(id => id !== group.id));
-                          }}
-                        />
-                        <span className="addon-name">{group.nameAr || group.nameEn}</span>
-                      </label>
-                    );
-                  })}
+                <div className="extra-tab-content">
+                  <div style={{ marginBottom: '15px' }}>
+                    <input 
+                      type="text" 
+                      placeholder="Search groups (e.g. Without, Drinks...)" 
+                      className="premium-input"
+                      style={{ padding: '10px 15px', borderRadius: '12px' }}
+                      value={addonSearchTerm}
+                      onChange={(e) => setAddonSearchTerm(e.target.value)}
+                    />
+                  </div>
+                  <div className="addons-scroll-area" style={{ maxHeight: '400px', overflowY: 'auto', padding: '5px' }}>
+                    {(() => {
+                      const filtered = addonGroups.filter(g => 
+                        (g.nameAr || '').includes(addonSearchTerm) || 
+                        (g.nameEn || '').toLowerCase().includes(addonSearchTerm.toLowerCase()) ||
+                        (g.groupType || '').toLowerCase().includes(addonSearchTerm.toLowerCase())
+                      );
+                      
+                      const groupsByType: Record<string, typeof filtered> = {};
+                      filtered.forEach(g => {
+                        const type = g.groupType || 'Other';
+                        if (!groupsByType[type]) groupsByType[type] = [];
+                        groupsByType[type].push(g);
+                      });
+
+                      return Object.entries(groupsByType).map(([type, items]) => (
+                        <div key={type} style={{ marginBottom: '20px' }}>
+                          <div style={{ fontSize: '12px', fontWeight: 900, textTransform: 'uppercase', color: 'var(--primary)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            {type} <div style={{ flex: 1, height: '1px', background: 'rgba(var(--primary-rgb), 0.1)' }}></div>
+                          </div>
+                          <div className="addons-grid">
+                            {items.map(group => {
+                              const isSelected = selectedAddonGroupIds.includes(group.id);
+                              return (
+                                <label key={group.id} className={`addon-label ${isSelected ? 'selected' : ''}`}>
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={(e) => {
+                                      if (e.target.checked) updateAddons(prev => [...prev, group.id]);
+                                      else updateAddons(prev => prev.filter(id => id !== group.id));
+                                    }}
+                                  />
+                                  <span className="addon-name">{group.nameAr || group.nameEn}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ));
+                    })()}
+                  </div>
                 </div>
               )}
             </div>
