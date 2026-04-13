@@ -86,14 +86,18 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
         const phone = (document.getElementById('customer-phone') as HTMLInputElement).value.trim();
         const email = (document.getElementById('customer-email') as HTMLInputElement).value.trim();
         const birthday = (document.getElementById('customer-birthday') as HTMLInputElement)?.value;
-        const address = (document.getElementById('customer-address') as HTMLInputElement)?.value.trim();
+        const street = (document.getElementById('customer-street') as HTMLInputElement)?.value.trim() || "";
+        const building = (document.getElementById('customer-building') as HTMLInputElement)?.value.trim() || "";
+        const addressNotes = (document.getElementById('customer-address-notes') as HTMLInputElement)?.value.trim() || "";
+        const address = street ? `${street}, ${building}${addressNotes ? ` (${addressNotes})` : ""}` : "";
+        
         const table = (document.getElementById('customer-table') as HTMLInputElement)?.value.trim();
         const pickupTime = (document.getElementById('customer-pickup-time') as HTMLInputElement)?.value.trim();
         const notes = (document.getElementById('customer-notes') as HTMLTextAreaElement)?.value.trim();
         const policyAccepted = (document.getElementById('policy-accept') as HTMLInputElement).checked;
 
         if (!name || !phone) return alert(isAr ? 'يرجى ملأ جميع الحقول الأساسية (الاسم، الهاتف)' : 'Please fill all required fields (Name, Phone)');
-        if (orderType === 'delivery' && (!selectedZone || !address)) return alert(isAr ? 'يرجى اختيار منطقة التوصيل وكتابة العنوان بالتفصيل' : 'Please select a delivery zone and enter your address');
+        if (orderType === 'delivery' && (!selectedZone || !street || !building)) return alert(isAr ? 'يرجى اختيار منطقة التوصيل وإدخال بيانات الشارع والبناية بالتفصيل' : 'Please select a delivery zone and enter street and building details');
         if (orderType === 'inRestaurant' && subType === 'table' && !table) return alert(isAr ? 'يرجى إدخال رقم الطاولة' : 'Please enter table number');
         if (orderType === 'inRestaurant' && subType === 'pickup' && !pickupTime) return alert(isAr ? 'يرجى اختيار وقت الاستلام' : 'Please select pickup time');
         if (!policyAccepted) return alert(isAr ? 'يجب الموافقة على الشروط والسياسات للمتابعة' : 'You must accept the terms and policies to continue');
@@ -349,9 +353,19 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                                         }) : <option value="Manual" disabled>{isAr ? 'المناطق غير متاحة حالياً' : 'Zones momentarily unavailable'}</option>}
                                     </select>
                                 </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '20px' }}>
+                                    <div className="uptown-input-group">
+                                        <label>{isAr ? 'اسم الشارع' : 'Street Name'} *</label>
+                                        <input type="text" id="customer-street" required className="uptown-input" />
+                                    </div>
+                                    <div className="uptown-input-group">
+                                        <label>{isAr ? 'البناية / الشقة' : 'Building / Apt'} *</label>
+                                        <input type="text" id="customer-building" required className="uptown-input" />
+                                    </div>
+                                </div>
                                 <div className="uptown-input-group" style={{ marginTop: '20px' }}>
-                                    <label>{isAr ? 'العنوان بالتفصيل' : 'Detailed Address'} *</label>
-                                    <input type="text" id="customer-address" required className="uptown-input" />
+                                    <label>{isAr ? 'ملاحظات العنوان' : 'Address Notes'} ({isAr ? 'اختياري' : 'Optional'})</label>
+                                    <input type="text" id="customer-address-notes" className="uptown-input" placeholder={isAr ? "مثلاً: قرب سوبرماركت..." : "e.g. Near supermarket..."} />
                                 </div>
                             </div>
                         )}

@@ -18,6 +18,13 @@ export default async function PrivacyPolicyPage() {
           : "We collect the minimum data necessary to complete your orders, such as name, phone number, and delivery address. We use this data only to ensure your order reaches you with the best quality."
       },
       {
+        icon: "shield",
+        title: isAr ? "تشفير SSL وأمان البيانات" : "SSL Encryption & Data Security",
+        text: isAr
+          ? "موقعنا مؤمن بشهادة SSL (Secure Sockets Layer) صالحة ومحدثة، مما يعني أن جميع البيانات التي تدخلونها مشفرة بالكامل قبل إرسالها إلى خوادمنا. نحن نضمن حماية معلوماتكم الشخصية من أي وصول غير مصرح به."
+          : "Our website is secured with a valid and updated SSL (Secure Sockets Layer) certificate, meaning all data you enter is fully encrypted before being sent to our servers. We guarantee the protection of your personal information from unauthorized access."
+      },
+      {
         icon: "database",
         title: isAr ? "استخدام البيانات" : "Data Usage",
         text: isAr
@@ -28,15 +35,15 @@ export default async function PrivacyPolicyPage() {
         icon: "lock",
         title: isAr ? "أمان المدفوعات" : "Payment Security",
         text: isAr
-          ? "نحن نستخدم بوابات دفع مشغرة وآمنة (مثل Lahza/PalPay). لا نقوم بتخزين تفاصيل بطاقاتكم الائتمانية في خوادمنا، حيث تتم جميع العمليات عبر قنوات بنكية آمنة."
-          : "We use encrypted and secure payment gateways (like Lahza/PalPay). We do not store your credit card details on our servers; all transactions are processed through secure banking channels."
+          ? "نحن نستخدم بوابات دفع مشقرة وآمنة (مثل Lahza/PalPay). تخضع جميع عمليات الدفع لمعايير PCI-DSS. لا نقوم بتخزين تفاصيل بطاقاتكم الائتمانية في خوادمنا؛ حيث تتم جميع العمليات عبر قنوات بنكية آمنة تابعة لمزود الخدمة."
+          : "We use encrypted and secure payment gateways (like Lahza/PalPay). All payments comply with PCI-DSS standards. We do not store your credit card details on our servers; all transactions are processed through secure banking channels provided by the service provider."
       },
       {
-        icon: "share-2",
-        title: isAr ? "حقوق المستخدم" : "User Rights",
+        icon: "briefcase",
+        title: isAr ? "هوية المتجر" : "Merchant Identity",
         text: isAr
-          ? "لكم الحق دائماً في طلب تحديث بياناتكم أو حذفها من سجلاتنا. للتواصل بشأن الخصوصية، يرجى مراسلتنا عبر uptownramallah@gmail.com."
-          : "You always have the right to request an update or deletion of your data from our records. To contact us regarding privacy, please email uptownramallah@gmail.com."
+          ? "هذا الموقع مملوك ومدار من قبل مطاعم أبتاون (Uptown)، العنوان: فلسطين، رام الله، شارع الإرسال. نحن ملتزمون بكافة القوانين المحلية والدولية المتعلقة بحماية بيانات المستهلك."
+          : "This website is owned and operated by Uptown Restaurants, Address: Palestine, Ramallah, Al-Irsal St. We are committed to all local and international laws regarding consumer data protection."
       }
     ],
     footer: isAr ? "آخر تحديث: أبريل 2026" : "Last Updated: April 2026"

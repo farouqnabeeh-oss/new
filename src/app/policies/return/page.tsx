@@ -12,31 +12,31 @@ export default async function ReturnPolicyPage() {
     sections: [
       {
         icon: "clock",
-        title: isAr ? "نطاق الإرجاع والتبديل" : "Return & Exchange Window",
+        title: isAr ? "إلغاء الطلب" : "Order Cancellation",
         text: isAr 
-          ? "نظراً لطبيعة المنتجات الغذائية، يجب الإبلاغ عن أي مشكلة في الطلب فور استلامه. نقبل المراجعات والتبديل خلال 15 دقيقة من وقت استلام الطلب لضمان الجودة."
-          : "Due to the nature of food products, any issue with the order must be reported immediately upon receipt. We accept reviews and exchanges within 15 minutes of receipt to ensure quality."
+          ? "يمكنكم إلغاء الطلب واسترداد كامل المبلغ في حال لم يتم البدء في تحضير الوجبة بعد. نظراً لطبيعة الوجبات السريعة، لا يمكن إلغاء الطلب بعد دخوله مرحلة التحضير أو بعد خروج مندوب التوصيل."
+          : "You can cancel your order and get a full refund if the meal preparation has not started yet. Due to the nature of fast food, orders cannot be canceled after they enter the preparation stage or after the delivery driver has departed."
       },
       {
-        icon: "alert-circle",
-        title: isAr ? "حالات استحقاق التبديل" : "Eligible Cases",
+        icon: "refresh-cw",
+        title: isAr ? "سياسة الإرجاع والتبديل" : "Return & Exchange Policy",
         text: isAr 
-          ? "يتم قبول طلبات التبديل في حال استلام وجبة غير صحيحة، أو وجود نقص في الطلب، أو في حال وجود ملاحظة جوهرية على جودة المنتج."
-          : "Exchange requests are accepted if an incorrect meal is received, if there's a missing item, or if there's a substantial quality concern."
+          ? "إذا استلمت منتجاً تالفاً أو مختلفاً عن طلبك، يرجى إبلاغنا خلال 15 دقيقة من الاستلام. سنقوم بتبديل المنتج فوراً دون تكاليف إضافية، أو سنقوم برد القيمة المالية إذا ثبت وجود خطأ من طرفنا."
+          : "If you receive a damaged product or one that differs from your order, please inform us within 15 minutes of receipt. We will replace the product immediately at no extra cost, or refund the amount if an error on our part is confirmed."
       },
       {
         icon: "credit-card",
-        title: isAr ? "آلية التعويض" : "Refund & Resolution",
+        title: isAr ? "آلية استرداد الأموال" : "Refund Method",
         text: isAr 
-          ? "في حال قبول طلبك، سنقوم بتبديل الوجبة فوراً، أو إضافة رصيد لحسابك لاستخدامه في الطلب القادم، أو استرداد المبلغ حسب نوع الدفع الأصلي."
-          : "If your request is accepted, we will immediately exchange the meal, add credit to your account for future use, or provide a refund based on the original payment method."
+          ? "في حال الدفع الإلكتروني، سيتم استرداد المبالغ المالية إلى نفس البطاقة المستخدمة في عملية الشراء. قد تستغرق العملية من 5 إلى 10 أيام عمل حسب سياسة البنك المصدر للبطاقة. لا يمكن استبدال المبالغ النقدية للمشتريات التي تمت بالبطاقة."
+          : "For online payments, refunds will be processed back to the same card used for the purchase. The process may take 5 to 10 business days depending on the issuing bank's policy. Cash refunds are not available for card transactions."
       },
       {
-        icon: "phone-call",
-        title: isAr ? "التواصل للمطالبات" : "Contact for Claims",
+        icon: "truck",
+        title: isAr ? "شحن وتوصيل البضائع" : "Delivery & Shipping",
         text: isAr 
-          ? "لأي مطالبة تتعلق بالطلب، يرجى التواصل معنا فوراً عبر رقم الهاتف المعتمد 022950505 أو عبر الواتساب الخاص بالفرع المعني."
-          : "For any order claims, please contact us immediately via our verified number 022950505 or via the branch WhatsApp."
+          ? "نحن نلتزم بتوصيل الوجبات ساخنة وفي أفضل حالة. تستغرق عملية التوصيل عادةً ما بين 30 إلى 60 دقيقة حسب المسافة والضغط. سيتم إرسال إشعار لك فور خروج الطلب للتوصيل."
+          : "We are committed to delivering meals hot and in the best condition. Delivery usually takes 30 to 60 minutes depending on distance and order volume. You will receive a notification as soon as your order is dispatched for delivery."
       }
     ],
     footer: isAr ? "آخر تحديث: أبريل 2026" : "Last Updated: April 2026"

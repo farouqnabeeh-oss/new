@@ -275,19 +275,35 @@ async function sendOrderConfirmationEmail(order: any, items: any[]) {
         شكراً لتسوقكم من UPTOWN
         Thank you for choosing UPTOWN
 ========================================
-رقم الطلب / Order ID: #${order.id}
-التاريخ / Date: ${date}
-المبلغ الإجمالي / Total: ${order.total_amount} ₪
-طريقة الدفع / Payment: ${order.payment_method === 'Card' ? 'بطاقة ائتمان / Card (Online)' : 'نقدي / Cash'}
-الحالة / Status: مدفوع / Paid
+
+تاجر / Merchant: مطاعم أبتاون - UPTOWN Restaurants
+العنوان / Address: فلسطين، رام الله، شارع الإرسال
+الرابط / Website: https://uptown.ps
 
 تفاصيل الطلب / Order Details:
+رقم الطلب / Order ID: #${order.id}
+التاريخ / Date: ${date}
+تاريخ التسليم المتوقع / Expected Delivery: ${order.order_type === 'Delivery' ? 'خلال 30-60 دقيقة / Within 30-60 mins' : 'فوراً / Immediately'}
+العنوان / Delivery Address: ${order.address || 'لا يوجد / None'}
+
+تفاصيل الدفع / Payment Info:
+طريقة الدفع / Payment Method: ${order.payment_method === 'Card' ? 'بطاقة ائتمان / Credit Card' : 'نقدي / Cash'}
+${order.payment_method === 'Card' ? `نوع البطاقة / Card Type: Visa / MasterCard
+آخر ٤ أرقام / Last 4 Digits: ****
+رمز التحقق / CVV: مخفي للأمان / Hidden for security` : ''}
+
+قائمة المنتجات / Items:
 ${itemsList}
 
+المبلغ الإجمالي / Total Amount: ${order.total_amount} ₪
+(السعر يشمل تكاليف الشحن وضريبة القيمة المضافة إن وجدت)
+الحالة / Status: ${order.payment_status === 'Paid' ? 'تم الدفع / Paid' : 'في انتظار الدفع / Pending Payment'}
+
 ----------------------------------------
+* لسياسة الاسترجاع والإلغاء، يرجى زيارة: https://uptown.ps/policies/return
+
 تواصل معنا / Contact: uptownramallah@gmail.com
 الهاتف / Phone: 022950505
-فلسطين - رام الله / Ramallah - Palestine
 ========================================
     `;
 
