@@ -315,12 +315,12 @@ export function AdminProductsTab({ products, categories, branches, settings, add
             {/* Section 4: Advanced Extras */}
             <div className="form-section">
               <div className="form-section-title">✨ {t('customization') || 'Product Customization'}</div>
-              
+
               <div className="customization-container">
                 {/* Sizes Section */}
                 <div className="custom-box">
-                   <div className="custom-box-header">📏 {t('sizes') || 'Sizes'}</div>
-                   <div className="extra-list">
+                  <div className="custom-box-header">📏 {t('sizes') || 'Sizes'}</div>
+                  <div className="extra-list">
                     {sizes.map((s, i) => (
                       <div key={i} className="extra-item-mini">
                         <span>{s.NameAr} ({s.Price})</span>
@@ -337,8 +337,8 @@ export function AdminProductsTab({ products, categories, branches, settings, add
 
                 {/* Types Section */}
                 <div className="custom-box">
-                   <div className="custom-box-header">🍔 {t('types') || 'Meal Types'}</div>
-                   <div className="extra-list">
+                  <div className="custom-box-header">🍔 {t('types') || 'Meal Types'}</div>
+                  <div className="extra-list">
                     {types.map((t, i) => (
                       <div key={i} className="extra-item-mini">
                         <span>{t.NameAr} ({t.Price})</span>
@@ -355,58 +355,58 @@ export function AdminProductsTab({ products, categories, branches, settings, add
 
                 {/* Addon Groups Section - Scrollable Selection */}
                 <div className="custom-box span-2">
-                   <div className="custom-box-header">➕ {t('addonGroups') || 'Linked Add-ons (Without, Drinks...)'}</div>
-                   <input 
-                      type="text" 
-                      placeholder="Search groups..." 
-                      className="premium-input-sm"
-                      value={addonSearchTerm}
-                      onChange={(e) => setAddonSearchTerm(e.target.value)}
-                    />
-                   <div className="inline-addons-scroll">
-                      {addonGroups.filter(g => g.isActive && (
-                        (g.nameAr || '').includes(addonSearchTerm) || 
-                        (g.nameEn || '').toLowerCase().includes(addonSearchTerm.toLowerCase())
-                      )).map(group => {
-                        const isSelected = selectedAddonGroupIds.includes(group.id);
-                        return (
-                          <label key={group.id} className={`inline-addon-chip ${isSelected ? 'active' : ''}`}>
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={(e) => {
-                                if (e.target.checked) updateAddons(prev => [...prev, group.id]);
-                                else updateAddons(prev => prev.filter(id => id !== group.id));
-                              }}
-                            />
-                            <div className="chip-content">
-                              <span className="chip-name">{group.nameAr}</span>
-                              <span className="chip-items">{group.items?.slice(0, 2).map(it => it.nameAr).join(', ')}</span>
-                            </div>
-                          </label>
-                        );
-                      })}
-                   </div>
+                  <div className="custom-box-header">➕ {t('addonGroups') || 'Linked Add-ons (Without, Drinks...)'}</div>
+                  <input
+                    type="text"
+                    placeholder="Search groups..."
+                    className="premium-input-sm"
+                    value={addonSearchTerm}
+                    onChange={(e) => setAddonSearchTerm(e.target.value)}
+                  />
+                  <div className="inline-addons-scroll">
+                    {addonGroups.filter(g => g.isActive && (
+                      (g.nameAr || '').includes(addonSearchTerm) ||
+                      (g.nameEn || '').toLowerCase().includes(addonSearchTerm.toLowerCase())
+                    )).map(group => {
+                      const isSelected = selectedAddonGroupIds.includes(group.id);
+                      return (
+                        <label key={group.id} className={`inline-addon-chip ${isSelected ? 'active' : ''}`}>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => {
+                              if (e.target.checked) updateAddons(prev => [...prev, group.id]);
+                              else updateAddons(prev => prev.filter(id => id !== group.id));
+                            }}
+                          />
+                          <div className="chip-content">
+                            <span className="chip-name">{group.nameAr}</span>
+                            <span className="chip-items">{group.items?.slice(0, 2).map(it => it.nameAr).join(', ')}</span>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 
               <div className="logic-toggles">
-                  <label className="logic-chip">
-                    <input type="checkbox" name="AllBranches" defaultChecked onChange={handleFormChange} />
-                    <span>Global Product</span>
-                  </label>
-                  <label className="logic-chip">
-                    <input type="checkbox" name="IsActive" defaultChecked onChange={handleFormChange} />
-                    <span>Active In Store</span>
-                  </label>
-                  <label className="logic-chip">
-                    <input type="checkbox" name="HasMealOption" onChange={handleFormChange} />
-                    <span>Supports Meals</span>
-                  </label>
-                  <label className="logic-chip">
-                    <input type="checkbox" name="HasDonenessOption" onChange={handleFormChange} />
-                    <span>Doneness (Meat)</span>
-                  </label>
+                <label className="logic-chip">
+                  <input type="checkbox" name="AllBranches" defaultChecked onChange={handleFormChange} />
+                  <span>Global Product</span>
+                </label>
+                <label className="logic-chip">
+                  <input type="checkbox" name="IsActive" defaultChecked onChange={handleFormChange} />
+                  <span>Active In Store</span>
+                </label>
+                <label className="logic-chip">
+                  <input type="checkbox" name="HasMealOption" onChange={handleFormChange} />
+                  <span>Supports Meals</span>
+                </label>
+                <label className="logic-chip">
+                  <input type="checkbox" name="HasDonenessOption" onChange={handleFormChange} />
+                  <span>Doneness (Meat)</span>
+                </label>
               </div>
             </div>
 
@@ -512,9 +512,9 @@ export function AdminProductsTab({ products, categories, branches, settings, add
               {activeExtraTab === 'addons' && (
                 <div className="extra-tab-content">
                   <div style={{ marginBottom: '15px' }}>
-                    <input 
-                      type="text" 
-                      placeholder="Search groups (e.g. Without, Drinks...)" 
+                    <input
+                      type="text"
+                      placeholder="Search groups (e.g. Without, Drinks...)"
                       className="premium-input"
                       style={{ padding: '10px 15px', borderRadius: '12px' }}
                       value={addonSearchTerm}
@@ -523,14 +523,14 @@ export function AdminProductsTab({ products, categories, branches, settings, add
                   </div>
                   <div className="addons-scroll-area" style={{ maxHeight: '400px', overflowY: 'auto', padding: '5px' }}>
                     {(() => {
-                      const filtered = addonGroups.filter(g => 
+                      const filtered = addonGroups.filter(g =>
                         g.isActive && (
-                          (g.nameAr || '').includes(addonSearchTerm) || 
+                          (g.nameAr || '').includes(addonSearchTerm) ||
                           (g.nameEn || '').toLowerCase().includes(addonSearchTerm.toLowerCase()) ||
                           (g.groupType || '').toLowerCase().includes(addonSearchTerm.toLowerCase())
                         )
                       );
-                      
+
                       const groupsByType: Record<string, typeof filtered> = {};
                       filtered.forEach(g => {
                         const type = g.groupType || 'Other';

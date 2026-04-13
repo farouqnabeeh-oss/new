@@ -27,6 +27,7 @@ export function AdminAddonsTab({ addonGroups, categories, products }: Props) {
   const [editId, setEditId] = useState(0);
 
   const [items, setItems] = useState<ItemEntry[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const itemArRef = useRef<HTMLInputElement>(null);
   const itemEnRef = useRef<HTMLInputElement>(null);
   const itemPriceRef = useRef<HTMLInputElement>(null);
@@ -121,115 +122,194 @@ export function AdminAddonsTab({ addonGroups, categories, products }: Props) {
         <h3 className="admin-card-title">{t('manageAddons')}</h3>
         <button className="btn btn-primary" type="button" onClick={toggleForm}>{t('addAddon')}</button>
       </div>
-      <div ref={containerRef} style={{ display: "none", marginBottom: 20 }}>
-        <form ref={formRef} action={handleSave}>
-          <input type="hidden" name="Id" value={editId} readOnly />
-          <div className="form-row">
-            <div className="form-group">
-              <label>{t('nameAr')}</label>
-              <input name="NameAr" required />
-            </div>
-            <div className="form-group">
-              <label>{t('nameEn')}</label>
-              <input name="NameEn" required />
-            </div>
-          </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label>{t('category')}</label>
-              <select name="CategoryId" required defaultValue="">
-                <option value="">{t('category')}</option>
-                {categories.map((cat) => (
-                  <option value={cat.id} key={cat.id}>{cat.nameEn}</option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Product Scope</label>
-              <select name="ProductId" defaultValue="">
-                <option value="">Whole Category</option>
-                {products.map((product) => (
-                  <option value={product.id} key={product.id}>{product.nameEn}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label>Group Type</label>
-              <select name="GroupType" defaultValue="Addon">
-                <option value="Addon">Addon (+ price)</option>
-                <option value="Without">Without (no price)</option>
-                <option value="MealDrink">Meal Drink</option>
-                <option value="MealDrinkUpgrade">Meal Drink Upgrade</option>
-                <option value="MealFries">Meal Fries</option>
-                <option value="Doneness">Doneness</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Sort Order</label>
-              <input type="number" name="SortOrder" defaultValue="0" />
-            </div>
-          </div>
-          <div className="form-row">
-            <div className="form-group" style={{ display: "flex", flexDirection: "column", gap: 8, paddingTop: 20 }}>
-              <label><input type="checkbox" name="IsRequired" value="true" /> Required</label>
-              <label><input type="checkbox" name="AllowMultiple" value="true" defaultChecked /> Allow Multiple</label>
-              <label><input type="checkbox" name="IsActive" value="true" defaultChecked /> Active</label>
-            </div>
-          </div>
-
-          {/* Items */}
-          <div className="admin-card" style={{ marginTop: 12 }}>
-            <h4 style={{ fontWeight: 700, marginBottom: 8 }}>Items</h4>
-            <div>
-              {items.map((item, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 10px", background: "var(--bg-surface)", borderRadius: 8, marginBottom: 4 }}>
-                  <span>{item.NameAr} / {item.NameEn} - {item.Price}</span>
-                  <button type="button" className="btn btn-danger btn-sm" onClick={() => setItems((prev) => prev.filter((_, idx) => idx !== i))}>×</button>
+      <div ref={containerRef} style={{ display: "none", marginBottom: 30 }}>
+        <div className="admin-form-container premium-addon-form">
+          <form ref={formRef} action={handleSave}>
+            <input type="hidden" name="Id" value={editId} readOnly />
+            
+            <div className="form-section">
+              <div className="form-section-title">📂 {t('groupIdentity') || 'Group Identity'}</div>
+              <div className="form-row">
+                <div className="premium-input-group">
+                  <label>{t('nameAr')}</label>
+                  <input name="NameAr" className="premium-input" required />
                 </div>
-              ))}
-            </div>
-            <div className="form-row-3 mt-2">
-              <input ref={itemArRef} placeholder="Arabic name" />
-              <input ref={itemEnRef} placeholder="English name" />
-              <div style={{ display: "flex", gap: 8 }}>
-                <input ref={itemPriceRef} type="number" step="0.01" placeholder="Price" defaultValue="0" />
-                <button type="button" className="btn btn-outline" onClick={addItem}>+</button>
+                <div className="premium-input-group">
+                  <label>{t('nameEn')}</label>
+                  <input name="NameEn" className="premium-input" required />
+                </div>
               </div>
             </div>
-          </div>
 
-          <div style={{ marginTop: 16 }}>
-            <AdminSubmitButton label={editId ? "Update Addon Group" : "Save Addon Group"} pendingLabel="Saving…" />
-            <button type="button" className="btn btn-outline" style={{ marginLeft: 8 }} onClick={resetForm}>Cancel</button>
-          </div>
-        </form>
+            <div className="form-row-3" style={{ marginTop: '20px' }}>
+              <div className="premium-input-group">
+                <label>{t('category')}</label>
+                <select name="CategoryId" className="premium-select" required defaultValue="">
+                  <option value="">{t('selectCategory') || 'Select Category'}</option>
+                  {categories.map((cat) => (
+                    <option value={cat.id} key={cat.id}>{cat.nameEn} ({cat.branch?.nameEn || 'Global'})</option>
+                  ))}
+                </select>
+              </div>
+              <div className="premium-input-group">
+                <label>Group Type</label>
+                <select name="GroupType" className="premium-select" defaultValue="Addon">
+                  <option value="Addon">Addon (+ price)</option>
+                  <option value="Without">Without (no price)</option>
+                  <option value="MealDrink">Meal Drink</option>
+                  <option value="MealDrinkUpgrade">Meal Drink Upgrade</option>
+                  <option value="MealFries">Meal Fries</option>
+                  <option value="Doneness">Doneness</option>
+                </select>
+              </div>
+              <div className="premium-input-group">
+                <label>Sort Order</label>
+                <input type="number" name="SortOrder" className="premium-input" defaultValue="0" />
+              </div>
+            </div>
+
+            <div className="logic-toggles" style={{ marginTop: '20px' }}>
+                <label className="logic-chip">
+                  <input type="checkbox" name="IsRequired" value="true" />
+                  <span>Required</span>
+                </label>
+                <label className="logic-chip">
+                  <input type="checkbox" name="AllowMultiple" value="true" defaultChecked />
+                  <span>Allow Multiple</span>
+                </label>
+                <label className="logic-chip">
+                  <input type="checkbox" name="IsActive" value="true" defaultChecked />
+                  <span>Is Active</span>
+                </label>
+            </div>
+
+            {/* Items Section */}
+            <div className="form-section" style={{ marginTop: '30px' }}>
+              <div className="form-section-title">🥗 {t('groupItems') || 'Items in this group'}</div>
+              <div className="items-grid-admin">
+                {items.map((item, i) => (
+                  <div key={i} className="item-card-admin">
+                    <div className="item-info-admin">
+                      <span className="item-name-admin">{item.NameAr}</span>
+                      <span className="item-price-admin">{item.Price} {t('currency') || '$'}</span>
+                    </div>
+                    <button type="button" className="item-remove-admin" onClick={() => setItems((prev) => prev.filter((_, idx) => idx !== i))}>&times;</button>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="quick-add-item-bar">
+                <input ref={itemArRef} placeholder="Arabic Name" className="premium-input-sm" />
+                <input ref={itemEnRef} placeholder="English Name" className="premium-input-sm" />
+                <input ref={itemPriceRef} type="number" step="0.01" placeholder="Price" defaultValue="0" className="premium-input-sm" style={{ width: '80px' }} />
+                <button type="button" className="btn-add-item" onClick={addItem}>{t('addItem') || 'Add Item'}</button>
+              </div>
+            </div>
+
+            <div className="save-bar-premium">
+              <div className="save-bar-info">
+                 <span className="synced-indicator">✨ {editId ? 'Editing Group' : 'New Group'}</span>
+              </div>
+              <div className="save-bar-actions">
+                <button type="button" className="btn-discard" onClick={resetForm}>{t('cancel') || 'Cancel'}</button>
+                <AdminSubmitButton label={editId ? "Update Group" : "Create Group"} pendingLabel="Saving…" className="btn-save-large" />
+              </div>
+            </div>
+          </form>
+        </div>
       </div>
-      <table className="admin-table">
-        <thead>
-          <tr>
-            <th>{t('name')}</th>
-            <th>{t('category')}</th>
-            <th>{t('actions')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {addonGroups.map((group) => (
-            <tr key={group.id}>
-              <td>{group.nameAr} / {group.nameEn}</td>
-              <td>{group.category?.nameEn ?? "Unknown"}</td>
-              <td>
-                <button type="button" className="btn btn-outline btn-sm" onClick={() => editAddonGroup(group)}>{t('edit')}</button>
-                <form action={handleDelete} style={{ display: "inline" }}>
-                  <input type="hidden" name="id" value={group.id} />
-                  <AdminDeleteButton confirmMessage={t('confirmDelete')} />
-                </form>
-              </td>
+
+      <div className="table-controls" style={{ marginBottom: '15px', display: 'flex', gap: '15px' }}>
+        <input 
+          type="text" 
+          placeholder="Search groups..." 
+          className="premium-input" 
+          style={{ maxWidth: '300px' }}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+
+      <div className="table-responsive">
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>{t('name')}</th>
+              <th>{t('type')}</th>
+              <th>{t('category')}</th>
+              <th>{t('items')}</th>
+              <th>{t('actions')}</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {addonGroups.filter(g => 
+              (g.nameAr || '').includes(searchTerm) || 
+              (g.nameEn || '').toLowerCase().includes(searchTerm.toLowerCase())
+            ).map((group) => (
+              <tr key={group.id} className={!group.isActive ? 'row-inactive' : ''}>
+                <td>
+                  <div style={{ fontWeight: 800 }}>{group.nameAr}</div>
+                  <div style={{ fontSize: '12px', color: '#888' }}>{group.nameEn}</div>
+                </td>
+                <td><span className={`type-tag type-${group.groupType.toLowerCase()}`}>{group.groupType}</span></td>
+                <td><span className="category-tag">{group.category?.nameEn ?? "Global"}</span></td>
+                <td><span className="items-count-tag">{group.items?.length || 0} items</span></td>
+                <td>
+                  <div className="flex gap-2">
+                    <button type="button" className="btn btn-outline btn-sm" style={{ border: 'none', background: '#f5f5f5' }} onClick={() => editAddonGroup(group)}>{t('edit')}</button>
+                    <form action={handleDelete} style={{ display: "inline" }}>
+                      <input type="hidden" name="id" value={group.id} />
+                      <AdminDeleteButton confirmMessage={t('confirmDelete')} />
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <style jsx>{`
+        .premium-addon-form { animation: slideDown 0.4s ease-out; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .items-grid-admin { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .item-card-admin { display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; border: 1px solid #eee; border-radius: 12px; padding: 10px 15px; }
+        .item-info-admin { display: flex; flexDirection: column; gap: 2px; }
+        .item-name-admin { font-size: 13px; font-weight: 800; color: #333; }
+        .item-price-admin { font-size: 11px; font-weight: 700; color: var(--primary); }
+        .item-remove-admin { background: #fff; color: #ff4d4d; border: 1px solid #eee; width: 24px; height: 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: 0.2s; }
+        .item-remove-admin:hover { background: #ff4d4d; color: #fff; }
+
+        .quick-add-item-bar { display: flex; gap: 10px; background: #fff; padding: 15px; border-radius: 16px; border: 1px solid #eee; border-bottom: 3px solid #eee; }
+        .btn-add-item { background: #000; color: #fff; border: none; padding: 0 20px; border-radius: 10px; font-weight: 800; font-size: 13px; cursor: pointer; transition: 0.3s; }
+        .btn-add-item:hover { transform: translateY(-2px); }
+
+        .type-tag { font-size: 10px; font-weight: 900; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; letter-spacing: 0.5px; }
+        .type-without { background: #fff1f1; color: #f84f4f; }
+        .type-addon { background: #f0fdf4; color: #16a34a; }
+        .type-mealdrink { background: #eff6ff; color: #2563eb; }
+        .category-tag { font-size: 11px; font-weight: 800; background: #f3f4f6; color: #4b5563; padding: 4px 10px; border-radius: 10px; }
+        .items-count-tag { font-size: 11px; font-weight: 800; color: #9ca3af; }
+        .row-inactive { opacity: 0.5; filter: grayscale(1); }
+
+        .save-bar-premium { position: sticky; bottom: -2px; width: calc(100% + 60px); margin: 0 -30px -30px; padding: 20px 40px; background: #1a1a1a; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 24px 24px; box-shadow: 0 -10px 30px rgba(0,0,0,0.1); }
+        .save-bar-info { color: #fff; font-weight: 700; font-size: 14px; }
+        .save-bar-actions { display: flex; gap: 15px; }
+        .btn-discard { background: transparent; border: 1px solid #444; color: #aaa; padding: 10px 20px; border-radius: 12px; cursor: pointer; font-weight: 700; transition: 0.3s; }
+        .btn-discard:hover { border-color: #666; color: #fff; }
+
+        .logic-toggles { display: flex; gap: 10px; flex-wrap: wrap; }
+        .logic-chip { flex: 1; min-width: 140px; display: flex; alignItems: center; gap: 8px; padding: 12px; background: #fff; border: 1px solid #eee; border-radius: 12px; cursor: pointer; font-size: 13px; font-weight: 700; transition: 0.2s; }
+        .logic-chip input { width: 18px; height: 18px; accent-color: var(--primary); }
+        
+        .premium-input, .premium-select { width: 100%; padding: 12px 16px; background: #fdfdfd; border: 2px solid #f0f0f0; border-radius: 14px; font-size: 15px; outline: none; transition: 0.3s; }
+        .premium-input:focus, .premium-select:focus { border-color: var(--primary); background: #fff; }
+        .premium-input-group { display: flex; flexDirection: column; gap: 6px; flex: 1; }
+        .premium-input-group label { font-size: 13px; font-weight: 800; color: #555; margin-inline-start: 4px; }
+        .form-section-title { font-size: 13px; font-weight: 900; color: #aaa; text-transform: uppercase; margin-bottom: 15px; display: flex; alignItems: center; gap: 10px; }
+        .form-section-title::after { content: ""; flex: 1; height: 1px; background: #eee; }
+      `}</style>le>
     </div>
   );
 }
