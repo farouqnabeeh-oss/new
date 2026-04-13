@@ -378,8 +378,8 @@ export function AdminProductsTab({ products, categories, branches, settings, add
                           (g.nameAr || '').includes(addonSearchTerm) ||
                           (g.nameEn || '').toLowerCase().includes(addonSearchTerm.toLowerCase())
                         )).map(group => {
-                          const isCategoryWide = group.categoryId && !group.productId;
-                          const isSelected = isCategoryWide || selectedAddonGroupIds.includes(group.id);
+                          const isCategoryWide = !!(group.categoryId && !group.productId);
+                          const isSelected = !!(isCategoryWide || selectedAddonGroupIds.includes(group.id));
                           return (
                             <label key={group.id} className={`inline-addon-chip ${isSelected ? 'active' : ''}`}>
                               <input
