@@ -314,38 +314,99 @@ export function AdminProductsTab({ products, categories, branches, settings, add
 
             {/* Section 4: Advanced Extras */}
             <div className="form-section">
-              <div className="form-section-title">✨ {t('customization') || 'Smart Customization'}</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '20px' }}>
-                <button
-                  type="button"
-                  className="extras-smart-btn"
-                  onClick={() => setShowExtrasModal(true)}
-                >
-                  🛠️ {t('extrasAndAddons') || 'Configure Extras & Add-ons'}
-                  <span className="extras-count">
-                    {sizes.length + types.length + selectedAddonGroupIds.length}
-                  </span>
-                </button>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <label className="status-chip">
-                    <input type="checkbox" name="AllBranches" defaultChecked onChange={handleFormChange} />
-                    <span>Global</span>
-                  </label>
-                  <label className="status-chip">
-                    <input type="checkbox" name="IsActive" defaultChecked onChange={handleFormChange} />
-                    <span>Active</span>
-                  </label>
+              <div className="form-section-title">✨ {t('customization') || 'Product Customization'}</div>
+              
+              <div className="customization-container">
+                {/* Sizes Section */}
+                <div className="custom-box">
+                   <div className="custom-box-header">📏 {t('sizes') || 'Sizes'}</div>
+                   <div className="extra-list">
+                    {sizes.map((s, i) => (
+                      <div key={i} className="extra-item-mini">
+                        <span>{s.NameAr} ({s.Price})</span>
+                        <button type="button" className="remove-btn-tiny" onClick={() => updateSizes((prev) => prev.filter((_, idx) => idx !== i))}>&times;</button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="extra-mini-form">
+                    <input ref={sizeArRef} placeholder="Ar" style={{ width: '40px' }} />
+                    <input ref={sizePriceRef} type="number" placeholder="Price" style={{ width: '50px' }} />
+                    <button type="button" onClick={addSize} className="add-btn-mini">+</button>
+                  </div>
+                </div>
+
+                {/* Types Section */}
+                <div className="custom-box">
+                   <div className="custom-box-header">🍔 {t('types') || 'Meal Types'}</div>
+                   <div className="extra-list">
+                    {types.map((t, i) => (
+                      <div key={i} className="extra-item-mini">
+                        <span>{t.NameAr} ({t.Price})</span>
+                        <button type="button" className="remove-btn-tiny" onClick={() => updateTypes((prev) => prev.filter((_, idx) => idx !== i))}>&times;</button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="extra-mini-form">
+                    <input ref={typeArRef} placeholder="Ar" style={{ width: '40px' }} />
+                    <input ref={typePriceRef} type="number" placeholder="Price" style={{ width: '50px' }} />
+                    <button type="button" onClick={addType} className="add-btn-mini">+</button>
+                  </div>
+                </div>
+
+                {/* Addon Groups Section - Scrollable Selection */}
+                <div className="custom-box span-2">
+                   <div className="custom-box-header">➕ {t('addonGroups') || 'Linked Add-ons (Without, Drinks...)'}</div>
+                   <input 
+                      type="text" 
+                      placeholder="Search groups..." 
+                      className="premium-input-sm"
+                      value={addonSearchTerm}
+                      onChange={(e) => setAddonSearchTerm(e.target.value)}
+                    />
+                   <div className="inline-addons-scroll">
+                      {addonGroups.filter(g => g.isActive && (
+                        (g.nameAr || '').includes(addonSearchTerm) || 
+                        (g.nameEn || '').toLowerCase().includes(addonSearchTerm.toLowerCase())
+                      )).map(group => {
+                        const isSelected = selectedAddonGroupIds.includes(group.id);
+                        return (
+                          <label key={group.id} className={`inline-addon-chip ${isSelected ? 'active' : ''}`}>
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={(e) => {
+                                if (e.target.checked) updateAddons(prev => [...prev, group.id]);
+                                else updateAddons(prev => prev.filter(id => id !== group.id));
+                              }}
+                            />
+                            <div className="chip-content">
+                              <span className="chip-name">{group.nameAr}</span>
+                              <span className="chip-items">{group.items?.slice(0, 2).map(it => it.nameAr).join(', ')}</span>
+                            </div>
+                          </label>
+                        );
+                      })}
+                   </div>
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                <label className="status-chip" style={{ flex: 1 }}>
-                  <input type="checkbox" name="HasMealOption" onChange={handleFormChange} />
-                  <span>Meal Support</span>
-                </label>
-                <label className="status-chip" style={{ flex: 1 }}>
-                  <input type="checkbox" name="HasDonenessOption" onChange={handleFormChange} />
-                  <span>Doneness (Meat)</span>
-                </label>
+
+              <div className="logic-toggles">
+                  <label className="logic-chip">
+                    <input type="checkbox" name="AllBranches" defaultChecked onChange={handleFormChange} />
+                    <span>Global Product</span>
+                  </label>
+                  <label className="logic-chip">
+                    <input type="checkbox" name="IsActive" defaultChecked onChange={handleFormChange} />
+                    <span>Active In Store</span>
+                  </label>
+                  <label className="logic-chip">
+                    <input type="checkbox" name="HasMealOption" onChange={handleFormChange} />
+                    <span>Supports Meals</span>
+                  </label>
+                  <label className="logic-chip">
+                    <input type="checkbox" name="HasDonenessOption" onChange={handleFormChange} />
+                    <span>Doneness (Meat)</span>
+                  </label>
               </div>
             </div>
 
@@ -359,14 +420,20 @@ export function AdminProductsTab({ products, categories, branches, settings, add
               </div>
             </div>
 
-            <div className="save-bar">
-              {isSaving && (
-                <span style={{ fontSize: '13px', color: 'var(--primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span className="spinner-mini"></span> {t('saving') || 'Syncing changes...'}
-                </span>
-              )}
-              <button type="button" className="btn btn-outline" style={{ borderRadius: '12px', padding: '12px 25px' }} onClick={resetForm}>Discard</button>
-              <AdminSubmitButton label={editId ? "Update Product" : "Create Product"} pendingLabel="Saving…" />
+            <div className="save-bar-premium">
+              <div className="save-bar-info">
+                {isSaving ? (
+                  <span className="saving-indicator">
+                    <span className="spinner-mini"></span> {t('saving') || 'Syncing...'}
+                  </span>
+                ) : (
+                  <span className="synced-indicator">✨ {t('allChangesSaved') || 'All changes ready'}</span>
+                )}
+              </div>
+              <div className="save-bar-actions">
+                <button type="button" className="btn-discard" onClick={resetForm}>{t('cancel') || 'Discard'}</button>
+                <AdminSubmitButton label={editId ? "Update Product" : "Create Product"} pendingLabel="Saving…" className="btn-save-large" />
+              </div>
             </div>
           </form>
         </div>
@@ -772,25 +839,41 @@ export function AdminProductsTab({ products, categories, branches, settings, add
         .addon-label.selected { border-color: var(--primary); background: rgba(var(--primary-rgb), 0.03); }
         .addon-name { font-size: 14px; font-weight: 800; }
         
-        .save-bar {
-          position: sticky;
-          bottom: -2px;
-          background: rgba(255,255,255,0.9);
-          backdrop-filter: blur(10px);
-          padding: 20px;
-          border-top: 1px solid #eee;
-          display: flex;
-          justify-content: flex-end;
-          align-items: center;
-          gap: 15px;
-          margin: 0 -30px -30px;
-          border-radius: 0 0 24px 24px;
-        }
+        .customization-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
+        .custom-box { background: #f8f9fa; border: 1px solid #eee; border-radius: 18px; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .custom-box.span-2 { grid-column: span 2; }
+        .custom-box-header { font-size: 13px; font-weight: 800; color: #444; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 5px; }
+        
+        .extra-item-mini { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 5px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; border: 1px solid #eee; }
+        .remove-btn-tiny { background: #fff1f1; color: #ff4d4d; border: none; width: 20px; height: 20px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        
+        .extra-mini-form { display: flex; gap: 5px; }
+        .extra-mini-form input { padding: 6px 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 11px; outline: none; }
+        .add-btn-mini { background: #000; color: #fff; border: none; padding: 0 12px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 900; }
+        
+        .premium-input-sm { width: 100%; padding: 8px 12px; background: #fff; border: 1px solid #ddd; border-radius: 10px; font-size: 12px; outline: none; }
+        .inline-addons-scroll { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; max-height: 200px; overflow-y: auto; padding: 5px; }
+        
+        .inline-addon-chip { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #fff; border: 1px solid #eee; border-radius: 12px; cursor: pointer; transition: 0.2s; }
+        .inline-addon-chip.active { border-color: var(--primary); background: rgba(var(--primary-rgb), 0.05); }
+        .chip-content { display: flex; flex-direction: column; line-height: 1.2; }
+        .chip-name { font-size: 12px; font-weight: 800; color: #222; }
+        .chip-items { font-size: 10px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
+        
+        .logic-toggles { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+        .logic-chip { flex: 1; min-width: 120px; display: flex; alignItems: center; gap: 8px; padding: 10px; background: #fff; border: 1px solid #eee; border-radius: 12px; cursor: pointer; font-size: 12px; font-weight: 700; transition: 0.2s; }
+        .logic-chip:hover { border-color: var(--primary); }
+        .logic-chip input { width: 16px; height: 16px; accent-color: var(--primary); }
 
-        .category-tag { font-size: 12px; font-weight: 800; color: #666; background: #f0f0f0; padding: 4px 10px; border-radius: 20px; }
-        .badge-s { background: #eff6ff; color: #2563eb; font-size: 11px; padding: 4px 10px; border-radius: 20px; font-weight: 800; }
-        .badge-t { background: #ecfdf5; color: #059669; font-size: 11px; padding: 4px 10px; border-radius: 20px; font-weight: 800; }
-        .spinner-mini { width: 14px; height: 14px; border: 2px solid rgba(var(--primary-rgb), 0.2); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; }
+        .save-bar-premium { position: sticky; bottom: -2px; width: calc(100% + 60px); margin: 0 -30px -30px; padding: 20px 40px; background: #1a1a1a; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 24px 24px; box-shadow: 0 -10px 30px rgba(0,0,0,0.1); }
+        .save-bar-info { color: #fff; font-weight: 700; font-size: 14px; }
+        .saving-indicator { display: flex; alignItems: center; gap: 8px; }
+        .synced-indicator { opacity: 0.8; }
+        .save-bar-actions { display: flex; gap: 15px; }
+        .btn-discard { background: transparent; border: 1px solid #444; color: #aaa; padding: 10px 20px; border-radius: 12px; cursor: pointer; font-weight: 700; transition: 0.3s; }
+        .btn-discard:hover { border-color: #666; color: #fff; }
+        
+        .spinner-mini { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.2); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; }
         @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
     </div>
