@@ -713,7 +713,7 @@ export async function createOrderAction(input: CreateOrderInput): Promise<{ succ
 export async function saveCustomerAction(formData: FormData): Promise<ActionResult> {
   await requireSession();
   const supabase = getSupabaseAdmin();
-  const id = toNumber(formData.get("Id"));
+  const id = String(formData.get("Id") ?? "0");
   const name = String(formData.get("Name") ?? "").trim();
   const email = String(formData.get("Email") ?? "").trim();
   const phone = String(formData.get("Phone") ?? "").trim();
@@ -729,7 +729,7 @@ export async function saveCustomerAction(formData: FormData): Promise<ActionResu
     updated_at: new Date().toISOString()
   };
 
-  if (id === 0) {
+  if (id === "0") {
     const { error } = await supabase.from("customers").insert(payload);
     if (error) return { success: false, error: error.message };
   } else {
@@ -744,7 +744,7 @@ export async function saveCustomerAction(formData: FormData): Promise<ActionResu
 export async function deleteCustomerAction(formData: FormData): Promise<ActionResult> {
   await requireSession();
   const supabase = getSupabaseAdmin();
-  const id = toNumber(formData.get("id"));
+  const id = String(formData.get("id") ?? "");
 
   if (!id) return { success: false, error: "Customer ID is required." };
 
