@@ -1,0 +1,292 @@
+"use client";
+
+import { useState, useEffect, useRef, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+
+const STATUS_STEPS = [
+  { key: "Pending",          arLabel: "استلام الطلب",       enLabel: "Order Received",     icon: "📥" },
+  { key: "Confirmed",        arLabel: "تأكيد الطلب",        enLabel: "Order Confirmed",    icon: "✅" },
+  { key: "Preparing",        arLabel: "قيد التحضير",         enLabel: "Preparing",          icon: "👨‍🍳" },
+  { key: "Ready",            arLabel: "جاهز للاستلام",       enLabel: "Ready for Pickup",   icon: "🎉" },
+  { key: "Out for Delivery", arLabel: "في الطريق إليك",     enLabel: "Out for Delivery",   icon: "🛵" },
+  { key: "Delivered",        arLabel: "تم التسليم",          enLabel: "Delivered",          icon: "🏠" },
+];
+
+const TERMINAL_STATUSES = ["Delivered", "Cancelled"];
+const ESTIMATE_MINUTES: Record<string, number> = {
+  Pending: 35,
+  Confirmed: 30,
+  Preparing: 20,
+  Ready: 5,
+  "Out for Delivery": 10,
+  Delivered: 0,
+};
+
+function OrderStatusContent() {
+  const searchParams = useSearchParams();
+  const orderId = searchParams.get("orderId");
+
+  const [order, setOrder] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const isAr = typeof document !== "undefined"
+    ? !document.cookie.includes("language=en")
+    : true;
+
+  const fetchStatus = async () => {
+    if (!orderId) return;
+    try {
+      const res = await fetch(`/api/order-status?orderId=${orderId}`, { cache: "no-store" });
+      const data = await res.json();
+      if (data.success) {
+        setOrder(data.order);
+        setLastUpdated(new Date());
+      } else {
+        setError(data.error || "Order not found");
+      }
+    } catch {
+      setError("Network error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStatus();
+    const interval = setInterval(() => {
+      if (order && !TERMINAL_STATUSES.includes(order.status)) {
+        fetchStatus();
+      }
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [orderId, order?.status]);
+
+  if (!orderId) {
+    return (
+      <div style={style.center}>
+        <p style={{ color: "#888" }}>{isAr ? "رقم الطلب غير موجود" : "No order ID provided"}</p>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div style={style.center}>
+        <div style={style.spinner} />
+      </div>
+    );
+  }
+
+  if (error || !order) {
+    return (
+      <div style={style.center}>
+        <div style={{ fontSize: "48px", marginBottom: "20px" }}>⚠️</div>
+        <p style={{ color: "#888", fontWeight: 700 }}>
+          {isAr ? "لم يتم العثور على الطلب" : "Order not found"}
+        </p>
+        <a href="/" style={{ color: "#8b0000", fontWeight: 800, marginTop: "20px", display: "block" }}>
+          {isAr ? "← الرجوع للرئيسية" : "← Back to Home"}
+        </a>
+      </div>
+    );
+  }
+
+  const currentStatusIndex = STATUS_STEPS.findIndex(s => s.key === order.status);
+  const isCancelled = order.status === "Cancelled";
+  const estimateMins = ESTIMATE_MINUTES[order.status] ?? 30;
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#FAF9F6", padding: "24px", direction: isAr ? "rtl" : "ltr" }}>
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes pulse-ring {
+          0% { box-shadow: 0 0 0 0 rgba(139,0,0,0.4); }
+          70% { box-shadow: 0 0 0 16px rgba(139,0,0,0); }
+          100% { box-shadow: 0 0 0 0 rgba(139,0,0,0); }
+        }
+        @keyframes fade-up { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
+        .status-card { animation: fade-up 0.4s ease both; }
+        .step-active { animation: pulse-ring 2s infinite; }
+      ` }} />
+
+      <div style={{ maxWidth: "520px", margin: "0 auto" }}>
+        {/* Header */}
+        <div style={{ textAlign: "center", padding: "30px 0 20px" }}>
+          <img src="/logo.jpeg" alt="Uptown" style={{ height: "50px", marginBottom: "12px" }} />
+          <h1 style={{ fontWeight: 900, fontSize: "1.8rem", margin: 0 }}>
+            {isAr ? "متابعة الطلب" : "Track Your Order"}
+          </h1>
+          <p style={{ color: "#888", fontWeight: 700, fontSize: "14px", marginTop: "6px" }}>
+            #{orderId} — {order.customer_name}
+          </p>
+        </div>
+
+        {/* Status Card */}
+        <div className="status-card" style={{
+          background: "#fff",
+          borderRadius: "32px",
+          padding: "32px",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.06)",
+          border: "1px solid #ECEAE7",
+          marginBottom: "20px",
+        }}>
+          {/* Current Status Banner */}
+          <div style={{
+            background: isCancelled ? "#FEE2E2" : "#FFF4F4",
+            borderRadius: "20px",
+            padding: "20px 24px",
+            marginBottom: "28px",
+            display: "flex",
+            alignItems: "center",
+            gap: "16px",
+          }}>
+            <div style={{
+              width: "56px", height: "56px", borderRadius: "50%",
+              background: isCancelled ? "#DC2626" : "#8B0000",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: "24px", flexShrink: 0,
+            }} className={!isCancelled && !TERMINAL_STATUSES.includes(order.status) ? "step-active" : ""}>
+              {isCancelled ? "❌" : (STATUS_STEPS[currentStatusIndex]?.icon ?? "🔄")}
+            </div>
+            <div>
+              <div style={{ fontWeight: 900, fontSize: "1.2rem", color: isCancelled ? "#DC2626" : "#8B0000" }}>
+                {isCancelled
+                  ? (isAr ? "تم إلغاء الطلب" : "Order Cancelled")
+                  : (isAr
+                    ? STATUS_STEPS[currentStatusIndex]?.arLabel
+                    : STATUS_STEPS[currentStatusIndex]?.enLabel)}
+              </div>
+              {!isCancelled && order.status !== "Delivered" && (
+                <div style={{ color: "#555", fontWeight: 700, fontSize: "13px", marginTop: "4px" }}>
+                  ⏱ {isAr
+                    ? `الوقت المتبقي المتوقع: ~${estimateMins} دقيقة`
+                    : `Estimated time: ~${estimateMins} min`}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Progress Steps */}
+          {!isCancelled && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
+              {STATUS_STEPS.filter(s => !["Out for Delivery"].includes(s.key) || order.order_type === "Delivery").map((step, idx) => {
+                const isCompleted = currentStatusIndex > idx;
+                const isCurrent = currentStatusIndex === idx;
+                return (
+                  <div key={step.key} style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}>
+                    {/* Track line */}
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "28px", flexShrink: 0 }}>
+                      <div style={{
+                        width: "28px", height: "28px", borderRadius: "50%",
+                        background: isCompleted ? "#8B0000" : isCurrent ? "#8B0000" : "#E5E7EB",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: "14px", transition: "all 0.3s",
+                        color: isCompleted || isCurrent ? "#fff" : "#9CA3AF",
+                      }}>
+                        {isCompleted ? "✓" : step.icon}
+                      </div>
+                      {idx < STATUS_STEPS.length - 1 && (
+                        <div style={{
+                          width: "2px", height: "36px",
+                          background: isCompleted ? "#8B0000" : "#E5E7EB",
+                          transition: "background 0.3s",
+                        }} />
+                      )}
+                    </div>
+                    {/* Label */}
+                    <div style={{ paddingTop: "4px", paddingBottom: "28px" }}>
+                      <div style={{
+                        fontWeight: isCurrent ? 900 : isCompleted ? 700 : 600,
+                        color: isCurrent ? "#8B0000" : isCompleted ? "#111" : "#9CA3AF",
+                        fontSize: isCurrent ? "16px" : "14px",
+                      }}>
+                        {isAr ? step.arLabel : step.enLabel}
+                      </div>
+                      {isCurrent && (
+                        <div style={{ fontSize: "12px", color: "#888", marginTop: "2px" }}>
+                          {isAr ? "الحالة الحالية" : "Current status"}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Order Info */}
+        <div style={{
+          background: "#fff",
+          borderRadius: "24px",
+          padding: "24px",
+          border: "1px solid #ECEAE7",
+          marginBottom: "20px",
+          fontSize: "14px",
+        }}>
+          <h3 style={{ margin: "0 0 16px", fontWeight: 900 }}>{isAr ? "تفاصيل الطلب" : "Order Details"}</h3>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
+            <span style={{ color: "#888" }}>{isAr ? "رقم الطلب" : "Order ID"}</span>
+            <span style={{ fontWeight: 800 }}>#{order.id}</span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
+            <span style={{ color: "#888" }}>{isAr ? "نوع الطلب" : "Order Type"}</span>
+            <span style={{ fontWeight: 800 }}>{order.order_type}</span>
+          </div>
+          {order.table_number && (
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
+              <span style={{ color: "#888" }}>{isAr ? "وقت الاستلام" : "Pickup Time"}</span>
+              <span style={{ fontWeight: 800 }}>{order.table_number}</span>
+            </div>
+          )}
+          <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #f0f0f0", paddingTop: "12px" }}>
+            <span style={{ fontWeight: 900 }}>{isAr ? "الإجمالي" : "Total"}</span>
+            <span style={{ fontWeight: 900, color: "#8B0000", fontSize: "1.1rem" }}>
+              {Number(order.total_amount).toFixed(2)} ₪
+            </span>
+          </div>
+        </div>
+
+        {/* Auto-refresh indicator */}
+        {!TERMINAL_STATUSES.includes(order.status) && (
+          <p style={{ textAlign: "center", fontSize: "12px", color: "#bbb", fontWeight: 600 }}>
+            🔄 {isAr
+              ? `يتم تحديث الحالة تلقائياً كل 10 ثوانٍ${lastUpdated ? ` • آخر تحديث: ${lastUpdated.toLocaleTimeString("ar-PS")}` : ""}`
+              : `Auto-refreshing every 10s${lastUpdated ? ` • Last update: ${lastUpdated.toLocaleTimeString()}` : ""}`}
+          </p>
+        )}
+
+        <a href="/" style={{
+          display: "block", textAlign: "center", color: "#888",
+          fontWeight: 700, textDecoration: "none", fontSize: "13px", marginTop: "16px"
+        }}>
+          {isAr ? "← العودة للرئيسية" : "← Back to Home"}
+        </a>
+      </div>
+    </div>
+  );
+}
+
+const style = {
+  center: {
+    minHeight: "100vh", display: "flex", flexDirection: "column" as const,
+    alignItems: "center", justifyContent: "center", background: "#FAF9F6",
+  },
+  spinner: {
+    width: "48px", height: "48px",
+    border: "5px solid #000", borderBottomColor: "transparent",
+    borderRadius: "50%", animation: "rotation 1s linear infinite",
+  },
+};
+
+export default function OrderStatusPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ width: 48, height: 48, border: "5px solid #000", borderBottomColor: "transparent", borderRadius: "50%" }} />
+      </div>
+    }>
+      <OrderStatusContent />
+    </Suspense>
+  );
+}

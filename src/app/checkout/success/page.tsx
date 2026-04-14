@@ -253,6 +253,20 @@ function SuccessContent() {
 
         {/* Action Buttons */}
         <div className="no-print" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+          {/* 🟢 Track Order Button */}
+          {orderId && (
+            <a href={`/order-status?orderId=${orderId}`} style={{
+              background: 'linear-gradient(135deg, #8B0000 0%, #B91C1C 100%)',
+              color: '#fff', width: '100%', borderRadius: '18px', height: '54px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontWeight: 900, fontSize: '16px', textDecoration: 'none', gap: '10px',
+              boxShadow: '0 10px 30px rgba(139,0,0,0.25)',
+            }}>
+              📍 {isAr ? 'تتبع طلبك الآن' : 'Track Your Order'}
+            </a>
+          )}
+
           <button onClick={() => window.print()} style={{
             background: '#f4f4f4', color: '#000',
             width: '100%', borderRadius: '18px', height: '50px',

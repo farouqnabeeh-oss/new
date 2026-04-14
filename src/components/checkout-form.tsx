@@ -91,16 +91,17 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
         const addressNotes = (document.getElementById('customer-address-notes') as HTMLInputElement)?.value.trim() || "";
         const address = street ? `${street}, ${building}${addressNotes ? ` (${addressNotes})` : ""}` : "";
         
-        const table = (document.getElementById('customer-table') as HTMLInputElement)?.value.trim();
         const pickupTime = (document.getElementById('customer-pickup-time') as HTMLInputElement)?.value.trim();
         const notes = (document.getElementById('customer-notes') as HTMLTextAreaElement)?.value.trim();
+        const scheduledDate = (document.getElementById('scheduled-date') as HTMLInputElement)?.value;
+        const scheduledTime = (document.getElementById('scheduled-time') as HTMLInputElement)?.value;
+        const scheduledAt = scheduledDate && scheduledTime ? `${scheduledDate} — ${scheduledTime}` : null;
         const policyAccepted = (document.getElementById('policy-accept') as HTMLInputElement).checked;
 
-        if (!name || !phone) return alert(isAr ? 'يرجى ملأ جميع الحقول الأساسية (الاسم، الهاتف)' : 'Please fill all required fields (Name, Phone)');
-        if (paymentMethod === 'palpay' && !email) return alert(isAr ? 'يرجى إدخال البريد الإلكتروني لإتمام الدفع بالفيزا' : 'Please enter your email to complete Visa payment');
+        if (!name || !phone || !email || !birthday) return alert(isAr ? 'يرجى ملأ جميع الحقول الأساسية (الاسم، الهاتف، البريد الإلكتروني، تاريخ الميلاد)' : 'Please fill all required fields (Name, Phone, Email, Dob)');
+        if (phone.length < 9) return alert(isAr ? 'يرجى إدخال رقم هاتف صحيح ومكتمل' : 'Please enter a valid and complete phone number');
         if (orderType === 'delivery' && (!selectedZone || !street || !building)) return alert(isAr ? 'يرجى اختيار منطقة التوصيل وإدخال بيانات الشارع والبناية بالتفصيل' : 'Please select a delivery zone and enter street and building details');
-        if (orderType === 'inRestaurant' && subType === 'table' && !table) return alert(isAr ? 'يرجى إدخال رقم الطاولة' : 'Please enter table number');
-        if (orderType === 'inRestaurant' && subType === 'pickup' && !pickupTime) return alert(isAr ? 'يرجى اختيار وقت الاستلام' : 'Please select pickup time');
+        if (orderType === 'inRestaurant' && !pickupTime) return alert(isAr ? 'يرجى اختيار وقت الاستلام' : 'Please select pickup time');
         if (!policyAccepted) return alert(isAr ? 'يجب الموافقة على الشروط والسياسات للمتابعة' : 'You must accept the terms and policies to continue');
 
         // Verify Captcha Check
@@ -132,9 +133,12 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                     const noteAddons = i.selectedAddOns?.filter((a: any) => (a.nameAr || '').includes('بدون') || (a.nameEn || '').toLowerCase().includes('without') || (a.nameEn || '').toLowerCase().includes('no '));
                     const parts = [];
                     if (i.selectedSize) parts.push(`الحجم: ${isAr ? i.selectedSize.nameAr : i.selectedSize.nameEn}`);
-                    if (i.selectedType) parts.push(`النوع: ${isAr ? i.selectedType.nameAr : i.selectedType.nameEn}`);
-                    if (normalAddons?.length) parts.push(`إضافات: ` + normalAddons.map((a:any)=> isAr ? a.nameAr : a.nameEn).join('، '));
-                    if (noteAddons?.length) parts.push(`ملاحظات: ` + noteAddons.map((a:any)=> isAr ? a.nameAr : a.nameEn).join('، '));
+                    if (i.selectedType) {
+                        const typeName = isAr ? i.selectedType.nameAr : i.selectedType.nameEn;
+                        parts.push(typeName?.includes('وجبة') || typeName?.toLowerCase().includes('meal') ? `النوع: وجبة (Meal)` : `النوع: ساندويش (Sandwich)`);
+                    }
+                    if (normalAddons?.length) parts.push(`إضافات: ` + normalAddons.map((a:any)=> isAr ? a.nameAr : a.nameEn).join(' + '));
+                    if (noteAddons?.length) parts.push(`ملاحظات (بدون): ` + noteAddons.map((a:any)=> isAr ? a.nameAr : a.nameEn).join('، '));
                     if (i.note) parts.push(`ملاحظة إضافية: ${i.note}`);
                     
                     return { ...i, addonDetails: parts.join(' | ') };
@@ -145,9 +149,9 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                     customerName: name,
                     customerPhone: phone,
                     customerEmail: email,
-                    orderType: orderType === 'delivery' ? 'Delivery' : (subType === 'table' ? 'Table' : 'Pickup'),
+                    orderType: orderType === 'delivery' ? 'Delivery' : 'Pickup',
                     address: finalAddress,
-                    tableNumber: orderType === 'delivery' ? null : (subType === 'table' ? table : pickupTime),
+                    tableNumber: orderType === 'delivery' ? null : pickupTime,
                     totalAmount: freshTotal,
                     paymentMethod: paymentMethod === 'cash' ? 'Cash' : 'Card'
                 }, mappedItems, captchaToken || undefined);
@@ -167,7 +171,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                     console.log("[Checkout] Saving demo data locally for success page fallback");
                     const demoStore = {
                         customer_name: name,
-                        order_type: orderType === 'delivery' ? 'Delivery' : (subType === 'table' ? 'Table' : 'Pickup'),
+                        order_type: orderType === 'delivery' ? 'Delivery' : 'Pickup',
                         total_amount: freshTotal,
                         order_items: items.map((i: any) => ({
                             product_name_ar: i.nameAr,
@@ -213,13 +217,14 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                     } catch (e) { }
 
                     // Construct WhatsApp Message
-                    const orderTypeLabel = orderType === 'delivery' ? (isAr ? 'توصيل' : 'Delivery') : (subType === 'table' ? (isAr ? 'طاولة' : 'Table') : (isAr ? 'استلام' : 'Pickup'));
+                    const orderTypeLabel = orderType === 'delivery' ? (isAr ? 'توصيل' : 'Delivery') : (isAr ? 'استلام' : 'Pickup');
                     const itemsTxt = mappedItems.map((i: any) => `- ${i.quantity}x ${isAr ? i.nameAr : i.nameEn} (${i.finalPrice} ₪) %0A   ${i.addonDetails || ''}`).join('%0A');
+                    const scheduledLine = scheduledAt ? `%0A*وقت التجهيز المجددل:* ${scheduledAt}` : '';
                     const msg = `*طلب جديد من UPTOWN*%0A%0A` +
                         `*العميل:* ${name}%0A` +
                         `*الهاتف:* ${phone}%0A` +
                         `*نوع الطلب:* ${orderTypeLabel}%0A` +
-                        `${orderType === 'delivery' ? `*العنوان:* ${finalAddress}` : (subType === 'table' ? `*رقم الطاولة:* ${table}` : `*وقت الاستلام:* ${pickupTime}`)}%0A%0A` +
+                        `${orderType === 'delivery' ? `*العنوان:* ${finalAddress}` : `*وقت الاستلام:* ${pickupTime}`}${scheduledLine}%0A%0A` +
                         `*الأصناف:*%0A${itemsTxt}%0A%0A` +
                         `*المجموع:* ${freshTotal} ₪%0A%0A` +
                         `_تم إرسال الطب عبر الموقع الإلكتروني_`;
@@ -292,14 +297,12 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                     </div>
                 </div>
 
+                {/* Removed Table Number Option as per new policy */}
                 {orderType === 'inRestaurant' && (
                     <div style={{ marginBottom: '40px' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                            <div onClick={() => setSubType('table')} className={`premium-choice-card sm ${subType === 'table' ? 'active' : ''}`}>
-                                <span>{isAr ? 'رقم الطاولة' : 'Table Number'}</span>
-                            </div>
-                            <div onClick={() => setSubType('pickup')} className={`premium-choice-card sm ${subType === 'pickup' ? 'active' : ''}`}>
-                                <span>{isAr ? 'استلام' : 'Pickup'}</span>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '15px' }}>
+                            <div className="premium-choice-card sm active" style={{ cursor: 'default' }}>
+                                <span>{isAr ? 'الاستلام من الفرع' : 'Pickup at Branch'}</span>
                             </div>
                         </div>
                     </div>
@@ -313,18 +316,31 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                         </div>
                         <div className="uptown-input-group">
                             <label>{isAr ? 'رقم الهاتف' : 'Phone'} *</label>
-                            <input type="tel" id="customer-phone" required className="uptown-input" />
+                            <input 
+                                type="tel" 
+                                id="customer-phone" 
+                                required 
+                                className="uptown-input" 
+                                dir="ltr"
+                                placeholder="05..."
+                                pattern="[0-9]{9,15}"
+                                minLength={9}
+                                maxLength={15}
+                                onInput={(e) => {
+                                    const el = e.target as HTMLInputElement;
+                                    el.value = el.value.replace(/[^0-9]/g, '');
+                                }}
+                            />
                         </div>
                         <div className="uptown-input-group">
                             <label>
-                                {isAr ? 'البريد الإلكتروني' : 'Email'} 
-                                {paymentMethod !== 'palpay' ? (isAr ? ' (اختياري)' : ' (Optional)') : ' *'}
+                                {isAr ? 'البريد الإلكتروني' : 'Email'} *
                             </label>
-                            <input type="email" id="customer-email" className="uptown-input" required={paymentMethod === 'palpay'} suppressHydrationWarning />
+                            <input type="email" id="customer-email" className="uptown-input" required suppressHydrationWarning />
                         </div>
                         <div className="uptown-input-group">
-                            <label>{isAr ? 'تاريخ الميلاد' : 'Birth Date'} ({isAr ? 'اختياري' : 'Optional'})</label>
-                            <input type="date" id="customer-birthday" className="uptown-input" />
+                            <label>{isAr ? 'تاريخ الميلاد' : 'Birth Date'} *</label>
+                            <input type="date" id="customer-birthday" className="uptown-input" required />
                         </div>
 
                         {orderType === 'delivery' && (
@@ -380,19 +396,42 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                             </div>
                         )}
 
-                        {orderType === 'inRestaurant' && subType === 'table' && (
-                            <div className="uptown-input-group" style={{ gridColumn: 'span 2' }}>
-                                <label>{isAr ? 'رقم الطاولة' : 'Table Number'} *</label>
-                                <input type="text" id="customer-table" required className="uptown-input" />
-                            </div>
-                        )}
-
-                        {orderType === 'inRestaurant' && subType === 'pickup' && (
+                        {orderType === 'inRestaurant' && (
                             <div className="uptown-input-group" style={{ gridColumn: 'span 2' }}>
                                 <label>{isAr ? 'وقت الاستلام' : 'Pickup Time'} *</label>
                                 <input type="time" id="customer-pickup-time" required className="uptown-input" />
                             </div>
                         )}
+
+                        {/* 🕐 SCHEDULED ORDER TIME */}
+                        <div style={{ gridColumn: 'span 2', background: '#FFFBEB', border: '1px solid #FCD34D', borderRadius: '20px', padding: '20px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                                <Clock size={18} color="#D97706" />
+                                <span style={{ fontWeight: 900, fontSize: '14px', color: '#92400E' }}>
+                                    {isAr ? 'جدولة الطلب (اختياري)' : 'Schedule Order (Optional)'}
+                                </span>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                <div className="uptown-input-group">
+                                    <label style={{ color: '#92400E' }}>{isAr ? 'التاريخ' : 'Date'}</label>
+                                    <input
+                                        type="date"
+                                        id="scheduled-date"
+                                        className="uptown-input"
+                                        min={new Date().toISOString().split('T')[0]}
+                                    />
+                                </div>
+                                <div className="uptown-input-group">
+                                    <label style={{ color: '#92400E' }}>{isAr ? 'الوقت' : 'Time'}</label>
+                                    <input type="time" id="scheduled-time" className="uptown-input" />
+                                </div>
+                            </div>
+                            <p style={{ fontSize: '12px', color: '#B45309', marginTop: '10px', fontWeight: 600 }}>
+                                {isAr
+                                    ? '⚡ اتركه فارغاً للتجهيز الفوري، أو حدد وقتاً لاحقاً لطلبك.'
+                                    : '⚡ Leave empty for immediate preparation, or set a future time for your order.'}
+                            </p>
+                        </div>
 
                         <div className="uptown-input-group" style={{ gridColumn: 'span 2' }}>
                             <label>{isAr ? 'ملاحظات إضافية' : 'Notes'}</label>

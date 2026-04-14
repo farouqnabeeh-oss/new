@@ -15,6 +15,7 @@ import { AdminProfileTab } from "@/components/admin/AdminProfileTab";
 import { AdminIntelligenceTab } from "@/components/admin/AdminIntelligenceTab";
 import { AdminCustomersTab } from "@/components/admin/AdminCustomersTab";
 import { AdminLangSwitcher } from "@/components/admin/AdminLangSwitcher";
+import { AdminOrderNotifier } from "@/components/admin/AdminOrderNotifier";
 
 export default async function AdminPage() {
   const session = await getCurrentSession();
@@ -38,6 +39,7 @@ export default async function AdminPage() {
   return (
     <AdminToastProvider>
       <div className="admin-page">
+        <AdminOrderNotifier />
         <div className="admin-header">
           <h1 className="admin-title">{isAr ? "⚙️ لوحة التحكم" : "⚙️ Admin Panel"}</h1>
           <div style={{ display: "flex", gap: "15px", alignItems: "center" }}>

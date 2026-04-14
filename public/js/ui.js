@@ -279,8 +279,24 @@ const UI = {
             if (group.allowMultiple) {
                 const exists = state.selectedAddOns.findIndex(addon => addon.id === item.id);
                 if (exists >= 0) {
+                    // Deselect
                     state.selectedAddOns.splice(exists, 1);
                 } else {
+                    // Check max selections
+                    const maxSel = group.maxSelections || 0;
+                    if (maxSel > 0) {
+                        const currentCount = state.selectedAddOns.filter(a => {
+                            const g = findGroupByItemId(a.id);
+                            return g && g.id === group.id;
+                        }).length;
+                        if (currentCount >= maxSel) {
+                            const isAr = typeof Lang !== 'undefined' ? Lang.current === 'ar' : true;
+                            alert(isAr
+                                ? `الحد الأقصى لهذا الخيار: ${maxSel} إضافة فقط.`
+                                : `Maximum ${maxSel} selection(s) allowed for this option.`);
+                            return;
+                        }
+                    }
                     state.selectedAddOns.push(item);
                 }
             } else {
@@ -299,10 +315,13 @@ const UI = {
         const renderGroup = (group, selectedIds) => {
             const groupLabel = Lang.localized(group.nameAr, group.nameEn);
             const reqBadge = group.isRequired ? `<span class="required-badge">(${Lang.t('required')})</span>` : '';
+            const maxBadge = group.allowMultiple && group.maxSelections > 0
+                ? `<span style="font-size:11px;background:#f0f0f0;color:#555;padding:2px 8px;border-radius:20px;margin-inline-start:8px;font-weight:700">اختر حتى ${group.maxSelections}</span>`
+                : '';
 
             return `
                 <div class="option-group">
-                    <div class="option-group-title">${groupLabel} ${reqBadge}</div>
+                    <div class="option-group-title">${groupLabel} ${reqBadge}${maxBadge}</div>
                     <div class="option-stack">
                         ${group.items.map(item => {
                 const isSelected = selectedIds.has(item.id);
