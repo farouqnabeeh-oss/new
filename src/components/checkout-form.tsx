@@ -545,6 +545,12 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                 .uptown-btn:hover { transform: scale(1.02); opacity: 0.95; }
                 .uptown-btn:disabled { opacity: 0.5; cursor: not-allowed; }
             ` }} />
+            
+            {/* Lahza Payment Script */}
+            <Script 
+                src="https://js.lahza.io/v1/inline.js" 
+                strategy="afterInteractive"
+            />
             </div>
         </div>
     );

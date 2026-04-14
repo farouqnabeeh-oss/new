@@ -35,7 +35,7 @@ export default async function PrivacyPolicyPage() {
         icon: "lock",
         title: isAr ? "أمان المدفوعات" : "Payment Security",
         text: isAr
-          ? "نحن نستخدم بوابات دفع مشقرة وآمنة (مثل Lahza/PalPay). تخضع جميع عمليات الدفع لمعايير PCI-DSS. لا نقوم بتخزين تفاصيل بطاقاتكم الائتمانية في خوادمنا؛ حيث تتم جميع العمليات عبر قنوات بنكية آمنة تابعة لمزود الخدمة."
+          ? "نحن نستخدم بوابات دفع مشفرة وآمنة (مثل Lahza/PalPay). تخضع جميع عمليات الدفع لمعايير PCI-DSS. لا نقوم بتخزين تفاصيل بطاقاتكم الائتمانية في خوادمنا؛ حيث تتم جميع العمليات عبر قنوات بنكية آمنة تابعة لمزود الخدمة."
           : "We use encrypted and secure payment gateways (like Lahza/PalPay). All payments comply with PCI-DSS standards. We do not store your credit card details on our servers; all transactions are processed through secure banking channels provided by the service provider."
       },
       {
