@@ -385,9 +385,7 @@ export function AdminProductsTab({ products, categories, branches, settings, add
                               <input
                                 type="checkbox"
                                 checked={isSelected}
-                                disabled={isCategoryWide}
                                 onChange={(e) => {
-                                  if (isCategoryWide) return;
                                   if (e.target.checked) updateAddons(prev => [...prev, group.id]);
                                   else updateAddons(prev => prev.filter(id => id !== group.id));
                                 }}

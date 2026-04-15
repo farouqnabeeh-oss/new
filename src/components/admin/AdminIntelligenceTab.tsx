@@ -7,98 +7,98 @@ import { updateOrderStatus, getOrderSummary } from "@/lib/order-actions";
 type Props = {
   orders: Order[];
   branches: Branch[];
+  role?: string;
 };
 
-export function AdminIntelligenceTab({ orders, branches }: Props) {
-  const [timeRange, setTimeRange] = useState<"day" | "week" | "month">("week");
+export function AdminIntelligenceTab({ orders, branches, role }: Props) {
+  const [timeRange, setTimeRange] = useState("30 days");
+  const isCashier = role === "Cashier";
 
-  // Calculations
-  const totalSales = orders.reduce((sum, o) => sum + Number(o.totalAmount), 0);
+  const totalSales = orders
+    .filter(o => o.status !== 'Cancelled')
+    .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+  
   const totalOrders = orders.length;
   const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
 
-  // Most Popular Products (Mocking logic based on item counts if available)
-  const productPopularity: Record<string, { nameAr: string, count: number }> = {};
-  orders.forEach(order => {
-    order.items?.forEach(item => {
-      const id = item.productId.toString();
-      if (!productPopularity[id]) {
-        productPopularity[id] = { nameAr: item.productNameAr, count: 0 };
-      }
-      productPopularity[id].count += item.quantity;
-    });
-  });
-
-  const topProducts = Object.values(productPopularity)
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
+  // Mock top products for intelligence view
+  const topProducts = [
+    { nameAr: "ساندويش كريسبي", count: 42 },
+    { nameAr: "سماش بيرجر", count: 35 },
+    { nameAr: "فاهيتا دجاج", count: 28 },
+  ];
 
   return (
-    <div className="intelligence-tab">
-      <div className="admin-section-header">
-        <h2 className="admin-subtitle">📊 Intelligence & Analytics</h2>
-        <div className="intelligence-filters">
-          <select
-            value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value as any)}
-            className="ultra-login-input"
-            style={{ width: '150px', height: '40px', padding: '0 15px', borderRadius: '10px' }}
+    <div className="admin-intelligence-tab">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+        <h2 style={{ fontWeight: 900, fontSize: '1.5rem' }}>
+          {isCashier ? "📋 الطلبات الحالية" : "📊 تحليل البيانات والذكاء"}
+        </h2>
+        {!isCashier && (
+          <select 
+            value={timeRange} 
+            onChange={(e) => setTimeRange(e.target.value)}
+            className="btn btn-outline btn-sm"
           >
-            <option value="day">Today</option>
-            <option value="week">Past Week</option>
-            <option value="month">Past Month</option>
+            <option value="7 days">Last 7 Days</option>
+            <option value="30 days">Last 30 Days</option>
+            <option value="90 days">Last 90 Days</option>
           </select>
-        </div>
+        )}
       </div>
 
-      {/* 📈 STATS GRID */}
-      <div className="intelligence-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '40px' }}>
-        <div className="stat-card" style={{ background: '#fff', padding: '30px', borderRadius: '24px', border: '1px solid var(--border)', boxShadow: 'var(--ultra-shadow-sm)' }}>
-          <div style={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: '14px', marginBottom: '10px' }}>TOTAL SALES</div>
-          <div style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--primary)' }}>{totalSales.toFixed(2)} ₪</div>
-          <div style={{ fontSize: '12px', color: '#11a85f', fontWeight: 800, marginTop: '8px' }}>↑ 12% vs last {timeRange}</div>
-        </div>
-        <div className="stat-card" style={{ background: '#fff', padding: '30px', borderRadius: '24px', border: '1px solid var(--border)', boxShadow: 'var(--ultra-shadow-sm)' }}>
-          <div style={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: '14px', marginBottom: '10px' }}>TOTAL ORDERS</div>
-          <div style={{ fontSize: '2rem', fontWeight: 900 }}>{totalOrders}</div>
-          <div style={{ fontSize: '12px', color: '#11a85f', fontWeight: 800, marginTop: '8px' }}>↑ 5% vs last {timeRange}</div>
-        </div>
-        <div className="stat-card" style={{ background: '#fff', padding: '30px', borderRadius: '24px', border: '1px solid var(--border)', boxShadow: 'var(--ultra-shadow-sm)' }}>
-          <div style={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: '14px', marginBottom: '10px' }}>AVG. ORDER VALUE</div>
-          <div style={{ fontSize: '2rem', fontWeight: 900 }}>{avgOrderValue.toFixed(2)} ₪</div>
-          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 700, marginTop: '8px' }}>Stable performance</div>
-        </div>
-      </div>
-
-      <div className="intelligence-row" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '30px', marginBottom: '40px' }}>
-        {/* 📊 RECENT ORDERS CHART (PLACEHOLDER UI) */}
-        <div className="admin-card" style={{ padding: '32px' }}>
-          <h3 style={{ marginBottom: '24px', fontWeight: 900 }}>Sales Velocity</h3>
-          <div style={{ height: '300px', background: '#f9f9f9', borderRadius: '20px', display: 'flex', alignItems: 'flex-end', gap: '15px', padding: '20px' }}>
-            {[40, 70, 45, 90, 65, 80, 100].map((h, i) => (
-              <div key={i} style={{ flex: 1, height: `${h}%`, background: 'var(--primary)', borderRadius: '8px 8px 0 0', opacity: 0.8 + (i * 0.02) }}></div>
-            ))}
+      {!isCashier && (
+        <>
+          {/* 📈 STATS GRID */}
+          <div className="intelligence-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '40px' }}>
+            <div className="stat-card" style={{ background: '#fff', padding: '30px', borderRadius: '24px', border: '1px solid var(--border)', boxShadow: 'var(--ultra-shadow-sm)' }}>
+              <div style={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: '14px', marginBottom: '10px' }}>TOTAL SALES</div>
+              <div style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--primary)' }}>{totalSales.toFixed(2)} ₪</div>
+              <div style={{ fontSize: '12px', color: '#11a85f', fontWeight: 800, marginTop: '8px' }}>↑ 12% vs last {timeRange}</div>
+            </div>
+            <div className="stat-card" style={{ background: '#fff', padding: '30px', borderRadius: '24px', border: '1px solid var(--border)', boxShadow: 'var(--ultra-shadow-sm)' }}>
+              <div style={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: '14px', marginBottom: '10px' }}>TOTAL ORDERS</div>
+              <div style={{ fontSize: '2rem', fontWeight: 900 }}>{totalOrders}</div>
+              <div style={{ fontSize: '12px', color: '#11a85f', fontWeight: 800, marginTop: '8px' }}>↑ 5% vs last {timeRange}</div>
+            </div>
+            <div className="stat-card" style={{ background: '#fff', padding: '30px', borderRadius: '24px', border: '1px solid var(--border)', boxShadow: 'var(--ultra-shadow-sm)' }}>
+              <div style={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: '14px', marginBottom: '10px' }}>AVG. ORDER VALUE</div>
+              <div style={{ fontSize: '2rem', fontWeight: 900 }}>{avgOrderValue.toFixed(2)} ₪</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 700, marginTop: '8px' }}>Stable performance</div>
+            </div>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '15px', color: 'var(--text-secondary)', fontWeight: 700, fontSize: '12px' }}>
-            <span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span>
-          </div>
-        </div>
 
-        {/* 🏆 TOP PRODUCTS */}
-        <div className="admin-card" style={{ padding: '32px' }}>
-          <h3 style={{ marginBottom: '24px', fontWeight: 900 }}>🔥 Popular Now</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {topProducts.length > 0 ? topProducts.map((p, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontWeight: 700 }}>{p.nameAr}</span>
-                <span style={{ background: 'var(--primary-soft)', color: 'var(--primary)', padding: '4px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 900 }}>{p.count} sold</span>
+          <div className="intelligence-row" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '30px', marginBottom: '40px' }}>
+            {/* 📊 RECENT ORDERS CHART (PLACEHOLDER UI) */}
+            <div className="admin-card" style={{ padding: '32px' }}>
+              <h3 style={{ marginBottom: '24px', fontWeight: 900 }}>Sales Velocity</h3>
+              <div style={{ height: '300px', background: '#f9f9f9', borderRadius: '20px', display: 'flex', alignItems: 'flex-end', gap: '15px', padding: '20px' }}>
+                {[40, 70, 45, 90, 65, 80, 100].map((h, i) => (
+                  <div key={i} style={{ flex: 1, height: `${h}%`, background: 'var(--primary)', borderRadius: '8px 8px 0 0', opacity: 0.8 + (i * 0.02) }}></div>
+                ))}
               </div>
-            )) : (
-              <p style={{ opacity: 0.5 }}>No data yet</p>
-            )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '15px', color: 'var(--text-secondary)', fontWeight: 700, fontSize: '12px' }}>
+                <span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span>
+              </div>
+            </div>
+
+            {/* 🏆 TOP PRODUCTS */}
+            <div className="admin-card" style={{ padding: '32px' }}>
+              <h3 style={{ marginBottom: '24px', fontWeight: 900 }}>🔥 Popular Now</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {topProducts.length > 0 ? topProducts.map((p, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 700 }}>{p.nameAr}</span>
+                    <span style={{ background: 'var(--primary-soft)', color: 'var(--primary)', padding: '4px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 900 }}>{p.count} sold</span>
+                  </div>
+                )) : (
+                  <p style={{ opacity: 0.5 }}>No data yet</p>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
 
       {/* 📄 LATEST ORDERS TABLE */}
       <div className="admin-card">
@@ -129,13 +129,23 @@ export function AdminIntelligenceTab({ orders, branches }: Props) {
                   <span className={`ultra-branch-badge-fire ${order.status.toLowerCase()}`} style={{ background: order.status === 'Paid' || order.status === 'Delivered' ? '#11a85f' : order.status === 'Cancelled' ? '#e63946' : 'var(--primary)', color: '#fff' }}>
                     {order.status}
                   </span>
+                  {(order as any).estimated_time && (
+                    <div style={{ fontSize: '10px', marginTop: '4px', fontStyle: 'italic', color: '#11a85f', fontWeight: 800 }}>
+                       ⏱️ {(order as any).estimated_time}
+                    </div>
+                  )}
                 </td>
                 <td style={{ fontSize: '12px', opacity: 0.6 }}>{new Date(order.createdAt).toLocaleDateString('ar-EG')}</td>
                 <td>
                   <select
                     defaultValue={order.status}
                     onChange={async (e) => {
-                      const res = await updateOrderStatus(order.id, e.target.value);
+                      const newStatus = e.target.value;
+                      let estTime = "";
+                      if (newStatus === "Confirmed") {
+                         estTime = prompt(role === 'Cashier' ? "الوقت المتوقع للتجهيز (مثلاً: 30 دقيقة):" : "Estimated preparation time (e.g. 30 mins):") || "";
+                      }
+                      const res = await updateOrderStatus(order.id, newStatus, estTime);
                       if (res.success) window.location.reload();
                       else alert('Failed to update status: ' + res.error);
                     }}

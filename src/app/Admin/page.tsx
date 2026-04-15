@@ -53,12 +53,8 @@ export default async function AdminPage() {
         </div>
 
         <AdminTabsWrapper role={session.role}>
-          {session.role === "cashier" ? {
-            intelligence: <AdminIntelligenceTab orders={orders} branches={branches} />,
-            customers: <AdminCustomersTab customers={customers} />,
-            profile: <AdminProfileTab user={{ email: session.email, displayName: session.displayName }} />
-          } : {
-            intelligence: <AdminIntelligenceTab orders={orders} branches={branches} />,
+          {{
+            intelligence: <AdminIntelligenceTab orders={orders} branches={branches} role={session.role} />,
             branches: <AdminBranchesTab branches={branches} />,
             categories: <AdminCategoriesTab categories={categories} branches={branches} />,
             products: <AdminProductsTab products={products as any} categories={categories} branches={branches} settings={settings as any} addonGroups={addonGroups as any} />,

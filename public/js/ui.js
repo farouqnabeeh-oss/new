@@ -138,10 +138,23 @@ const UI = {
         let state = {
             quantity: 1,
             selectedSize: product.sizes?.length ? product.sizes[0] : null,
-            selectedType: product.types?.length ? product.types[0] : null,
+            selectedType: null, // Will be set below
             selectedAddOns: [],
             note: ''
         };
+
+        // Default to 'Sandwich' (ساندويش) if possible
+        if (product.types?.length) {
+            const sandwichType = product.types.find(t => (t.nameAr || '').includes('ساندويش') || (t.nameAr || '').includes('سندويش') || (t.nameEn || '').toLowerCase().includes('sandwich'));
+            state.selectedType = sandwichType || product.types[0];
+        }
+
+        const typeGroup = addonGroups.find(g => (g.groupType === 'type' || g.groupType === 'types' || (g.nameAr || '').includes('النوع')));
+        if (typeGroup && typeGroup.items.length) {
+            const sandwichItem = typeGroup.items.find(it => (it.nameAr || '').includes('ساندويش') || (it.nameAr || '').includes('سندويش') || (it.nameEn || '').toLowerCase().includes('sandwich'));
+            state.selectedAddOns.push(sandwichItem || typeGroup.items[0]);
+        }
+
         const hasCombinedSizeAndType = !!product.sizes?.length && !!product.types?.length;
 
         const getSelectedIds = () => new Set(state.selectedAddOns.map(item => item.id));
@@ -228,20 +241,37 @@ const UI = {
         };
 
         const syncVisibleSelections = () => {
-            const visibleGroupIds = new Set(getVisibleGroups().map(group => group.id));
+            const visibleGroups = getVisibleGroups();
+            const visibleGroupIds = new Set(visibleGroups.map(group => group.id));
+            
             state.selectedAddOns = state.selectedAddOns.filter(item => {
                 const group = findGroupByItemId(item.id);
                 return group && visibleGroupIds.has(group.id);
             });
 
-            getVisibleGroups().forEach(group => {
-                if (!group.isRequired || group.allowMultiple || !group.items.length) return;
+            visibleGroups.forEach(group => {
+                const isRequiredSingle = group.isRequired && !group.allowMultiple && group.items.length;
+                if (!isRequiredSingle) return;
+                
                 const hasSelection = state.selectedAddOns.some(item => group.items.some(groupItem => groupItem.id === item.id));
                 if (!hasSelection) {
                     state.selectedAddOns.push(group.items[0]);
                 }
             });
+            
+            // Auto-select first item in meal-specific groups (Drink/Fries) if meal is selected
+            if (isMealSelection()) {
+                visibleGroups.forEach(group => {
+                   if (['MealDrink', 'MealFries'].includes(group.groupType)) {
+                       const hasSelection = state.selectedAddOns.some(item => group.items.some(gi => gi.id === item.id));
+                       if (!hasSelection && group.items.length) {
+                           state.selectedAddOns.push(group.items[0]);
+                       }
+                   }
+                });
+            }
         };
+
 
         const calculateBasePrice = () => {
             if (state.selectedSize && hasCombinedSizeAndType) {
@@ -276,11 +306,12 @@ const UI = {
         };
 
         const toggleAddon = (group, item) => {
+            const currentlySelected = state.selectedAddOns.find(addon => addon.id === item.id);
+
             if (group.allowMultiple) {
-                const exists = state.selectedAddOns.findIndex(addon => addon.id === item.id);
-                if (exists >= 0) {
+                if (currentlySelected) {
                     // Deselect
-                    state.selectedAddOns.splice(exists, 1);
+                    state.selectedAddOns = state.selectedAddOns.filter(addon => addon.id !== item.id);
                 } else {
                     // Check max selections
                     const maxSel = group.maxSelections || 0;
@@ -300,13 +331,15 @@ const UI = {
                     state.selectedAddOns.push(item);
                 }
             } else {
-                const currentlySelected = state.selectedAddOns.some(existing => existing.id === item.id);
-                state.selectedAddOns = state.selectedAddOns.filter(existing => {
-                    const existingGroup = findGroupByItemId(existing.id);
-                    return existingGroup?.id === group.id ? false : true;
-                });
-
-                if (!currentlySelected || group.isRequired) {
+                if (currentlySelected) {
+                    // If already selected, clicking it again should DESELECT it (flexible behavior)
+                    state.selectedAddOns = state.selectedAddOns.filter(addon => addon.id !== item.id);
+                } else {
+                    // Remove any other item from the SAME group (radio behavior)
+                    state.selectedAddOns = state.selectedAddOns.filter(a => {
+                        const g = findGroupByItemId(a.id);
+                        return !g || g.id !== group.id;
+                    });
                     state.selectedAddOns.push(item);
                 }
             }
@@ -425,8 +458,12 @@ const UI = {
                 `;
             }
 
-            html += visibleGroups.map(group => {
-                const groupLabel = Lang.localized(group.nameAr, group.nameEn);
+            html += visibleGroups.filter(g => g.items && g.items.length > 0).map(group => {
+                let groupLabel = Lang.localized(group.nameAr, group.nameEn);
+                // Rename "إضافات" or "Addons" to "النوع" if it's a type-like group
+                if (group.groupType === 'types' || group.groupType === 'type' || groupLabel.includes('إضافات') && group.items.some(it => it.nameAr.includes('ساندويش'))) {
+                    groupLabel = Lang.current === 'ar' ? 'النوع' : 'Type';
+                }
                 return `
                     <div class="option-group">
                         <div class="option-group-title" style="font-size:15px">${groupLabel}</div>

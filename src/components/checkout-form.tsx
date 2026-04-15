@@ -99,7 +99,8 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
         const policyAccepted = (document.getElementById('policy-accept') as HTMLInputElement).checked;
 
         if (!name || !phone || !email || !birthday) return alert(isAr ? 'يرجى ملأ جميع الحقول الأساسية (الاسم، الهاتف، البريد الإلكتروني، تاريخ الميلاد)' : 'Please fill all required fields (Name, Phone, Email, Dob)');
-        if (phone.length < 9) return alert(isAr ? 'يرجى إدخال رقم هاتف صحيح ومكتمل' : 'Please enter a valid and complete phone number');
+        if (phone.length !== 10) return alert(isAr ? 'يجب أن يتكون رقم الهاتف من 10 أرقام' : 'Phone number must be exactly 10 digits');
+        if (paymentMethod === 'palpay' && !email) return alert(isAr ? 'البريد الإلكتروني مطلوب للدفع بالفيزا' : 'Email is required for Visa payments');
         if (orderType === 'delivery' && (!selectedZone || !street || !building)) return alert(isAr ? 'يرجى اختيار منطقة التوصيل وإدخال بيانات الشارع والبناية بالتفصيل' : 'Please select a delivery zone and enter street and building details');
         if (orderType === 'inRestaurant' && !pickupTime) return alert(isAr ? 'يرجى اختيار وقت الاستلام' : 'Please select pickup time');
         if (!policyAccepted) return alert(isAr ? 'يجب الموافقة على الشروط والسياسات للمتابعة' : 'You must accept the terms and policies to continue');
@@ -323,9 +324,9 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                                 className="uptown-input" 
                                 dir="ltr"
                                 placeholder="05..."
-                                pattern="[0-9]{9,15}"
-                                minLength={9}
-                                maxLength={15}
+                                pattern="[0-9]{10}"
+                                minLength={10}
+                                maxLength={10}
                                 onInput={(e) => {
                                     const el = e.target as HTMLInputElement;
                                     el.value = el.value.replace(/[^0-9]/g, '');

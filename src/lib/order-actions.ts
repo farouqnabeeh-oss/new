@@ -1,6 +1,7 @@
 "use server";
 
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { sendOrderInvoiceEmail } from "./mail-actions";
 
 /**
  * Checks if the database is configured (non-placeholder URL).
@@ -85,9 +86,23 @@ export async function finalizeOrder(orderId: string | number) {
 
         if (updateError) throw updateError;
 
-        // 3. Send Confirmation Email (Mocked for now)
+        // 3. Send Real Confirmation Email
         try {
-            await sendOrderConfirmationEmail(order, items || []);
+            const { data: branchData } = await supabase
+                .from("branches")
+                .select("*")
+                .eq("id", order.branch_id)
+                .single();
+
+            if (branchData) {
+                const branch = {
+                    id: branchData.id,
+                    nameAr: branchData.name_ar,
+                    phone: branchData.phone,
+                    whatsApp: branchData.whatsapp
+                } as any;
+                await sendOrderInvoiceEmail(order as any, items || [], branch);
+            }
         } catch (emailErr: any) {
             console.error(`[finalizeOrder] 📧 Email failed but order is confirmed:`, emailErr.message);
         }
@@ -313,13 +328,16 @@ ${itemsList}
     return true;
 }
 
-export async function updateOrderStatus(orderId: number | string, newStatus: string) {
+export async function updateOrderStatus(orderId: number | string, newStatus: string, estimatedTime?: string) {
     if (!isDBConfigured()) return { success: false, error: "DB not configured" };
     try {
         const supabase = getSupabaseAdmin();
+        const updateData: any = { status: newStatus, updated_at: new Date().toISOString() };
+        if (estimatedTime) updateData.estimated_time = estimatedTime;
+
         const { error } = await supabase
             .from("orders")
-            .update({ status: newStatus, updated_at: new Date().toISOString() })
+            .update(updateData)
             .eq("id", orderId);
         
         if (error) throw error;

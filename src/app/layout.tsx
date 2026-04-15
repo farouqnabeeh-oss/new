@@ -22,6 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
 import HeaderLeftLang from "@/components/header-left-lang";
 import LayoutSwitcher from "@/components/layout-switcher";
 import ModalOverlays from "@/components/modal-overlays";
+import { Phone, Mail, MapPin } from "lucide-react";
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const settings = await getSiteSettings();
@@ -108,7 +109,61 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             {isAr ? "ساعات العمل:" : "Working Hours:"}<br />
             <span style={{ color: '#8b0000', fontWeight: 800 }}>{isAr ? "١٠:٠٠ صباحاً - ١٢:٠٠ منتصف الليل" : "10:00 AM - 12:00 AM"}</span>
           </p>
-          <div style={{ marginTop: '20px' }}>
+          <div className="up-social-hub" style={{ marginTop: '20px', display: 'flex', gap: '15px' }}>
+            <a href={settings?.facebookUptownUrl || "https://facebook.com/uptownramallah"} 
+               target="_blank" 
+               rel="noopener noreferrer" 
+               className="social-footer-link"
+               style={{ 
+                 color: '#8b0000', 
+                 display: 'flex', 
+                 alignItems: 'center', 
+                 justifyContent: 'center',
+                 width: '40px',
+                 height: '40px',
+                 borderRadius: '50%',
+                 background: '#fff5f5',
+                 transition: '0.3s',
+                 border: '1px solid rgba(139, 0, 0, 0.1)'
+               }}>
+               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+            </a>
+            <a href={settings?.instagramUptownUrl || "https://instagram.com/uptownramallah"} 
+               target="_blank" 
+               rel="noopener noreferrer" 
+               className="social-footer-link"
+               style={{ 
+                 color: '#8b0000', 
+                 display: 'flex', 
+                 alignItems: 'center', 
+                 justifyContent: 'center',
+                 width: '40px',
+                 height: '40px',
+                 borderRadius: '50%',
+                 background: '#fff5f5',
+                 transition: '0.3s',
+                 border: '1px solid rgba(139, 0, 0, 0.1)'
+               }}>
+               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+            </a>
+            <a href={settings?.tiktokUrl || "https://tiktok.com/@uptownramallah"} 
+               target="_blank" 
+               rel="noopener noreferrer" 
+               className="social-footer-link"
+               style={{ 
+                 color: '#8b0000', 
+                 display: 'flex', 
+                 alignItems: 'center', 
+                 justifyContent: 'center',
+                 width: '40px',
+                 height: '40px',
+                 borderRadius: '50%',
+                 background: '#fff5f5',
+                 transition: '0.3s',
+                 border: '1px solid rgba(139, 0, 0, 0.1)'
+               }}>
+               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12a4 4 0 1 0 4 4V2a5 5 0 0 0 5 5"></path></svg>
+            </a>
           </div>
         </div>
 
@@ -116,15 +171,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <h4 className="up-footer-title" style={{ fontSize: '18px', fontWeight: 900, marginBottom: '20px', color: '#000' }}>{isAr ? "تواصل معنا" : "Contact Us"}</h4>
           <ul className="up-footer-contact" style={{ listStyle: 'none', padding: 0 }}>
             <li style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px', color: '#555' }}>
-              <i data-lucide="phone" style={{ width: '18px' }} />
+              <Phone size={18} />
               <span style={{ fontWeight: 700 }}>{phone}</span>
             </li>
             <li style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px', color: '#555' }}>
-              <i data-lucide="mail" style={{ width: '18px' }} />
+              <Mail size={18} />
               <span style={{ fontWeight: 700 }}>{email}</span>
             </li>
             <li style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px', color: '#555' }}>
-              <i data-lucide="map-pin" style={{ width: '18px' }} />
+              <MapPin size={18} />
               <span style={{ fontWeight: 700 }}>{address}</span>
             </li>
           </ul>
@@ -143,28 +198,28 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </div>
           </div>
         </div>
+      </div >
+
+    <div className="up-footer-bottom" style={{ textAlign: 'center', marginTop: '50px', paddingTop: '20px', borderTop: '1px solid #f5f5f5' }}>
+      <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center', gap: '25px', fontSize: '14px', fontWeight: 800 }}>
+        <a href="/policies/privacy" style={{ color: '#8b0000', textDecoration: 'none' }}>{isAr ? "سياسة الخصوصية" : "Privacy Policy"}</a>
+        <a href="/policies/return" style={{ color: '#8b0000', textDecoration: 'none' }}>{isAr ? "سياسة الإرجاع" : "Refund Policy"}</a>
       </div>
 
-      <div className="up-footer-bottom" style={{ textAlign: 'center', marginTop: '50px', paddingTop: '20px', borderTop: '1px solid #f5f5f5' }}>
-        <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center', gap: '25px', fontSize: '14px', fontWeight: 800 }}>
-          <a href="/policies/privacy" style={{ color: '#8b0000', textDecoration: 'none' }}>{isAr ? "سياسة الخصوصية" : "Privacy Policy"}</a>
-          <a href="/policies/return" style={{ color: '#8b0000', textDecoration: 'none' }}>{isAr ? "سياسة الإرجاع" : "Refund Policy"}</a>
-        </div>
+      <p style={{ fontSize: '12px', color: '#999', fontWeight: 600 }}>
+        © {new Date().getFullYear()} {siteName}. {isAr ? "جميع الحقوق محفوظة." : "All Rights Reserved."}
+      </p>
 
-        <p style={{ fontSize: '12px', color: '#999', fontWeight: 600 }}>
-            © {new Date().getFullYear()} {siteName}. {isAr ? "جميع الحقوق محفوظة." : "All Rights Reserved."}
-        </p>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '15px', gap: '4px' }}>
-          <a href="/Admin" style={{ color: '#000', fontWeight: 900, textDecoration: 'none', fontSize: '16px', letterSpacing: '2px' }}>
-            UPTOWN
-          </a>
-          <span style={{ fontSize: '11px', color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>
-             Developed by <span style={{ color: '#8b0000' }}>Menuna</span>
-          </span>
-        </div>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '15px', gap: '4px' }}>
+        <a href="/Admin" style={{ color: '#000', fontWeight: 900, textDecoration: 'none', fontSize: '16px', letterSpacing: '2px' }}>
+          UPTOWN
+        </a>
+        <span style={{ fontSize: '11px', color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>
+          Developed by <span style={{ color: '#8b0000' }}>Menuna</span>
+        </span>
       </div>
-    </footer>
+    </div>
+    </footer >
   );
 
   return (
@@ -173,13 +228,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet" />
-        <Script src="https://unpkg.com/lucide@latest" strategy="beforeInteractive" />
         <style dangerouslySetInnerHTML={{
           __html: `
           /* 🏁 RESTORED PREMIUM UI CSS */
           .premium-header { transition: 0.3s; }
           .public-home #header-cart-container { display: none !important; }
           
+          .social-footer-link:hover {
+            transform: translateY(-3px);
+            background: #8b0000 !important;
+            color: #fff !important;
+          }
+
           .up-footer-grid { display: grid; grid-template-columns: 1.5fr 1fr 0.5fr; gap: 40px; }
           @media (max-width: 992px) { .up-footer-grid { grid-template-columns: repeat(2, 1fr); } }
           @media (max-width: 576px) { .up-footer-grid { grid-template-columns: 1fr; } }

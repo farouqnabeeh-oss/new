@@ -18,6 +18,29 @@ export function AdminOrderNotifier() {
   const audioCtxRef = useRef<AudioContext | null>(null);
   const alarmIntervalRef = useRef<any>(null);
 
+  // Load seen/dismissed IDs from localStorage on mount
+  useEffect(() => {
+    const savedSeen = localStorage.getItem("admin_seen_orders");
+    const savedDismissed = localStorage.getItem("admin_dismissed_orders");
+    if (savedSeen) {
+      try {
+        const arr = JSON.parse(savedSeen);
+        if (Array.isArray(arr)) arr.forEach(id => seenIds.current.add(String(id)));
+      } catch (e) {}
+    }
+    if (savedDismissed) {
+      try {
+        const arr = JSON.parse(savedDismissed);
+        if (Array.isArray(arr)) setDismissed(new Set(arr.map(String)));
+      } catch (e) {}
+    }
+  }, []);
+
+  // Save to localStorage whenever seenIds or dismissed changes
+  const persistState = (ids: Set<string>, key: "admin_seen_orders" | "admin_dismissed_orders") => {
+    localStorage.setItem(key, JSON.stringify(Array.from(ids)));
+  };
+
   const playAlarmTone = useCallback(() => {
     try {
       if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
@@ -25,24 +48,24 @@ export function AdminOrderNotifier() {
       }
       const ctx = audioCtxRef.current;
 
-      const playBeep = (freq: number, start: number, dur: number) => {
+      const playBeep = (freq: number, start: number, dur: number, type: OscillatorType = "square") => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.connect(gain);
         gain.connect(ctx.destination);
-        osc.type = "square";
+        osc.type = type;
         osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
-        gain.gain.setValueAtTime(0.3, ctx.currentTime + start);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
+        gain.gain.setValueAtTime(0.5, ctx.currentTime + start);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + start + dur);
         osc.start(ctx.currentTime + start);
         osc.stop(ctx.currentTime + start + dur);
       };
 
-      // Triple beep alarm pattern
-      playBeep(880, 0.0, 0.2);
-      playBeep(1100, 0.25, 0.2);
-      playBeep(880, 0.5, 0.2);
-      playBeep(1100, 0.75, 0.4);
+      // Faster, more insistent "Emergency" pattern
+      playBeep(987.77, 0.0, 0.1, "sawtooth"); // B5
+      playBeep(1318.51, 0.15, 0.1, "sawtooth"); // E6
+      playBeep(987.77, 0.3, 0.1, "sawtooth"); // B5
+      playBeep(1318.51, 0.45, 0.3, "sawtooth"); // E6
     } catch (e) {
       console.log("Audio error:", e);
     }
@@ -55,14 +78,18 @@ export function AdminOrderNotifier() {
       const data = await res.json();
       const orders: PendingOrder[] = data.orders || [];
 
-      // Check for new orders
-      const newOrders = orders.filter(o => !seenIds.current.has(String(o.id)));
-      if (newOrders.length > 0) {
-        newOrders.forEach(o => seenIds.current.add(String(o.id)));
+      // Filter out orders that have already been seen OR dismissed
+      const filteredPending = orders.filter(o => !dismissed.has(String(o.id)));
+
+      // Check for new orders (not in seenIds)
+      const trulyNewOrders = filteredPending.filter(o => !seenIds.current.has(String(o.id)));
+      if (trulyNewOrders.length > 0) {
+        trulyNewOrders.forEach(o => seenIds.current.add(String(o.id)));
+        persistState(seenIds.current, "admin_seen_orders");
         playAlarmTone();
       }
 
-      setPendingOrders(orders.filter(o => !dismissed.has(String(o.id))));
+      setPendingOrders(filteredPending);
     } catch (e) {
       // Silently fail - DB might not be configured
     }
@@ -74,25 +101,7 @@ export function AdminOrderNotifier() {
     return () => clearInterval(interval);
   }, [fetchPendingOrders]);
 
-  // Persistent alarm sound every 5s while there are unacknowledged pending orders
-  useEffect(() => {
-    if (pendingOrders.length > 0) {
-      if (!alarmIntervalRef.current) {
-        alarmIntervalRef.current = setInterval(playAlarmTone, 5000);
-      }
-    } else {
-      if (alarmIntervalRef.current) {
-        clearInterval(alarmIntervalRef.current);
-        alarmIntervalRef.current = null;
-      }
-    }
-    return () => {
-      if (alarmIntervalRef.current) {
-        clearInterval(alarmIntervalRef.current);
-        alarmIntervalRef.current = null;
-      }
-    };
-  }, [pendingOrders.length, playAlarmTone]);
+  // Removed persistent alarm sound every 5s loop as requested
 
   const handleStartPreparing = async (orderId: string | number) => {
     try {
@@ -101,7 +110,9 @@ export function AdminOrderNotifier() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orderId, status: "Preparing" }),
       });
-      setDismissed(prev => new Set([...prev, String(orderId)]));
+      const updatedDismissed = new Set([...dismissed, String(orderId)]);
+      setDismissed(updatedDismissed);
+      persistState(updatedDismissed, "admin_dismissed_orders");
       setPendingOrders(prev => prev.filter(o => String(o.id) !== String(orderId)));
     } catch (e) {
       alert("فشل تحديث حالة الطلب");
@@ -109,7 +120,9 @@ export function AdminOrderNotifier() {
   };
 
   const handleDismiss = (orderId: string | number) => {
-    setDismissed(prev => new Set([...prev, String(orderId)]));
+    const updatedDismissed = new Set([...dismissed, String(orderId)]);
+    setDismissed(updatedDismissed);
+    persistState(updatedDismissed, "admin_dismissed_orders");
     setPendingOrders(prev => prev.filter(o => String(o.id) !== String(orderId)));
   };
 

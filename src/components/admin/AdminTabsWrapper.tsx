@@ -41,8 +41,11 @@ export function AdminTabsWrapper({ children, role }: Props) {
     { key: "profile", label: t('profile') }
   ];
 
-  if (role === "cashier") {
-    translatedTabs = translatedTabs.filter(t => ["intelligence", "customers", "profile"].includes(t.key));
+  if (role?.toLowerCase() === "cashier") {
+    translatedTabs = translatedTabs.filter(t => ["intelligence"].includes(t.key));
+    // For cashier, "Intelligence" is primarily the order list; let's rename it to Orders
+    const ordersTab = translatedTabs.find(t => t.key === "intelligence");
+    if (ordersTab) ordersTab.label = t('orders') || 'الطلبات';
   }
 
   useEffect(() => {

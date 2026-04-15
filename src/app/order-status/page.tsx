@@ -156,12 +156,18 @@ function OrderStatusContent() {
                     ? STATUS_STEPS[currentStatusIndex]?.arLabel
                     : STATUS_STEPS[currentStatusIndex]?.enLabel)}
               </div>
-              {!isCancelled && order.status !== "Delivered" && (
-                <div style={{ color: "#555", fontWeight: 700, fontSize: "13px", marginTop: "4px" }}>
-                  ⏱ {isAr
-                    ? `الوقت المتبقي المتوقع: ~${estimateMins} دقيقة`
-                    : `Estimated time: ~${estimateMins} min`}
+              {order.estimated_time ? (
+                <div style={{ color: "#059669", fontWeight: 800, fontSize: "14px", marginTop: "4px" }}>
+                  ⏱ {isAr ? "الوقت المقدر:" : "Estimated time:"} {order.estimated_time}
                 </div>
+              ) : (
+                !isCancelled && order.status !== "Delivered" && (
+                  <div style={{ color: "#555", fontWeight: 700, fontSize: "13px", marginTop: "4px" }}>
+                    ⏱ {isAr
+                      ? `الوقت المتبقي المتوقع: ~${estimateMins} دقيقة`
+                      : `Estimated time: ~${estimateMins} min`}
+                  </div>
+                )
               )}
             </div>
           </div>
