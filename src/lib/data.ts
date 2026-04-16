@@ -145,7 +145,7 @@ function mapAddonGroup(row: Record<string, unknown>): AddonGroup {
     id: Number(row.id),
     nameAr: String(row.name_ar ?? ""),
     nameEn: String(row.name_en ?? ""),
-    categoryId: Number(row.category_id),
+    categoryId: row.category_id === null ? 0 : Number(row.category_id),
     productId: row.product_id === null ? null : Number(row.product_id),
     groupType: String(row.group_type ?? ""),
     isRequired: Boolean(row.is_required),

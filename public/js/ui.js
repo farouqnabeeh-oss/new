@@ -193,22 +193,34 @@ const UI = {
         const findGroupByItemId = (itemId) => addonGroups.find(group => group.items.some(item => item.id === itemId));
 
         const getVisibleGroups = () => {
-            const groups = addonGroups.filter(group => {
+            // Only apply Burger/Sandwich meal-specific hiding logic to those categories
+            const isBurgerOrSandwich = [1, 2].includes(product.categoryId);
+
+            return (product.addonGroups || []).filter(group => {
+                const nameEn = (group.nameEn || '').toLowerCase();
+                const nameAr = (group.nameAr || '').toLowerCase();
+
                 const type = group.groupType;
                 const name = (group.nameAr || '') + ' ' + (group.nameEn || '');
 
-                // --- SIZE VISIBILITY ---
-                // User wants to hide Size for "other products", presumably all except the legend (87)
+                // --- SIZE VISIBILITY: only hide redundant size for burger/sandwich ---
                 const isSizeGroup = (type === 'Size' || type === 'sizes' || name.includes('الحجم') || name.toLowerCase().includes('size'));
-                if (isSizeGroup && product.id !== 87 && [1, 2].includes(product.categoryId)) {
+                if (isSizeGroup && product.id !== 87 && isBurgerOrSandwich) {
                     return false;
                 }
 
-                // --- MEAL VISIBILITY ---
-                const isMealSpecificGroup = ['MealDrink', 'MealDrinkUpgrade', 'MealFries'].includes(type) ||
-                    name.includes('مشروب') || name.includes('بطاطا') || name.toLowerCase().includes('drink') || name.toLowerCase().includes('fries');
+                // --- DRINK / FRIES: only conditional for Burger/Sandwich (when meal) ---
+                const isDrinkOrFries =
+                    ['choose drink', 'change drink', 'change fries', 'upgrade drink', 'upgrade fries', 'select drink', 'swap drink', 'swap fries'].some(t => nameEn.includes(t)) ||
+                    ['اختيار المشروب', 'تبديل المشروب', 'تبديل البطاطا'].some(t => nameAr.includes(t));
 
-                if (isMealSpecificGroup) {
+                if (isDrinkOrFries && isBurgerOrSandwich) {
+                    return isMealSelection();
+                }
+
+                // --- MEAL-SPECIFIC GROUPS: only hide for burger/sandwich (MealDrink, MealFries, etc.) ---
+                const isMealSpecificGroup = ['MealDrink', 'MealDrinkUpgrade', 'MealFries'].includes(type);
+                if (isMealSpecificGroup && isBurgerOrSandwich) {
                     return isMealSelection();
                 }
 
@@ -217,6 +229,7 @@ const UI = {
                     return !!product.hasDonenessOption;
                 }
 
+                // For all other categories (Family Meals, Kids, Wings, etc.): always show
                 return true;
             });
 
@@ -243,7 +256,7 @@ const UI = {
         const syncVisibleSelections = () => {
             const visibleGroups = getVisibleGroups();
             const visibleGroupIds = new Set(visibleGroups.map(group => group.id));
-            
+
             state.selectedAddOns = state.selectedAddOns.filter(item => {
                 const group = findGroupByItemId(item.id);
                 return group && visibleGroupIds.has(group.id);
@@ -252,25 +265,28 @@ const UI = {
             visibleGroups.forEach(group => {
                 const isRequiredSingle = group.isRequired && !group.allowMultiple && group.items.length;
                 if (!isRequiredSingle) return;
-                
+
                 const hasSelection = state.selectedAddOns.some(item => group.items.some(groupItem => groupItem.id === item.id));
                 if (!hasSelection) {
-                    state.selectedAddOns.push(group.items[0]);
+                    const firstItem = group.items[0];
+                    if (Number(firstItem.price || 0) === 0) {
+                        state.selectedAddOns.push(firstItem);
+                    }
                 }
             });
-            
+
             // Auto-select first item ONLY IF price is 0 (Regular Fries/Drink)
             if (isMealSelection()) {
                 visibleGroups.forEach(group => {
-                   if (['MealDrink', 'MealFries'].includes(group.groupType)) {
-                       const hasSelection = state.selectedAddOns.some(item => group.items.some(gi => gi.id === item.id));
-                       if (!hasSelection && group.items.length) {
-                           const firstItem = group.items[0];
-                           if (Number(firstItem.price || 0) === 0) {
-                               state.selectedAddOns.push(firstItem);
-                           }
-                       }
-                   }
+                    if (['MealDrink', 'MealFries'].includes(group.groupType)) {
+                        const hasSelection = state.selectedAddOns.some(item => group.items.some(gi => gi.id === item.id));
+                        if (!hasSelection && group.items.length) {
+                            const firstItem = group.items[0];
+                            if (Number(firstItem.price || 0) === 0) {
+                                state.selectedAddOns.push(firstItem);
+                            }
+                        }
+                    }
                 });
             }
         };

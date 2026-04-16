@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-export const revalidate = 20;
+export const dynamic = "force-dynamic";
+import Script from "next/script";
 import { BodyClassName } from "@/components/body-class-name";
 import { getBranchBySlug, getMenuBanners, getSiteSettings, getCategories, getProducts } from "@/lib/data";
 import type { Category, Product, Branch, SiteSettings, MenuBanner, AddonGroup } from "@/lib/types";
@@ -198,6 +199,10 @@ export default async function MenuPage({ params }: MenuPageProps) {
           padding: 0 10px;
         }
       `}} />
+
+      <Script src="/js/language.js?v=10" strategy="beforeInteractive" />
+      <Script src="/js/cart.js?v=10" strategy="beforeInteractive" />
+      <Script src="/js/ui.js?v=10" strategy="afterInteractive" />
 
       <div className="hero-gap" />
 

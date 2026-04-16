@@ -20,7 +20,7 @@ interface Props {
   currency: string;
 }
 
-export default function MenuClient({ categories, allProducts, allAddonGroups, branch, isAr, currency }: Props) {
+export default function MenuClient({ categories = [], allProducts = [], allAddonGroups = [], branch, isAr, currency }: Props) {
   
   const updateBadge = useCallback(() => {
     if (!window.UI || !window.Cart) return;
@@ -80,6 +80,7 @@ export default function MenuClient({ categories, allProducts, allAddonGroups, br
       if (renderArea) renderArea.innerHTML = content;
 
       window.viewP = async (id: string | number) => {
+        console.log("[MenuDebug] Clicking product ID:", id);
         try {
           const card = document.querySelector(`[data-pid="${id}"]`);
           const btn = card?.querySelector('.up-add-pill');
@@ -92,13 +93,18 @@ export default function MenuClient({ categories, allProducts, allAddonGroups, br
             // Filter addons based on category and product, mimicking API rules
             const deduplicatedGroupsMap = new Map();
             allAddonGroups.forEach(row => {
-              if (row.productId !== null && String(row.productId) !== String(id)) return;
-              if (row.categoryId !== p.categoryId && row.productId === null) return;
+              // If this group is assigned to a DIFFERENT product, skip it
+              if (row.productId !== null && row.productId !== 0 && String(row.productId) !== String(id)) return;
+
+              // If this group has no product assignment (category-level), it must match the product's category
+              // Note: categoryId may be 0 when the DB value is null (product-only groups)
+              const isCategoryGroup = row.productId === null || row.productId === 0;
+              if (isCategoryGroup && row.categoryId !== 0 && row.categoryId !== p.categoryId) return;
               
               const rowKey = row.nameAr ? row.nameAr.trim() : (row.nameEn ? row.nameEn.trim() : String(row.id));
               const existing = deduplicatedGroupsMap.get(rowKey);
-              if (!existing || (row.productId !== null && existing.productId === null)) {
-                 if (row.productId === null && row.categoryId !== null) {
+              if (!existing || (row.productId !== null && row.productId !== 0 && (existing.productId === null || existing.productId === 0))) {
+                 if (isCategoryGroup && row.categoryId !== 0) {
                     const hasSpecificOverride = allAddonGroups.some(
                       other => String(other.productId) === String(id) &&
                         (other.groupType === row.groupType || other.nameAr === row.nameAr)
@@ -109,10 +115,15 @@ export default function MenuClient({ categories, allProducts, allAddonGroups, br
               }
             });
             const productAddonGroups = Array.from(deduplicatedGroupsMap.values());
+            console.log("[MenuDebug] Addons found for " + id + ":", productAddonGroups.length, productAddonGroups);
             
             // Always show the product modal so the user can see the description (product details)
             // since it's cached, this is instantaneous!
-            window.UI.renderProductModal(p, productAddonGroups, branch.slug, currency, branch.discountPercent || 0);
+            if (window.UI && window.UI.renderProductModal) {
+              window.UI.renderProductModal(p, productAddonGroups, branch.slug, currency, branch.discountPercent || 0);
+            } else {
+              console.warn("[MenuDebug] UI.renderProductModal is not available yet");
+            }
 
           } catch (e: any) {
             console.error("[Product Modal] Error for Product #" + id + ":", e);
