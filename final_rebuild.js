@@ -28,8 +28,15 @@ async function finalRebuild() {
         if (error || !data?.[0]) { console.error('Error adding group:', grp.name_ar, error); return; }
         const gid = data[0].id;
         if (items?.length > 0) {
-           const finalItems = items.map((it, idx) => ({ ...it, addon_group_id: gid, sort_order: idx + 1, is_active: true }));
-           await supabase.from('addon_group_items').insert(finalItems);
+           const finalItems = items.map((it, idx) => ({ 
+               ...it, 
+               name_en: it.name_en || it.name_ar || 'Item', 
+               addon_group_id: gid, 
+               sort_order: idx + 1, 
+               is_active: true 
+           }));
+           const { error: itemError } = await supabase.from('addon_group_items').insert(finalItems);
+           if (itemError) console.error('Error adding items for group:', grp.name_ar, itemError);
         }
         console.log(`✅ Added: ${grp.name_ar} (${items?.length || 0} items)`);
     }
@@ -48,7 +55,7 @@ async function finalRebuild() {
             { name_ar: 'هالبينو', price: 3 }, { name_ar: '2 موزاريلا', price: 8 }, { name_ar: '3 حلقات بصل', price: 5 },
             { name_ar: 'وايت صوص', price: 5 }
         ]);
-        await addGrp({ name_ar: 'إضافة على جنب', name_en: 'Side Addons', category_id: bId, group_type: 'side_addons' }, [
+        await addGrp({ name_ar: 'إضافات على جنب', name_en: 'Side Addons', category_id: bId, group_type: 'side_addons' }, [
             { name_ar: 'حلقات بصل (8)', price: 10 }, { name_ar: 'موزاريلا (3)', price: 12 },
             { name_ar: 'بوب كورن دجاج', price: 12 }, { name_ar: 'هالبينو', price: 8 }, { name_ar: 'علبة جبنة', price: 5 }
         ]);
@@ -73,13 +80,20 @@ async function finalRebuild() {
             { name_ar: 'ساندويش', price: 0 }, { name_ar: 'وجبة (بطاطا ومشروب)', price: 9 }
         ]);
         await addGrp({ name_ar: 'إضافات', name_en: 'Addons', category_id: sId, group_type: 'addons' }, [
-            { name_ar: 'لحمة 120غ', price: 12 }, { name_ar: 'لحمة 150غ', price: 15 }, { name_ar: 'جبنة', price: 3 }, { name_ar: 'هالبينو', price: 3 }
+            { name_ar: 'لحمة 120غ', price: 12 }, { name_ar: 'لحمة 150غ', price: 15 }, { name_ar: 'بصل مكرمل', price: 3 }, { name_ar: 'ماشروم', price: 3 },
+            { name_ar: 'سلامي', price: 5 }, { name_ar: 'بيكون', price: 5 }, { name_ar: 'أفوكادو', price: 5 }, { name_ar: 'جبنة', price: 3 }, { name_ar: 'هالبينو', price: 3 }
         ]);
         await addGrp({ name_ar: 'بدون', name_en: 'Without', category_id: sId, group_type: 'without' }, [
             { name_ar: 'مخلل' }, { name_ar: 'بندورة' }, { name_ar: 'بصل' }, { name_ar: 'خس' }, { name_ar: 'صوص' }
         ]);
         await addGrp({ name_ar: 'اختر المشروب', name_en: 'Select Drink', category_id: sId, group_type: 'MealDrink', is_required: true }, [
             { name_ar: 'كولا' }, { name_ar: 'كولا زيرو' }, { name_ar: 'فانتا' }, { name_ar: 'سبرايت' }, { name_ar: 'ماء' }
+        ]);
+        await addGrp({ name_ar: 'تبديل المشروب', name_en: 'Upgrade Drink', category_id: sId, group_type: 'MealDrinkUpgrade' }, [
+            { name_ar: 'XL', price: 4 }, { name_ar: 'بافاريا', price: 4 }, { name_ar: 'صودا', price: 4 }
+        ]);
+        await addGrp({ name_ar: 'تبديل البطاطا', name_en: 'Change Fries', category_id: sId, group_type: 'MealFries' }, [
+            { name_ar: 'كيرلي', price: 5 }, { name_ar: 'ويدجز', price: 5 }, { name_ar: 'بطاطا حلوة', price: 5 }, { name_ar: 'كرات بطاطا', price: 5 }
         ]);
     }
 
@@ -104,19 +118,31 @@ async function finalRebuild() {
         await addGrp({ name_ar: 'الحجم', name_en: 'Size', category_id: wId, group_type: 'sizes', is_required: true }, [
             { name_ar: '10 قطع', price: 13 }, { name_ar: '20 قطعة', price: 25 }
         ]);
-        await addGrp({ name_ar: 'الصوص', name_en: 'Sauce', category_id: wId, group_type: 'types' }, [
-            { name_ar: 'بافلو' }, { name_ar: 'باربيكيو' }, { name_ar: 'ثوم وليمون' }, { name_ar: 'تيراكي' }
+        await addGrp({ name_ar: 'الصوص', name_en: 'Sauce', category_id: wId, group_type: 'sauces', is_required: true }, [
+            { name_ar: 'بافلو' }, { name_ar: 'باربيكيو' }, { name_ar: 'ثوم وليمون' }, { name_ar: 'تيراكي' }, { name_ar: 'بارميزان ثوم' }, { name_ar: 'سويت تشيلي' }
         ]);
     }
 
-    // --- MILKSHAKE / SMOOTHIE ---
+    // --- MILKSHAKE ---
     const msId = findCat('Milkshake');
     if (msId) await addGrp({ name_ar: 'النوع', name_en: 'Flavor', category_id: msId, group_type: 'flavors', is_required: true }, [
-        { name_ar: 'فراولة' }, { name_ar: 'فانيلا' }, { name_ar: 'اوريو' }, { name_ar: 'لوتس' }, { name_ar: 'تشوكليت' }
+        { name_ar: 'فراولة' }, { name_ar: 'فانيلا' }, { name_ar: 'اوريو' }, { name_ar: 'لوتس' }, { name_ar: 'تشوكليت' }, { name_ar: 'كوفي كراش' }
     ]);
+
+    // --- NATURAL SMOOTHIE ---
     const smId = findCat('Natural Smoothie');
     if (smId) await addGrp({ name_ar: 'النوع', name_en: 'Flavor', category_id: smId, group_type: 'flavors', is_required: true }, [
-        { name_ar: 'فراولة' }, { name_ar: 'مانجا' }, { name_ar: 'اناناس' }, { name_ar: 'مانجا واناناس' }
+        { name_ar: 'فراولة' }, { name_ar: 'مانجا' }, { name_ar: 'اناناس' }, { name_ar: 'مانجا واناناس' }, { name_ar: 'مانجا وباشن' }, { name_ar: 'بينك ليمونيد' }
+    ]);
+
+    // --- COLD COFFEE ---
+    const ccId = findCat('Cold Coffee');
+    if (ccId) await addGrp({ name_ar: 'الحجم', name_en: 'Size', category_id: ccId, group_type: 'sizes', is_required: true }, [ { name_ar: 'وسط' }, { name_ar: 'كبير', price: 3 } ]);
+
+    // --- HOOKAH ---
+    const hId = findCat('Hookah');
+    if (hId) await addGrp({ name_ar: 'النوع', name_en: 'Flavor', category_id: hId, group_type: 'flavors', is_required: true }, [
+        { name_ar: 'ليمون ونعنع' }, { name_ar: 'تفاحتين' }, { name_ar: 'مستكة وقرفة' }, { name_ar: 'بلوبري' }, { name_ar: 'بطيخ ونعنع' }, { name_ar: 'تفاحتين نخلة' }
     ]);
 
     // --- PASTA ---

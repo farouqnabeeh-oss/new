@@ -92,7 +92,26 @@ export default function MenuClient({ categories = [], allProducts = [], allAddon
             
             // Filter addons based on category and product, mimicking API rules
             const deduplicatedGroupsMap = new Map();
-            allAddonGroups.forEach(row => {
+            allAddonGroups.forEach((dbRow: any) => {
+              // Normalize snake_case from DB to camelCase for UI.js
+              const row = {
+                id: dbRow.id,
+                nameAr: dbRow.name_ar,
+                nameEn: dbRow.name_en,
+                groupType: dbRow.group_type,
+                categoryId: dbRow.category_id,
+                productId: dbRow.product_id,
+                isRequired: dbRow.is_required,
+                allowMultiple: dbRow.allow_multiple,
+                items: (dbRow.addon_group_items || []).map((it: any) => ({
+                  id: it.id,
+                  nameAr: it.name_ar,
+                  nameEn: it.name_en,
+                  price: it.price || 0,
+                  isAvailable: it.is_active !== false
+                }))
+              };
+
               // If this group is assigned to a DIFFERENT product, skip it
               if (row.productId && String(row.productId) !== String(id)) return;
 
@@ -105,8 +124,8 @@ export default function MenuClient({ categories = [], allProducts = [], allAddon
               if (!existing || (row.productId && (String(existing.productId) === "0" || !existing.productId))) {
                  if (isCategoryGroup && String(row.categoryId) !== "0") {
                     const hasSpecificOverride = allAddonGroups.some(
-                      other => String(other.productId) === String(id) &&
-                        (other.groupType === row.groupType || other.nameAr === row.nameAr)
+                      (other: any) => String(other.product_id) === String(id) &&
+                        (other.group_type === row.groupType || other.name_ar === row.nameAr)
                     );
                     if (hasSpecificOverride) return;
                  }
