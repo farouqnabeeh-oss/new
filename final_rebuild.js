@@ -1,5 +1,5 @@
 
-require('dotenv').config({path: '.env.local'});
+require('dotenv').config({ path: '.env.local' });
 const { createClient } = require('@supabase/supabase-js');
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
@@ -28,15 +28,15 @@ async function finalRebuild() {
         if (error || !data?.[0]) { console.error('Error adding group:', grp.name_ar, error); return; }
         const gid = data[0].id;
         if (items?.length > 0) {
-           const finalItems = items.map((it, idx) => ({ 
-               ...it, 
-               name_en: it.name_en || it.name_ar || 'Item', 
-               addon_group_id: gid, 
-               sort_order: idx + 1, 
-               is_active: true 
-           }));
-           const { error: itemError } = await supabase.from('addon_group_items').insert(finalItems);
-           if (itemError) console.error('Error adding items for group:', grp.name_ar, itemError);
+            const finalItems = items.map((it, idx) => ({
+                ...it,
+                name_en: it.name_en || it.name_ar || 'Item',
+                addon_group_id: gid,
+                sort_order: idx + 1,
+                is_active: true
+            }));
+            const { error: itemError } = await supabase.from('addon_group_items').insert(finalItems);
+            if (itemError) console.error('Error adding items for group:', grp.name_ar, itemError);
         }
         console.log(`✅ Added: ${grp.name_ar} (${items?.length || 0} items)`);
     }
@@ -100,7 +100,7 @@ async function finalRebuild() {
     // --- MAIN MEALS ---
     const mId = findCat('Main Meals');
     if (mId) {
-        await addGrp({ name_ar: 'إضافات', name_en: 'Addons', category_id: mId, group_type: 'addons' }, [ { name_ar: 'صحن أرز إضافي', price: 10 } ]);
+        await addGrp({ name_ar: 'إضافات', name_en: 'Addons', category_id: mId, group_type: 'addons' }, [{ name_ar: 'صحن أرز إضافي', price: 10 }]);
         await addGrp({ name_ar: 'درجة الاستواء', name_en: 'Doneness', category_id: mId, group_type: 'Doneness', is_required: true }, [
             { name_ar: 'ميديوم' }, { name_ar: 'ميديوم ويل' }, { name_ar: 'ويل دون' }
         ]);
@@ -137,7 +137,7 @@ async function finalRebuild() {
 
     // --- COLD COFFEE ---
     const ccId = findCat('Cold Coffee');
-    if (ccId) await addGrp({ name_ar: 'الحجم', name_en: 'Size', category_id: ccId, group_type: 'sizes', is_required: true }, [ { name_ar: 'وسط' }, { name_ar: 'كبير', price: 3 } ]);
+    if (ccId) await addGrp({ name_ar: 'الحجم', name_en: 'Size', category_id: ccId, group_type: 'sizes', is_required: true }, [{ name_ar: 'وسط' }, { name_ar: 'كبير', price: 3 }]);
 
     // --- HOOKAH ---
     const hId = findCat('Hookah');

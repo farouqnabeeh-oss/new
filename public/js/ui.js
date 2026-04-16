@@ -1,5 +1,5 @@
 // ===== UI Module =====
-const UI = {
+var UI = window.UI || {
     showModal(overlayId, panelId) {
         const overlay = document.getElementById(overlayId);
         const panel = document.getElementById(panelId);

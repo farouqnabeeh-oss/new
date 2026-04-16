@@ -200,9 +200,9 @@ export default async function MenuPage({ params }: MenuPageProps) {
         }
       `}} />
 
-      <Script src="/js/language.js?v=10" strategy="beforeInteractive" />
-      <Script src="/js/cart.js?v=10" strategy="beforeInteractive" />
-      <Script src="/js/ui.js?v=10" strategy="afterInteractive" />
+      <Script src="/js/language.js?v=15" strategy="beforeInteractive" />
+      <Script src="/js/cart.js?v=15" strategy="beforeInteractive" />
+      <Script src="/js/ui.js?v=15" strategy="afterInteractive" />
 
       <div className="hero-gap" />
 
