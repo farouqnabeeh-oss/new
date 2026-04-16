@@ -14,6 +14,7 @@ interface PendingOrder {
 export function AdminOrderNotifier() {
   const [pendingOrders, setPendingOrders] = useState<PendingOrder[]>([]);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const seenIds = useRef<Set<string>>(new Set());
   const audioCtxRef = useRef<AudioContext | null>(null);
   const alarmIntervalRef = useRef<any>(null);
@@ -26,13 +27,13 @@ export function AdminOrderNotifier() {
       try {
         const arr = JSON.parse(savedSeen);
         if (Array.isArray(arr)) arr.forEach(id => seenIds.current.add(String(id)));
-      } catch (e) {}
+      } catch (e) { }
     }
     if (savedDismissed) {
       try {
         const arr = JSON.parse(savedDismissed);
         if (Array.isArray(arr)) setDismissed(new Set(arr.map(String)));
-      } catch (e) {}
+      } catch (e) { }
     }
   }, []);
 
@@ -43,29 +44,36 @@ export function AdminOrderNotifier() {
 
   const playAlarmTone = useCallback(() => {
     try {
-      if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
-        audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-      }
-      const ctx = audioCtxRef.current;
+      // First try to play physical MP3 file
+      const audio = new Audio('/sounds/success.mp3');
+      audio.play().catch(() => {
+        // Fallback to Synth Beep if MP3 is blocked or not found
+        try {
+          setSoundEnabled(false); // browser blocked it, need interaction
+          if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
+            audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+          }
+          const ctx = audioCtxRef.current;
 
-      const playBeep = (freq: number, start: number, dur: number, type: OscillatorType = "square") => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.type = type;
-        osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
-        gain.gain.setValueAtTime(0.5, ctx.currentTime + start);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + start + dur);
-        osc.start(ctx.currentTime + start);
-        osc.stop(ctx.currentTime + start + dur);
-      };
+          const playBeep = (freq: number, start: number, dur: number, type: OscillatorType = "square") => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
+            gain.gain.setValueAtTime(0.5, ctx.currentTime + start);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + start + dur);
+            osc.start(ctx.currentTime + start);
+            osc.stop(ctx.currentTime + start + dur);
+          };
 
-      // Faster, more insistent "Emergency" pattern
-      playBeep(987.77, 0.0, 0.1, "sawtooth"); // B5
-      playBeep(1318.51, 0.15, 0.1, "sawtooth"); // E6
-      playBeep(987.77, 0.3, 0.1, "sawtooth"); // B5
-      playBeep(1318.51, 0.45, 0.3, "sawtooth"); // E6
+          playBeep(987.77, 0.0, 0.1, "sawtooth"); // B5
+          playBeep(1318.51, 0.15, 0.1, "sawtooth"); // E6
+          playBeep(987.77, 0.3, 0.1, "sawtooth"); // B5
+          playBeep(1318.51, 0.45, 0.3, "sawtooth"); // E6
+        } catch (e) { }
+      });
     } catch (e) {
       console.log("Audio error:", e);
     }
@@ -126,7 +134,23 @@ export function AdminOrderNotifier() {
     setPendingOrders(prev => prev.filter(o => String(o.id) !== String(orderId)));
   };
 
-  // No visible output. The physical alarm sound is enough to notify the staff, 
-  // and they will see the orders in the main dashboard grid.
+  // If sound is blocked initially by the browser policy, we can show a small invisible trigger or a floating button to activate it
+  if (!soundEnabled) {
+    return (
+      <div style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 9999 }}>
+        <button
+          onClick={() => {
+            setSoundEnabled(true);
+            playAlarmTone();
+          }}
+          className="btn btn-primary"
+          style={{ background: '#e63946', color: '#fff', padding: '10px 20px', borderRadius: '20px', fontWeight: 'bold', boxShadow: '0 4px 10px rgba(0,0,0,0.2)' }}
+        >
+          🎵 تفعيل صوت الإشعارات للطلبات الجديدة
+        </button>
+      </div>
+    );
+  }
+
   return null;
 }

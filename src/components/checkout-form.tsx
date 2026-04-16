@@ -59,7 +59,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
 
                 // Delivery Logic
                 let effectiveFee = orderType === 'delivery' ? (deliveryFee || settings.deliveryFee || 0) : 0;
-                
+
                 if (branch.freeDelivery) {
                     effectiveFee = 0;
                 } else if (branch.deliveryDiscountPercent && branch.deliveryDiscountPercent > 0) {
@@ -90,7 +90,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
         const building = (document.getElementById('customer-building') as HTMLInputElement)?.value.trim() || "";
         const addressNotes = (document.getElementById('customer-address-notes') as HTMLInputElement)?.value.trim() || "";
         const address = street ? `${street}, ${building}${addressNotes ? ` (${addressNotes})` : ""}` : "";
-        
+
         const pickupTime = (document.getElementById('customer-pickup-time') as HTMLInputElement)?.value.trim();
         const notes = (document.getElementById('customer-notes') as HTMLTextAreaElement)?.value.trim();
         const scheduledDate = (document.getElementById('scheduled-date') as HTMLInputElement)?.value;
@@ -100,13 +100,13 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
 
         const isEmailRequired = paymentMethod === 'palpay';
         if (!name || !phone || !birthday || (isEmailRequired && !email)) {
-            return alert(isAr 
-                ? `يرجى ملأ جميع الحقول الأساسية (${isEmailRequired ? 'الاسم، الهاتف، البريد الإلكتروني، تاريخ الميلاد' : 'الاسم، الهاتف، تاريخ الميلاد'})` 
+            return alert(isAr
+                ? `يرجى ملأ جميع الحقول الأساسية (${isEmailRequired ? 'الاسم، الهاتف، البريد الإلكتروني، تاريخ الميلاد' : 'الاسم، الهاتف، تاريخ الميلاد'})`
                 : `Please fill all required fields (${isEmailRequired ? 'Name, Phone, Email, Dob' : 'Name, Phone, Dob'})`
             );
         }
         if (phone.length !== 10) return alert(isAr ? 'يجب أن يتكون رقم الهاتف من 10 أرقام' : 'Phone number must be exactly 10 digits');
-        
+
         // Final fallback just in case
         if (isEmailRequired && !email) return alert(isAr ? 'البريد الإلكتروني مطلوب للدفع بالفيزا' : 'Email is required for Visa payments');
         if (orderType === 'delivery' && (!selectedZone || !street || !building)) return alert(isAr ? 'يرجى اختيار منطقة التوصيل وإدخال بيانات الشارع والبناية بالتفصيل' : 'Please select a delivery zone and enter street and building details');
@@ -138,18 +138,29 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
             const finalAddress = orderType === 'delivery' ? `${selectedZone} - ${address}` : address;
             try {
                 const mappedItems = items.map((i: any) => {
-                    const normalAddons = i.selectedAddOns?.filter((a: any) => !(a.nameAr || '').includes('بدون') && !(a.nameEn || '').toLowerCase().includes('without') && !(a.nameEn || '').toLowerCase().includes('no '));
+                    const typeAddons = i.selectedAddOns?.filter((a: any) => (a.nameAr || '').includes('وجبة') || (a.nameAr || '').includes('ساندويش') || (a.nameEn || '').toLowerCase().includes('meal') || (a.nameEn || '').toLowerCase().includes('sandwich'));
                     const noteAddons = i.selectedAddOns?.filter((a: any) => (a.nameAr || '').includes('بدون') || (a.nameEn || '').toLowerCase().includes('without') || (a.nameEn || '').toLowerCase().includes('no '));
+                    const normalAddons = i.selectedAddOns?.filter((a: any) => !typeAddons?.includes(a) && !noteAddons?.includes(a));
+
                     const parts = [];
                     if (i.selectedSize) parts.push(`الحجم: ${isAr ? i.selectedSize.nameAr : i.selectedSize.nameEn}`);
+
+                    let finalTypes = [];
                     if (i.selectedType) {
                         const typeName = isAr ? i.selectedType.nameAr : i.selectedType.nameEn;
-                        parts.push(typeName?.includes('وجبة') || typeName?.toLowerCase().includes('meal') ? `النوع: وجبة (Meal)` : `النوع: ساندويش (Sandwich)`);
+                        finalTypes.push(typeName);
                     }
-                    if (normalAddons?.length) parts.push(`إضافات: ` + normalAddons.map((a:any)=> isAr ? a.nameAr : a.nameEn).join(' + '));
-                    if (noteAddons?.length) parts.push(`ملاحظات (بدون): ` + noteAddons.map((a:any)=> isAr ? a.nameAr : a.nameEn).join('، '));
+                    if (typeAddons?.length) {
+                        finalTypes.push(...typeAddons.map((a: any) => isAr ? a.nameAr : a.nameEn));
+                    }
+                    if (finalTypes.length) {
+                        parts.push(`النوع: ${finalTypes.join(' + ')}`);
+                    }
+
+                    if (normalAddons?.length) parts.push(`إضافات: ` + normalAddons.map((a: any) => isAr ? a.nameAr : a.nameEn).join(' + '));
+                    if (noteAddons?.length) parts.push(`ملاحظات (بدون): ` + noteAddons.map((a: any) => isAr ? a.nameAr : a.nameEn).join('، '));
                     if (i.note) parts.push(`ملاحظة إضافية: ${i.note}`);
-                    
+
                     return { ...i, addonDetails: parts.join(' | ') };
                 });
 
@@ -262,307 +273,307 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                 </div>
 
 
-            {!isOpen && (
-                <div style={{
-                    background: '#FEF2F2',
-                    border: '1px solid #FCA5A5',
-                    borderRadius: '24px',
-                    padding: '24px',
-                    marginBottom: '30px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '20px',
-                    boxShadow: '0 10px 30px rgba(220, 38, 38, 0.05)'
-                }}>
-                    <div style={{ background: '#DC2626', color: '#fff', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <Clock size={20} />
-                    </div>
-                    <div>
-                        <h4 style={{ color: '#991B1B', fontWeight: 900, marginBottom: '5px' }}>{isAr ? 'المطعم مغلق حالياً' : 'Restaurant Currently Closed'}</h4>
-                        <p style={{ color: '#B91C1C', fontSize: '14px', fontWeight: 600 }}>
-                            {isAr
-                                ? `نعتذر منك، ساعات العمل في هذا الفرع من ${branch.openingTime} حتى ${branch.closingTime}. يمكنك تصفح المنيو ولكن لا يمكن استقبال طلبات حالياً.`
-                                : `We apologize, this branch operates from ${branch.openingTime} to ${branch.closingTime}. You can browse the menu but cannot place orders at this time.`
-                            }
-                        </p>
-                    </div>
-                </div>
-            )}
-
-            <div className="checkout-main-grid" style={{ background: '#FDFCFB', padding: '40px', borderRadius: '40px', boxShadow: '0 20px 60px rgba(0,0,0,0.05)', border: '1px solid #ECEAE7' }}>
-
-                {/* 📋 ORDER TYPE */}
-                <div style={{ marginBottom: '40px' }}>
-                    <h4 style={{ fontWeight: 800, marginBottom: '20px', fontSize: '1.2rem' }}>{isAr ? 'نوع الطلب' : 'Order Type'}</h4>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                        <div onClick={() => setOrderType('inRestaurant')} className={`premium-choice-card ${orderType === 'inRestaurant' ? 'active' : ''}`}>
-                            <Utensils size={32} />
-                            <span>{isAr ? 'داخل المطعم' : 'In Restaurant'}</span>
+                {!isOpen && (
+                    <div style={{
+                        background: '#FEF2F2',
+                        border: '1px solid #FCA5A5',
+                        borderRadius: '24px',
+                        padding: '24px',
+                        marginBottom: '30px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '20px',
+                        boxShadow: '0 10px 30px rgba(220, 38, 38, 0.05)'
+                    }}>
+                        <div style={{ background: '#DC2626', color: '#fff', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <Clock size={20} />
                         </div>
-                        <div onClick={() => setOrderType('delivery')} className={`premium-choice-card ${orderType === 'delivery' ? 'active' : ''}`}>
-                            <Truck size={32} />
-                            <span>{isAr ? 'توصيل ' : 'Delivery'}</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Removed Table Number Option as per new policy */}
-                {orderType === 'inRestaurant' && (
-                    <div style={{ marginBottom: '40px' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '15px' }}>
-                            <div className="premium-choice-card sm active" style={{ cursor: 'default' }}>
-                                <span>{isAr ? 'الاستلام من الفرع' : 'Pickup at Branch'}</span>
-                            </div>
+                        <div>
+                            <h4 style={{ color: '#991B1B', fontWeight: 900, marginBottom: '5px' }}>{isAr ? 'المطعم مغلق حالياً' : 'Restaurant Currently Closed'}</h4>
+                            <p style={{ color: '#B91C1C', fontSize: '14px', fontWeight: 600 }}>
+                                {isAr
+                                    ? `نعتذر منك، ساعات العمل في هذا الفرع من ${branch.openingTime} حتى ${branch.closingTime}. يمكنك تصفح المنيو ولكن لا يمكن استقبال طلبات حالياً.`
+                                    : `We apologize, this branch operates from ${branch.openingTime} to ${branch.closingTime}. You can browse the menu but cannot place orders at this time.`
+                                }
+                            </p>
                         </div>
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '40px' }}>
-                        <div className="uptown-input-group">
-                            <label>{isAr ? 'الاسم الكامل' : 'Full Name'} *</label>
-                            <input type="text" id="customer-name" required className="uptown-input" />
-                        </div>
-                        <div className="uptown-input-group">
-                            <label>{isAr ? 'رقم الهاتف' : 'Phone'} *</label>
-                            <input 
-                                type="tel" 
-                                id="customer-phone" 
-                                required 
-                                className="uptown-input" 
-                                dir="ltr"
-                                placeholder="05..."
-                                pattern="[0-9]{10}"
-                                minLength={10}
-                                maxLength={10}
-                                onInput={(e) => {
-                                    const el = e.target as HTMLInputElement;
-                                    el.value = el.value.replace(/[^0-9]/g, '');
-                                }}
-                            />
-                        </div>
-                        <div className="uptown-input-group">
-                            <label>
-                                {isAr ? 'البريد الإلكتروني' : 'Email'} {paymentMethod === 'palpay' ? '*' : `(${isAr ? 'اختياري' : 'Optional'})`}
-                            </label>
-                            <input type="email" id="customer-email" className="uptown-input" suppressHydrationWarning />
-                        </div>
-                        <div className="uptown-input-group">
-                            <label>{isAr ? 'تاريخ الميلاد' : 'Birth Date'} *</label>
-                            <input type="date" id="customer-birthday" className="uptown-input" required />
-                        </div>
+                <div className="checkout-main-grid" style={{ background: '#FDFCFB', padding: '40px', borderRadius: '40px', boxShadow: '0 20px 60px rgba(0,0,0,0.05)', border: '1px solid #ECEAE7' }}>
 
-                        {orderType === 'delivery' && (
-                            <div style={{ gridColumn: 'span 2' }}>
-                                <label style={{ display: 'block', fontWeight: 800, marginBottom: '10px' }}>{isAr ? 'منطقة التوصيل' : 'Delivery Zone'} <span className="required-star">*</span></label>
-                                <div style={{ position: 'relative' }}>
-                                    <select 
-                                        className="uptown-input premium-select" 
-                                        style={{ width: '100%', cursor: 'pointer', backgroundPosition: 'left 20px center' }}
-                                        value={selectedZone}
-                                        onChange={(e) => {
-                                            const zone = branch.deliveryZones?.find(z => (isAr ? (z.nameAr || (z as any).name) : (z.nameEn || (z as any).name)) === e.target.value);
-                                            if (zone) {
-                                                setDeliveryFee(zone.fee);
-                                                setSelectedZone(e.target.value);
-                                            } else {
-                                                setDeliveryFee(0);
-                                                setSelectedZone("");
-                                            }
-                                        }}
-                                    >
-                                        <option value="">{isAr ? '--- اختر المنطقة ---' : '--- Choose Zone ---'}</option>
-                                        {(branch.deliveryZones ?? []).length > 0 ? (branch.deliveryZones ?? []).map((z, zIdx) => {
-                                            const zoneName = isAr ? z.nameAr : z.nameEn;
-                                            if (!zoneName) return null;
-                                            const feeText = z.fee === 0 
-                                                ? (isAr ? 'مجاناً' : 'Free') 
-                                                : `+${z.fee} ${settings.currencySymbol}`;
-                                            return <option key={`zone-${zIdx}`} value={zoneName}>{zoneName} ({feeText})</option>;
-                                        }) : <option value="Manual" disabled>{isAr ? 'المناطق غير متاحة حالياً' : 'Zones momentarily unavailable'}</option>}
-                                    </select>
+                    {/* 📋 ORDER TYPE */}
+                    <div style={{ marginBottom: '40px' }}>
+                        <h4 style={{ fontWeight: 800, marginBottom: '20px', fontSize: '1.2rem' }}>{isAr ? 'نوع الطلب' : 'Order Type'}</h4>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                            <div onClick={() => setOrderType('inRestaurant')} className={`premium-choice-card ${orderType === 'inRestaurant' ? 'active' : ''}`}>
+                                <Utensils size={32} />
+                                <span>{isAr ? 'داخل المطعم' : 'In Restaurant'}</span>
+                            </div>
+                            <div onClick={() => setOrderType('delivery')} className={`premium-choice-card ${orderType === 'delivery' ? 'active' : ''}`}>
+                                <Truck size={32} />
+                                <span>{isAr ? 'توصيل ' : 'Delivery'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Removed Table Number Option as per new policy */}
+                    {orderType === 'inRestaurant' && (
+                        <div style={{ marginBottom: '40px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '15px' }}>
+                                <div className="premium-choice-card sm active" style={{ cursor: 'default' }}>
+                                    <span>{isAr ? 'الاستلام من الفرع' : 'Pickup at Branch'}</span>
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '20px' }}>
-                                    <div className="uptown-input-group">
-                                        <label>{isAr ? 'اسم الشارع' : 'Street Name'} *</label>
-                                        <input type="text" id="customer-street" required className="uptown-input" />
+                            </div>
+                        </div>
+                    )}
+
+                    <form onSubmit={handleSubmit}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '40px' }}>
+                            <div className="uptown-input-group">
+                                <label>{isAr ? 'الاسم الكامل' : 'Full Name'} *</label>
+                                <input type="text" id="customer-name" required className="uptown-input" />
+                            </div>
+                            <div className="uptown-input-group">
+                                <label>{isAr ? 'رقم الهاتف' : 'Phone'} *</label>
+                                <input
+                                    type="tel"
+                                    id="customer-phone"
+                                    required
+                                    className="uptown-input"
+                                    dir="ltr"
+                                    placeholder="05..."
+                                    pattern="[0-9]{10}"
+                                    minLength={10}
+                                    maxLength={10}
+                                    onInput={(e) => {
+                                        const el = e.target as HTMLInputElement;
+                                        el.value = el.value.replace(/[^0-9]/g, '');
+                                    }}
+                                />
+                            </div>
+                            <div className="uptown-input-group">
+                                <label>
+                                    {isAr ? 'البريد الإلكتروني' : 'Email'} {paymentMethod === 'palpay' ? '*' : `(${isAr ? 'اختياري' : 'Optional'})`}
+                                </label>
+                                <input type="email" id="customer-email" className="uptown-input" suppressHydrationWarning />
+                            </div>
+                            <div className="uptown-input-group">
+                                <label>{isAr ? 'تاريخ الميلاد' : 'Birth Date'} *</label>
+                                <input type="date" id="customer-birthday" className="uptown-input" required />
+                            </div>
+
+                            {orderType === 'delivery' && (
+                                <div style={{ gridColumn: 'span 2' }}>
+                                    <label style={{ display: 'block', fontWeight: 800, marginBottom: '10px' }}>{isAr ? 'منطقة التوصيل' : 'Delivery Zone'} <span className="required-star">*</span></label>
+                                    <div style={{ position: 'relative' }}>
+                                        <select
+                                            className="uptown-input premium-select"
+                                            style={{ width: '100%', cursor: 'pointer', backgroundPosition: 'left 20px center' }}
+                                            value={selectedZone}
+                                            onChange={(e) => {
+                                                const zone = branch.deliveryZones?.find(z => (isAr ? (z.nameAr || (z as any).name) : (z.nameEn || (z as any).name)) === e.target.value);
+                                                if (zone) {
+                                                    setDeliveryFee(zone.fee);
+                                                    setSelectedZone(e.target.value);
+                                                } else {
+                                                    setDeliveryFee(0);
+                                                    setSelectedZone("");
+                                                }
+                                            }}
+                                        >
+                                            <option value="">{isAr ? '--- اختر المنطقة ---' : '--- Choose Zone ---'}</option>
+                                            {(branch.deliveryZones ?? []).length > 0 ? (branch.deliveryZones ?? []).map((z, zIdx) => {
+                                                const zoneName = isAr ? z.nameAr : z.nameEn;
+                                                if (!zoneName) return null;
+                                                const feeText = z.fee === 0
+                                                    ? (isAr ? 'مجاناً' : 'Free')
+                                                    : `+${z.fee} ${settings.currencySymbol}`;
+                                                return <option key={`zone-${zIdx}`} value={zoneName}>{zoneName} ({feeText})</option>;
+                                            }) : <option value="Manual" disabled>{isAr ? 'المناطق غير متاحة حالياً' : 'Zones momentarily unavailable'}</option>}
+                                        </select>
                                     </div>
-                                    <div className="uptown-input-group">
-                                        <label>{isAr ? 'البناية / الشقة' : 'Building / Apt'} *</label>
-                                        <input type="text" id="customer-building" required className="uptown-input" />
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '20px' }}>
+                                        <div className="uptown-input-group">
+                                            <label>{isAr ? 'اسم الشارع' : 'Street Name'} *</label>
+                                            <input type="text" id="customer-street" required className="uptown-input" />
+                                        </div>
+                                        <div className="uptown-input-group">
+                                            <label>{isAr ? 'البناية / الشقة' : 'Building / Apt'} *</label>
+                                            <input type="text" id="customer-building" required className="uptown-input" />
+                                        </div>
+                                    </div>
+                                    <div className="uptown-input-group" style={{ marginTop: '20px' }}>
+                                        <label>{isAr ? 'ملاحظات العنوان' : 'Address Notes'} ({isAr ? 'اختياري' : 'Optional'})</label>
+                                        <input type="text" id="customer-address-notes" className="uptown-input" placeholder={isAr ? "مثلاً: قرب سوبرماركت..." : "e.g. Near supermarket..."} />
+                                    </div>
+                                    <div style={{ marginTop: '20px', padding: '15px', background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <Clock size={20} color="#0284C7" />
+                                        <span style={{ color: '#0369A1', fontWeight: 800, fontSize: '14px' }}>
+                                            {isAr ? 'وقت التوصيل المتوقع: حوالي نصف ساعة (30 دقيقة)' : 'Expected Delivery Time: About 30 minutes'}
+                                        </span>
                                     </div>
                                 </div>
-                                <div className="uptown-input-group" style={{ marginTop: '20px' }}>
-                                    <label>{isAr ? 'ملاحظات العنوان' : 'Address Notes'} ({isAr ? 'اختياري' : 'Optional'})</label>
-                                    <input type="text" id="customer-address-notes" className="uptown-input" placeholder={isAr ? "مثلاً: قرب سوبرماركت..." : "e.g. Near supermarket..."} />
+                            )}
+
+                            {orderType === 'inRestaurant' && (
+                                <div className="uptown-input-group" style={{ gridColumn: 'span 2' }}>
+                                    <label>{isAr ? 'وقت الاستلام' : 'Pickup Time'} *</label>
+                                    <input type="time" id="customer-pickup-time" required className="uptown-input" />
                                 </div>
-                                <div style={{ marginTop: '20px', padding: '15px', background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <Clock size={20} color="#0284C7" />
-                                    <span style={{ color: '#0369A1', fontWeight: 800, fontSize: '14px' }}>
-                                        {isAr ? 'وقت التوصيل المتوقع: حوالي نصف ساعة (30 دقيقة)' : 'Expected Delivery Time: About 30 minutes'}
+                            )}
+
+                            {/* 🕐 SCHEDULED ORDER TIME */}
+                            <div style={{ gridColumn: 'span 2', background: '#FFFBEB', border: '1px solid #FCD34D', borderRadius: '20px', padding: '20px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                                    <Clock size={18} color="#D97706" />
+                                    <span style={{ fontWeight: 900, fontSize: '14px', color: '#92400E' }}>
+                                        {isAr ? 'جدولة الطلب (اختياري)' : 'Schedule Order (Optional)'}
                                     </span>
                                 </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                    <div className="uptown-input-group">
+                                        <label style={{ color: '#92400E' }}>{isAr ? 'التاريخ' : 'Date'}</label>
+                                        <input
+                                            type="date"
+                                            id="scheduled-date"
+                                            className="uptown-input"
+                                            min={new Date().toISOString().split('T')[0]}
+                                        />
+                                    </div>
+                                    <div className="uptown-input-group">
+                                        <label style={{ color: '#92400E' }}>{isAr ? 'الوقت' : 'Time'}</label>
+                                        <input type="time" id="scheduled-time" className="uptown-input" />
+                                    </div>
+                                </div>
+                                <p style={{ fontSize: '12px', color: '#B45309', marginTop: '10px', fontWeight: 600 }}>
+                                    {isAr
+                                        ? '⚡ اتركه فارغاً للتجهيز الفوري، أو حدد وقتاً لاحقاً لطلبك.'
+                                        : '⚡ Leave empty for immediate preparation, or set a future time for your order.'}
+                                </p>
                             </div>
-                        )}
 
-                        {orderType === 'inRestaurant' && (
                             <div className="uptown-input-group" style={{ gridColumn: 'span 2' }}>
-                                <label>{isAr ? 'وقت الاستلام' : 'Pickup Time'} *</label>
-                                <input type="time" id="customer-pickup-time" required className="uptown-input" />
+                                <label>{isAr ? 'ملاحظات إضافية' : 'Notes'}</label>
+                                <textarea id="customer-notes" rows={3} className="uptown-input" />
+                            </div>
+                        </div>
+
+                        {/* 📦 SUMMARY BOX */}
+                        <div style={{ background: '#fff', border: '1px solid #eee', padding: '30px', borderRadius: '30px', marginBottom: '40px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: '15px', marginBottom: '15px' }}>
+                                <span style={{ fontWeight: 800 }}>{cartItems.length} {isAr ? 'أصناف في السلة' : 'Items'}</span>
+                                <span style={{ color: '#666', fontSize: '14px' }}>{isAr ? 'المجموع' : 'Subtotal'}: {subtotal.toFixed(2)}</span>
+                            </div>
+                            {cartItems.map((item: any, i: number) => (
+                                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginBottom: '8px', color: '#666' }}>
+                                    <span>{item.quantity}x {isAr ? item.nameAr : item.nameEn}</span>
+                                    <span>{item.finalPrice.toFixed(2)}</span>
+                                </div>
+                            ))}
+
+                            <div style={{ marginTop: '20px', paddingTop: '15px', borderTop: '1px solid #f0f0f0' }}>
+                                {discount > 0 && (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#059669', fontWeight: 700, marginBottom: '8px' }}>
+                                        <span>{isAr ? 'خصم العرض' : 'Discount'} ({branch.discountPercent}%)</span>
+                                        <span>-{discount.toFixed(2)} {settings.currencySymbol}</span>
+                                    </div>
+                                )}
+                                {!!branch.deliveryDiscountPercent && branch.deliveryDiscountPercent > 0 && deliveryFee > 0 && (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#059669', fontWeight: 700, marginBottom: '8px' }}>
+                                        <span>{isAr ? 'خصم التوصيل' : 'Delivery Discount'} ({branch.deliveryDiscountPercent}%)</span>
+                                        <span>-{(deliveryFee * (branch.deliveryDiscountPercent || 0) / 100).toFixed(2)} {settings.currencySymbol}</span>
+                                    </div>
+                                )}
+                                {orderType === 'delivery' && (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#666', marginBottom: '8px' }}>
+                                        <span>{isAr ? 'رسوم التوصيل' : 'Delivery Fee'}</span>
+                                        <span>{(deliveryFee || settings.deliveryFee || 0).toFixed(2)} {settings.currencySymbol}</span>
+                                    </div>
+                                )}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.2rem', color: '#8B0000', fontWeight: 900, marginTop: '10px' }}>
+                                    <span>{isAr ? 'المجموع النهائي' : 'Grand Total'}</span>
+                                    <span>{(total || 0).toFixed(2)} {settings.currencySymbol}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 💳 PAYMENT */}
+                        <div style={{ marginBottom: '40px' }}>
+                            <h4 style={{ fontWeight: 800, marginBottom: '20px', textAlign: isAr ? 'right' : 'left' }}>{isAr ? 'اختر طريقة الدفع' : 'Choose Payment Method'}</h4>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                                <div onClick={() => setPaymentMethod('cash')} className={`premium-choice-card ${paymentMethod === 'cash' ? 'active' : ''}`} style={{ padding: '25px' }}>
+                                    <Banknote size={36} />
+                                    <span style={{ fontSize: '14px', marginTop: '10px' }}>{isAr ? 'الدفع كاش' : 'Cash Payment'}</span>
+                                </div>
+                                <div onClick={() => setPaymentMethod('palpay')} className={`premium-choice-card ${paymentMethod === 'palpay' ? 'active' : ''}`} style={{ padding: '25px' }}>
+                                    <CreditCard size={36} />
+                                    <span style={{ fontSize: '14px', marginTop: '10px' }}>{isAr ? 'الدفع بالفيزا' : 'Visa Payment'}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {paymentMethod === 'palpay' && (
+                            <div style={{ background: '#fff', padding: '25px', borderRadius: '30px', border: '2px solid #EEE', marginBottom: '40px', textAlign: 'center' }}>
+                                <p style={{ fontWeight: 600, color: '#666' }}>
+                                    {isAr ? "سيتم توجيهك إلى بوابة الدفع الآمنة لإتمام العملية." : "You will be redirected to our secure payment gateway to complete your request."}
+                                </p>
                             </div>
                         )}
 
-                        {/* 🕐 SCHEDULED ORDER TIME */}
-                        <div style={{ gridColumn: 'span 2', background: '#FFFBEB', border: '1px solid #FCD34D', borderRadius: '20px', padding: '20px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-                                <Clock size={18} color="#D97706" />
-                                <span style={{ fontWeight: 900, fontSize: '14px', color: '#92400E' }}>
-                                    {isAr ? 'جدولة الطلب (اختياري)' : 'Schedule Order (Optional)'}
+                        <div style={{ marginBottom: '30px', padding: '15px', background: '#fff', borderRadius: '15px', border: '1px solid #eee' }}>
+                            <label style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', cursor: 'pointer' }}>
+                                <input type="checkbox" id="policy-accept" required style={{ width: '22px', height: '22px', marginTop: '3px', accentColor: '#8B0000' }} />
+                                <span style={{ fontSize: '13px', fontWeight: 600, color: '#444', lineHeight: '1.5' }}>
+                                    {isAr ? (
+                                        <>
+                                            أوافق على <a href="/policies/return" target="_blank" style={{ color: '#8B0000', textDecoration: 'underline' }}>سياسة الإرجاع والتبديل</a> و <a href="/policies/privacy" target="_blank" style={{ color: '#8B0000', textDecoration: 'underline' }}>سياسة الخصوصية</a>
+                                        </>
+                                    ) : (
+                                        <>
+                                            I accept the <a href="/policies/return" target="_blank" style={{ color: '#8B0000', textDecoration: 'underline' }}>Return & Exchange Policy</a> and <a href="/policies/privacy" target="_blank" style={{ color: '#8B0000', textDecoration: 'underline' }}>Privacy Policy</a>
+                                        </>
+                                    )}
                                 </span>
+                            </label>
+                        </div>
+
+                        {/* 🛡️ reCAPTCHA */}
+                        {process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && (
+                            <div style={{ marginBottom: '30px', display: 'flex', justifyContent: 'center' }}>
+                                <ReCAPTCHA
+                                    sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
+                                    onChange={(token) => setCaptchaToken(token)}
+                                    hl={isAr ? 'ar' : 'en'}
+                                />
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                <div className="uptown-input-group">
-                                    <label style={{ color: '#92400E' }}>{isAr ? 'التاريخ' : 'Date'}</label>
-                                    <input
-                                        type="date"
-                                        id="scheduled-date"
-                                        className="uptown-input"
-                                        min={new Date().toISOString().split('T')[0]}
-                                    />
-                                </div>
-                                <div className="uptown-input-group">
-                                    <label style={{ color: '#92400E' }}>{isAr ? 'الوقت' : 'Time'}</label>
-                                    <input type="time" id="scheduled-time" className="uptown-input" />
-                                </div>
-                            </div>
-                            <p style={{ fontSize: '12px', color: '#B45309', marginTop: '10px', fontWeight: 600 }}>
-                                {isAr
-                                    ? '⚡ اتركه فارغاً للتجهيز الفوري، أو حدد وقتاً لاحقاً لطلبك.'
-                                    : '⚡ Leave empty for immediate preparation, or set a future time for your order.'}
-                            </p>
+                        )}
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                            <button
+                                type="submit"
+                                className="uptown-btn red-gradient"
+                                disabled={isPending || (!!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && !captchaToken)}
+                                style={{
+                                    opacity: (isPending || (!!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && !captchaToken)) ? 0.6 : 1,
+                                    cursor: (isPending || (!!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && !captchaToken)) ? 'not-allowed' : 'pointer'
+                                }}
+                            >
+                                <CheckCircle2 color="#fff" />
+                                {!isOpen
+                                    ? (isAr ? 'إرسال الطلب (المطعم مغلق)' : 'Send Order (Closed Now)')
+                                    : (isPending
+                                        ? (isAr ? 'جاري المعالجة...' : 'Processing...')
+                                        : (paymentMethod === 'palpay'
+                                            ? (isAr ? 'المتابعة للدفع الإلكتروني' : 'Continue to Online Payment')
+                                            : (isAr ? 'إرسال الطلب' : 'Send Order')))}
+                            </button>
                         </div>
+                    </form>
+                </div>
 
-                        <div className="uptown-input-group" style={{ gridColumn: 'span 2' }}>
-                            <label>{isAr ? 'ملاحظات إضافية' : 'Notes'}</label>
-                            <textarea id="customer-notes" rows={3} className="uptown-input" />
-                        </div>
-                    </div>
-
-                    {/* 📦 SUMMARY BOX */}
-                    <div style={{ background: '#fff', border: '1px solid #eee', padding: '30px', borderRadius: '30px', marginBottom: '40px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: '15px', marginBottom: '15px' }}>
-                            <span style={{ fontWeight: 800 }}>{cartItems.length} {isAr ? 'أصناف في السلة' : 'Items'}</span>
-                            <span style={{ color: '#666', fontSize: '14px' }}>{isAr ? 'المجموع' : 'Subtotal'}: {subtotal.toFixed(2)}</span>
-                        </div>
-                        {cartItems.map((item: any, i: number) => (
-                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginBottom: '8px', color: '#666' }}>
-                                <span>{item.quantity}x {isAr ? item.nameAr : item.nameEn}</span>
-                                <span>{item.finalPrice.toFixed(2)}</span>
-                            </div>
-                        ))}
-
-                        <div style={{ marginTop: '20px', paddingTop: '15px', borderTop: '1px solid #f0f0f0' }}>
-                            {discount > 0 && (
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#059669', fontWeight: 700, marginBottom: '8px' }}>
-                                    <span>{isAr ? 'خصم العرض' : 'Discount'} ({branch.discountPercent}%)</span>
-                                    <span>-{discount.toFixed(2)} {settings.currencySymbol}</span>
-                                </div>
-                            )}
-                            {!!branch.deliveryDiscountPercent && branch.deliveryDiscountPercent > 0 && deliveryFee > 0 && (
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#059669', fontWeight: 700, marginBottom: '8px' }}>
-                                    <span>{isAr ? 'خصم التوصيل' : 'Delivery Discount'} ({branch.deliveryDiscountPercent}%)</span>
-                                    <span>-{(deliveryFee * (branch.deliveryDiscountPercent || 0) / 100).toFixed(2)} {settings.currencySymbol}</span>
-                                </div>
-                            )}
-                            {orderType === 'delivery' && (
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#666', marginBottom: '8px' }}>
-                                    <span>{isAr ? 'رسوم التوصيل' : 'Delivery Fee'}</span>
-                                    <span>{(deliveryFee || settings.deliveryFee || 0).toFixed(2)} {settings.currencySymbol}</span>
-                                </div>
-                            )}
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.2rem', color: '#8B0000', fontWeight: 900, marginTop: '10px' }}>
-                                <span>{isAr ? 'المجموع النهائي' : 'Grand Total'}</span>
-                                <span>{(total || 0).toFixed(2)} {settings.currencySymbol}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* 💳 PAYMENT */}
-                    <div style={{ marginBottom: '40px' }}>
-                        <h4 style={{ fontWeight: 800, marginBottom: '20px', textAlign: isAr ? 'right' : 'left' }}>{isAr ? 'اختر طريقة الدفع' : 'Choose Payment Method'}</h4>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                            <div onClick={() => setPaymentMethod('cash')} className={`premium-choice-card ${paymentMethod === 'cash' ? 'active' : ''}`} style={{ padding: '25px' }}>
-                                <Banknote size={36} />
-                                <span style={{ fontSize: '14px', marginTop: '10px' }}>{isAr ? 'الدفع كاش' : 'Cash Payment'}</span>
-                            </div>
-                            <div onClick={() => setPaymentMethod('palpay')} className={`premium-choice-card ${paymentMethod === 'palpay' ? 'active' : ''}`} style={{ padding: '25px' }}>
-                                <CreditCard size={36} />
-                                <span style={{ fontSize: '14px', marginTop: '10px' }}>{isAr ? 'الدفع بالفيزا' : 'Visa Payment'}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {paymentMethod === 'palpay' && (
-                        <div style={{ background: '#fff', padding: '25px', borderRadius: '30px', border: '2px solid #EEE', marginBottom: '40px', textAlign: 'center' }}>
-                            <p style={{ fontWeight: 600, color: '#666' }}>
-                                {isAr ? "سيتم توجيهك إلى بوابة الدفع الآمنة لإتمام العملية." : "You will be redirected to our secure payment gateway to complete your request."}
-                            </p>
-                        </div>
-                    )}
-
-                    <div style={{ marginBottom: '30px', padding: '15px', background: '#fff', borderRadius: '15px', border: '1px solid #eee' }}>
-                        <label style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', cursor: 'pointer' }}>
-                            <input type="checkbox" id="policy-accept" required style={{ width: '22px', height: '22px', marginTop: '3px', accentColor: '#8B0000' }} />
-                            <span style={{ fontSize: '13px', fontWeight: 600, color: '#444', lineHeight: '1.5' }}>
-                                {isAr ? (
-                                    <>
-                                        أوافق على <a href="/policies/return" target="_blank" style={{ color: '#8B0000', textDecoration: 'underline' }}>سياسة الإرجاع والتبديل</a> و <a href="/policies/privacy" target="_blank" style={{ color: '#8B0000', textDecoration: 'underline' }}>سياسة الخصوصية</a>
-                                    </>
-                                ) : (
-                                    <>
-                                        I accept the <a href="/policies/return" target="_blank" style={{ color: '#8B0000', textDecoration: 'underline' }}>Return & Exchange Policy</a> and <a href="/policies/privacy" target="_blank" style={{ color: '#8B0000', textDecoration: 'underline' }}>Privacy Policy</a>
-                                    </>
-                                )}
-                            </span>
-                        </label>
-                    </div>
-
-                    {/* 🛡️ reCAPTCHA */}
-                    {process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && (
-                        <div style={{ marginBottom: '30px', display: 'flex', justifyContent: 'center' }}>
-                            <ReCAPTCHA
-                                sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
-                                onChange={(token) => setCaptchaToken(token)}
-                                hl={isAr ? 'ar' : 'en'}
-                            />
-                        </div>
-                    )}
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                        <button 
-                            type="submit" 
-                            className="uptown-btn red-gradient" 
-                            disabled={isPending || (!!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && !captchaToken)} 
-                            style={{ 
-                                opacity: (isPending || (!!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && !captchaToken)) ? 0.6 : 1, 
-                                cursor: (isPending || (!!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && !captchaToken)) ? 'not-allowed' : 'pointer' 
-                            }}
-                        >
-                            <CheckCircle2 color="#fff" />
-                            {!isOpen
-                                ? (isAr ? 'إرسال الطلب (المطعم مغلق)' : 'Send Order (Closed Now)')
-                                : (isPending
-                                    ? (isAr ? 'جاري المعالجة...' : 'Processing...')
-                                    : (paymentMethod === 'palpay'
-                                        ? (isAr ? 'المتابعة للدفع الإلكتروني' : 'Continue to Online Payment')
-                                        : (isAr ? 'إرسال الطلب' : 'Send Order')))}
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            <style dangerouslySetInnerHTML={{
-                __html: `
+                <style dangerouslySetInnerHTML={{
+                    __html: `
                 .premium-choice-card {
                     background: #fff; border: 2px solid #ECEAE7; border-radius: 25px; 
                     padding: 30px 20px; display: flex; flex-direction: column; align-items: center; 
@@ -593,12 +604,12 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                 .uptown-btn:hover { transform: scale(1.02); opacity: 0.95; }
                 .uptown-btn:disabled { opacity: 0.5; cursor: not-allowed; }
             ` }} />
-            
-            {/* Lahza Payment Script */}
-            <Script 
-                src="https://js.lahza.io/v1/inline.js" 
-                strategy="afterInteractive"
-            />
+
+                {/* Lahza Payment Script */}
+                <Script
+                    src="https://js.lahza.io/v1/inline.js"
+                    strategy="afterInteractive"
+                />
             </div>
         </div>
     );

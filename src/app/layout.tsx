@@ -109,61 +109,108 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             {isAr ? "ساعات العمل:" : "Working Hours:"}<br />
             <span style={{ color: '#8b0000', fontWeight: 800 }}>{isAr ? "١٠:٠٠ صباحاً - ١٢:٠٠ منتصف الليل" : "10:00 AM - 12:00 AM"}</span>
           </p>
-          <div className="up-social-hub" style={{ marginTop: '20px', display: 'flex', gap: '15px' }}>
-            <a href={settings?.facebookUptownUrl || "https://facebook.com/uptownramallah"} 
-               target="_blank" 
-               rel="noopener noreferrer" 
-               className="social-footer-link"
-               style={{ 
-                 color: '#8b0000', 
-                 display: 'flex', 
-                 alignItems: 'center', 
-                 justifyContent: 'center',
-                 width: '40px',
-                 height: '40px',
-                 borderRadius: '50%',
-                 background: '#fff5f5',
-                 transition: '0.3s',
-                 border: '1px solid rgba(139, 0, 0, 0.1)'
-               }}>
-               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
-            </a>
-            <a href={settings?.instagramUptownUrl || "https://instagram.com/uptownramallah"} 
-               target="_blank" 
-               rel="noopener noreferrer" 
-               className="social-footer-link"
-               style={{ 
-                 color: '#8b0000', 
-                 display: 'flex', 
-                 alignItems: 'center', 
-                 justifyContent: 'center',
-                 width: '40px',
-                 height: '40px',
-                 borderRadius: '50%',
-                 background: '#fff5f5',
-                 transition: '0.3s',
-                 border: '1px solid rgba(139, 0, 0, 0.1)'
-               }}>
-               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-            </a>
-            <a href={settings?.tiktokUrl || "https://tiktok.com/@uptownramallah"} 
-               target="_blank" 
-               rel="noopener noreferrer" 
-               className="social-footer-link"
-               style={{ 
-                 color: '#8b0000', 
-                 display: 'flex', 
-                 alignItems: 'center', 
-                 justifyContent: 'center',
-                 width: '40px',
-                 height: '40px',
-                 borderRadius: '50%',
-                 background: '#fff5f5',
-                 transition: '0.3s',
-                 border: '1px solid rgba(139, 0, 0, 0.1)'
-               }}>
-               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12a4 4 0 1 0 4 4V2a5 5 0 0 0 5 5"></path></svg>
-            </a>
+          <div style={{ marginTop: '20px' }}>
+            <h5 style={{ fontSize: '14px', fontWeight: 800, color: '#000', marginBottom: '10px' }}>Uptown Ramallah</h5>
+            <div className="up-social-hub" style={{ display: 'flex', gap: '15px' }}>
+              <a href={settings?.facebookUptownUrl || "https://www.facebook.com/uptownramallah"} 
+                 target="_blank" 
+                 rel="noopener noreferrer" 
+                 className="social-footer-link"
+                 style={{ 
+                   color: '#8b0000', 
+                   display: 'flex', 
+                   alignItems: 'center', 
+                   justifyContent: 'center',
+                   width: '40px',
+                   height: '40px',
+                   borderRadius: '50%',
+                   background: '#fff5f5',
+                   transition: '0.3s',
+                   border: '1px solid rgba(139, 0, 0, 0.1)'
+                 }}>
+                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+              </a>
+              <a href={settings?.instagramUptownUrl || "https://www.instagram.com/uptownramallah"} 
+                 target="_blank" 
+                 rel="noopener noreferrer" 
+                 className="social-footer-link"
+                 style={{ 
+                   color: '#8b0000', 
+                   display: 'flex', 
+                   alignItems: 'center', 
+                   justifyContent: 'center',
+                   width: '40px',
+                   height: '40px',
+                   borderRadius: '50%',
+                   background: '#fff5f5',
+                   transition: '0.3s',
+                   border: '1px solid rgba(139, 0, 0, 0.1)'
+                 }}>
+                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+              </a>
+              <a href={settings?.tiktokUrl || "https://www.tiktok.com/@uptownps"} 
+                 target="_blank" 
+                 rel="noopener noreferrer" 
+                 className="social-footer-link"
+                 style={{ 
+                   color: '#8b0000', 
+                   display: 'flex', 
+                   alignItems: 'center', 
+                   justifyContent: 'center',
+                   width: '40px',
+                   height: '40px',
+                   borderRadius: '50%',
+                   background: '#fff5f5',
+                   transition: '0.3s',
+                   border: '1px solid rgba(139, 0, 0, 0.1)'
+                 }}>
+                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12a4 4 0 1 0 4 4V2a5 5 0 0 0 5 5"></path></svg>
+              </a>
+            </div>
+          </div>
+
+          <div style={{ marginTop: '20px' }}>
+            <h5 style={{ fontSize: '14px', fontWeight: 800, color: '#000', marginBottom: '10px' }}>Pasta Signature</h5>
+            <div className="up-social-hub" style={{ display: 'flex', gap: '15px' }}>
+              <a href="https://www.facebook.com/pastasignature"
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 className="social-footer-link"
+                 title="Pasta Signature - Facebook"
+                 style={{
+                   color: '#8b0000',
+                   display: 'flex',
+                   alignItems: 'center',
+                   justifyContent: 'center',
+                   width: '40px',
+                   height: '40px',
+                   borderRadius: '50%',
+                   background: '#fff5f5',
+                   transition: '0.3s',
+                   border: '1px solid rgba(139, 0, 0, 0.1)'
+                 }}>
+                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+              </a>
+              <a href="https://www.instagram.com/pastasignature"
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 className="social-footer-link"
+                 title="Pasta Signature - Instagram"
+                 style={{
+                   color: '#8b0000',
+                   display: 'flex',
+                   alignItems: 'center',
+                   justifyContent: 'center',
+                   width: '40px',
+                   height: '40px',
+                   borderRadius: '50%',
+                   background: '#fff5f5',
+                   transition: '0.3s',
+                   border: '1px solid rgba(139, 0, 0, 0.1)'
+                 }}>
+                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+              </a>
+            </div>
           </div>
         </div>
 
@@ -185,6 +232,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </ul>
         </div>
 
+
+
+        {/* Payment */}
         <div className="up-footer-col">
           <h4 className="up-footer-title" style={{ fontSize: '18px', fontWeight: 900, marginBottom: '20px', color: '#000' }}>{isAr ? "طرق الدفع والأمان" : "Payment & Security"}</h4>
           <div className="up-footer-payments" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', alignItems: 'center' }}>
