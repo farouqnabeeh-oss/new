@@ -94,17 +94,16 @@ export default function MenuClient({ categories = [], allProducts = [], allAddon
             const deduplicatedGroupsMap = new Map();
             allAddonGroups.forEach(row => {
               // If this group is assigned to a DIFFERENT product, skip it
-              if (row.productId !== null && row.productId !== 0 && String(row.productId) !== String(id)) return;
+              if (row.productId && String(row.productId) !== String(id)) return;
 
               // If this group has no product assignment (category-level), it must match the product's category
-              // Note: categoryId may be 0 when the DB value is null (product-only groups)
-              const isCategoryGroup = row.productId === null || row.productId === 0;
-              if (isCategoryGroup && row.categoryId !== 0 && row.categoryId !== p.categoryId) return;
+              const isCategoryGroup = !row.productId || String(row.productId) === "0";
+              if (isCategoryGroup && row.categoryId && String(row.categoryId) !== String(p.categoryId)) return;
               
               const rowKey = row.nameAr ? row.nameAr.trim() : (row.nameEn ? row.nameEn.trim() : String(row.id));
               const existing = deduplicatedGroupsMap.get(rowKey);
-              if (!existing || (row.productId !== null && row.productId !== 0 && (existing.productId === null || existing.productId === 0))) {
-                 if (isCategoryGroup && row.categoryId !== 0) {
+              if (!existing || (row.productId && (String(existing.productId) === "0" || !existing.productId))) {
+                 if (isCategoryGroup && String(row.categoryId) !== "0") {
                     const hasSpecificOverride = allAddonGroups.some(
                       other => String(other.productId) === String(id) &&
                         (other.groupType === row.groupType || other.nameAr === row.nameAr)

@@ -254,9 +254,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </LayoutSwitcher>
         </div>
 
-        <Script src="/js/language.js?v=10" strategy="beforeInteractive" />
-        <Script src="/js/cart.js?v=10" strategy="beforeInteractive" />
-        <Script src="/js/ui.js?v=10" strategy="afterInteractive" />
+        <Script src="/js/language.js?v=11" strategy="beforeInteractive" />
+        <Script src="/js/cart.js?v=11" strategy="beforeInteractive" />
+        <Script src="/js/ui.js?v=11" strategy="afterInteractive" />
         <Script id="layout-core-logic" strategy="afterInteractive">
           {`
             (() => {

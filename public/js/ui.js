@@ -196,7 +196,7 @@ const UI = {
             // Only apply Burger/Sandwich meal-specific hiding logic to those categories
             const isBurgerOrSandwich = [1, 2].includes(product.categoryId);
 
-            return (product.addonGroups || []).filter(group => {
+            return (addonGroups || []).filter(group => {
                 const nameEn = (group.nameEn || '').toLowerCase();
                 const nameAr = (group.nameAr || '').toLowerCase();
 
