@@ -583,7 +583,7 @@ export const mockProducts = [
     imagePath: "/images/iced-chocolate__n5gge2vfh6dvahl.jpg", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), sizes: [], types: []
   },
   {
-    id: 1126, nameAr: "موميتو", nameEn: "Mojito", descriptionAr: "موهيتو منعش للموميتو", descriptionEn: "Refreshing mojito drink",
+    id: 1126, nameAr: "موهيتو", nameEn: "Mojito", descriptionAr: "موهيتو منعش للموهيتو", descriptionEn: "Refreshing mojito drink",
     basePrice: 19, discount: 10, categoryId: 111, branchId: null, allBranches: true, hasMealOption: false, hasDonenessOption: false, sortOrder: 16, isActive: true,
     imagePath: "/images/mojito__dnldrs18pec0our.jpg", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), sizes: [], types: []
   },
