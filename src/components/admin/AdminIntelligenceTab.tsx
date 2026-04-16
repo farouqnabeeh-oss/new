@@ -12,7 +12,7 @@ type Props = {
 
 export function AdminIntelligenceTab({ orders, branches, role }: Props) {
   const [timeRange, setTimeRange] = useState("30 days");
-  const isCashier = role === "Cashier";
+  const isCashier = role?.toLowerCase() === "cashier";
 
   const totalSales = orders
     .filter(o => o.status !== 'Cancelled')
@@ -31,8 +31,8 @@ export function AdminIntelligenceTab({ orders, branches, role }: Props) {
   return (
     <div className="admin-intelligence-tab">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-        <h2 style={{ fontWeight: 900, fontSize: '1.5rem' }}>
-          {isCashier ? "📋 الطلبات الحالية" : "📊 تحليل البيانات والذكاء"}
+        <h2 style={{ fontWeight: 900, fontSize: '1.8rem' }}>
+          {isCashier ? "📋 قائمة الطلبات" : "📊 تحليل البيانات والذكاء"}
         </h2>
         {!isCashier && (
           <select 
@@ -47,6 +47,7 @@ export function AdminIntelligenceTab({ orders, branches, role }: Props) {
         )}
       </div>
 
+      {/* Stats and Charts are completely removed for Cashier */}
       {!isCashier && (
         <>
           {/* 📈 STATS GRID */}

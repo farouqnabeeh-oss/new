@@ -36,12 +36,19 @@ export default async function AdminPage() {
   const lang = cookieStore.get("language")?.value || "ar";
   const isAr = lang === "ar";
 
+  const isCashier = session.role?.toLowerCase() === "cashier";
+
   return (
     <AdminToastProvider>
       <div className="admin-page">
         <AdminOrderNotifier />
         <div className="admin-header">
-          <h1 className="admin-title">{isAr ? "⚙️ لوحة التحكم" : "⚙️ Admin Panel"}</h1>
+          <h1 className="admin-title">
+            {isCashier 
+              ? (isAr ? "📋 نظام إدارة الطلبات" : "📋 Order Management")
+              : (isAr ? "⚙️ لوحة التحكم الإدارية" : "⚙️ Admin Panel")
+            }
+          </h1>
           <div style={{ display: "flex", gap: "15px", alignItems: "center" }}>
             <AdminLangSwitcher currentLang={lang} />
             <form action={logoutAction} style={{ display: "inline" }}>
