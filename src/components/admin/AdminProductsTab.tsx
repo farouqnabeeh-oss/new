@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAdminTranslation } from "@/lib/useAdminTranslation";
 import { useToast } from "@/components/admin/AdminToast";
 import { AdminSubmitButton, AdminDeleteButton } from "@/components/admin/AdminSubmitButton";
-import { saveProductAction, deleteProductAction, type ActionResult } from "@/lib/actions";
+import { saveProductAction, deleteProductAction, toggleAddonRequiredAction, deleteAddonGroupAction, type ActionResult } from "@/lib/actions";
 import type { Branch, Category, Product, SiteSettings, AddonGroup } from "@/lib/types";
 
 type SizeEntry = { NameAr: string; NameEn: string; Price: number };
@@ -381,23 +381,25 @@ export function AdminProductsTab({ products, categories, branches, settings, add
                           const isCategoryWide = !!(group.categoryId && !group.productId);
                           const isSelected = !!(isCategoryWide || selectedAddonGroupIds.includes(group.id));
                           return (
-                            <label key={group.id} className={`inline-addon-chip ${isSelected ? 'active' : ''}`}>
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={(e) => {
-                                  if (e.target.checked) updateAddons(prev => [...prev, group.id]);
-                                  else updateAddons(prev => prev.filter(id => id !== group.id));
-                                }}
-                              />
-                              <div className="chip-content">
-                                <span className="chip-name">{group.nameAr}</span>
-                                <span className="chip-scope">
-                                  {group.productId ? '📦 Product Only' : group.categoryId ? '📂 Category' : '🌐 Global'}
-                                </span>
-                                <span className="chip-items">{group.items?.slice(0, 3).map(it => it.nameAr).join(', ')}</span>
-                              </div>
-                            </label>
+                            <div key={group.id} className={`inline-addon-chip ${isSelected ? 'active' : ''}`} style={{ display: 'flex', flexDirection: 'column', padding: '10px', height: 'auto', gap: '8px' }}>
+                              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', width: '100%' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={(e) => {
+                                    if (e.target.checked) updateAddons(prev => [...prev, group.id]);
+                                    else updateAddons(prev => prev.filter(id => id !== group.id));
+                                  }}
+                                />
+                                <div className="chip-content" style={{ flex: 1 }}>
+                                  <span className="chip-name">{group.nameAr || group.nameEn}</span>
+                                  <span className="chip-scope">
+                                    {group.productId ? '📦 Product Only' : group.categoryId ? '📂 Category' : '🌐 Global'}
+                                  </span>
+                                  <span className="chip-items">{group.items?.slice(0, 3).map(it => it.nameAr).join(', ')}</span>
+                                </div>
+                              </label>
+                            </div>
                           );
                         })
                     }
@@ -564,22 +566,60 @@ export function AdminProductsTab({ products, categories, branches, settings, add
                             {items.map(group => {
                               const isSelected = selectedAddonGroupIds.includes(group.id);
                               return (
-                                <label key={group.id} className={`addon-label ${isSelected ? 'selected' : ''}`} title={group.items?.map(i => i.nameAr).join(', ')}>
-                                  <input
-                                    type="checkbox"
-                                    checked={isSelected}
-                                    onChange={(e) => {
-                                      if (e.target.checked) updateAddons(prev => [...prev, group.id]);
-                                      else updateAddons(prev => prev.filter(id => id !== group.id));
-                                    }}
-                                  />
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                    <span className="addon-name">{group.nameAr || group.nameEn}</span>
-                                    <span style={{ fontSize: '10px', color: '#888', fontWeight: 600 }}>
-                                      {group.items?.slice(0, 3).map(i => i.nameAr).join(', ')} {group.items?.length > 3 ? '...' : ''}
-                                    </span>
+                                <div key={group.id} className={`addon-label ${isSelected ? 'selected' : ''}`} style={{ display: 'flex', flexDirection: 'column', gap: '10px', height: 'auto' }}>
+                                  <label title={group.items?.map(i => i.nameAr).join(', ')} style={{ display: 'flex', gap: '8px', cursor: 'pointer', width: '100%' }}>
+                                    <input
+                                      type="checkbox"
+                                      checked={isSelected}
+                                      onChange={(e) => {
+                                        if (e.target.checked) updateAddons(prev => [...prev, group.id]);
+                                        else updateAddons(prev => prev.filter(id => id !== group.id));
+                                      }}
+                                    />
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+                                      <span className="addon-name" style={{ fontWeight: 800 }}>{group.nameAr || group.nameEn}</span>
+                                      <span style={{ fontSize: '10px', color: '#888', fontWeight: 600 }}>
+                                        {group.items?.slice(0, 3).map(i => i.nameAr).join(', ')} {group.items?.length > 3 ? '...' : ''}
+                                      </span>
+                                    </div>
+                                  </label>
+
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '8px' }}>
+                                    <button
+                                      type="button"
+                                      onClick={async (e) => {
+                                        e.preventDefault();
+                                        const fd = new FormData();
+                                        fd.set("id", String(group.id));
+                                        fd.set("isRequired", String(!group.isRequired));
+                                        const res = await toggleAddonRequiredAction(fd);
+                                        if (res.success) { showToast("Updated successfully"); router.refresh(); } 
+                                        else showToast(res.error, "error");
+                                      }}
+                                      style={{ fontSize: '10px', fontWeight: 800, padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', border: 'none', background: group.isRequired ? '#ffebee' : '#e8f5e9', color: group.isRequired ? '#d32f2f' : '#2e7d32' }}
+                                    >
+                                      {group.isRequired ? "Required (Click to make Optional)" : "Optional (Click to make Required)"}
+                                    </button>
+                                    
+                                    <button
+                                      type="button"
+                                      onClick={async (e) => {
+                                        e.preventDefault();
+                                        if (confirm("Delete this Addon Group entirely?")) {
+                                          const fd = new FormData();
+                                          fd.set("id", String(group.id));
+                                          const res = await deleteAddonGroupAction(fd);
+                                          if (res.success) { showToast("Deleted successfully"); router.refresh(); }
+                                          else showToast(res.error, "error");
+                                        }
+                                      }}
+                                      style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '12px' }}
+                                      title="Delete Category/Product Addon"
+                                    >
+                                      ❌
+                                    </button>
                                   </div>
-                                </label>
+                                </div>
                               );
                             })}
                           </div>

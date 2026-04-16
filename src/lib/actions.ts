@@ -460,6 +460,23 @@ export async function deleteAddonGroupAction(formData: FormData): Promise<Action
   }
 }
 
+export async function toggleAddonRequiredAction(formData: FormData): Promise<ActionResult> {
+  try {
+    await requireSession();
+    const supabase = getSupabaseAdmin();
+    const id = toNumber(formData.get("id"));
+    const isRequired = toBoolean(formData.get("isRequired"));
+
+    const { error } = await supabase.from("addon_groups").update({ is_required: isRequired, updated_at: new Date().toISOString() }).eq("id", id);
+    if (error) return { success: false, error: error.message };
+
+    revalidatePath("/Admin");
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : "Failed to update addon." };
+  }
+}
+
 export async function saveSettingsAction(formData: FormData): Promise<ActionResult> {
   try {
     await requireSession();

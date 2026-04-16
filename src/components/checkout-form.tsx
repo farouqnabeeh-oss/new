@@ -20,7 +20,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
     const [paymentMethod, setPaymentMethod] = useState<"cash" | "palpay">("cash");
     const [deliveryFee, setDeliveryFee] = useState(0);
     const [selectedZone, setSelectedZone] = useState("");
-    const [isPending, startTransition] = useTransition();
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [cartItems, setCartItems] = useState<any[]>([]);
     const [subtotal, setSubtotal] = useState(0);
     const [discount, setDiscount] = useState(0);
@@ -113,13 +113,15 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
         if (orderType === 'inRestaurant' && !pickupTime) return alert(isAr ? 'يرجى اختيار وقت الاستلام' : 'Please select pickup time');
         if (!policyAccepted) return alert(isAr ? 'يجب الموافقة على الشروط والسياسات للمتابعة' : 'You must accept the terms and policies to continue');
 
-        // Verify Captcha Check
         const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
         if (siteKey && !captchaToken) {
             return alert(isAr ? "يرجى تأكيد أنك لست روبوت" : "Please confirm you are not a bot");
         }
 
-        startTransition(async () => {
+        if (isSubmitting) return;
+        setIsSubmitting(true);
+
+        try {
             // Recalculate fresh values to avoid stale state
             const items = (window as any).Cart.getItems(branch.slug);
             const freshItemsTotal = (window as any).Cart.getTotal(branch.slug);
@@ -136,8 +138,8 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
             const freshTotal = Number((freshItemsTotal - freshDAmount + freshEffectiveFee).toFixed(2));
 
             const finalAddress = orderType === 'delivery' ? `${selectedZone} - ${address}` : address;
-            try {
-                const mappedItems = items.map((i: any) => {
+            
+            const mappedItems = items.map((i: any) => {
                     const typeAddons = i.selectedAddOns?.filter((a: any) => (a.nameAr || '').includes('وجبة') || (a.nameAr || '').includes('ساندويش') || (a.nameEn || '').toLowerCase().includes('meal') || (a.nameEn || '').toLowerCase().includes('sandwich'));
                     const noteAddons = i.selectedAddOns?.filter((a: any) => (a.nameAr || '').includes('بدون') || (a.nameEn || '').toLowerCase().includes('without') || (a.nameEn || '').toLowerCase().includes('no '));
                     const normalAddons = i.selectedAddOns?.filter((a: any) => !typeAddons?.includes(a) && !noteAddons?.includes(a));
@@ -255,10 +257,12 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                     window.open(waLink, '_blank');
                     window.location.href = `/checkout/success?orderId=${res.orderId}&branchSlug=${branch.slug}&method=cash`;
                 }
-            } catch (err: any) {
-                alert(isAr ? "عذراً، حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى." : "Critical Error: " + err.message);
             }
-        });
+        } catch (err: any) {
+            alert(isAr ? "عذراً، حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى." : "Critical Error: " + err.message);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -553,16 +557,16 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                             <button
                                 type="submit"
                                 className="uptown-btn red-gradient"
-                                disabled={isPending || (!!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && !captchaToken)}
+                                disabled={isSubmitting || (!!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && !captchaToken)}
                                 style={{
-                                    opacity: (isPending || (!!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && !captchaToken)) ? 0.6 : 1,
-                                    cursor: (isPending || (!!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && !captchaToken)) ? 'not-allowed' : 'pointer'
+                                    opacity: (isSubmitting || (!!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && !captchaToken)) ? 0.6 : 1,
+                                    cursor: (isSubmitting || (!!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && !captchaToken)) ? 'not-allowed' : 'pointer'
                                 }}
                             >
                                 <CheckCircle2 color="#fff" />
                                 {!isOpen
                                     ? (isAr ? 'إرسال الطلب (المطعم مغلق)' : 'Send Order (Closed Now)')
-                                    : (isPending
+                                    : (isSubmitting
                                         ? (isAr ? 'جاري المعالجة...' : 'Processing...')
                                         : (paymentMethod === 'palpay'
                                             ? (isAr ? 'المتابعة للدفع الإلكتروني' : 'Continue to Online Payment')
