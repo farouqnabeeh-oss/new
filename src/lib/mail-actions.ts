@@ -16,7 +16,7 @@ export async function sendOrderInvoiceEmail(order: Order, items: OrderItem[], br
     const transactionDate = new Date(order.createdAt).toLocaleString('ar-EG');
     const orderNumber = order.id;
     const transactionNumber = `TXN-${order.id}-${Date.now().toString().slice(-4)}`;
-    const paymentMethod = order.paymentMethod === 'Card' ? 'بطاقة ائتمان' : 'نقداً';
+    const paymentMethod = (order.paymentMethod === 'Card' || order.paymentMethod === 'palpay') ? 'بطاقة ائتمان' : 'نقداً';
 
     const itemsHtml = items.map(item => `
         <tr>

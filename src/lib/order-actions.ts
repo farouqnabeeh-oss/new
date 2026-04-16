@@ -86,25 +86,49 @@ export async function finalizeOrder(orderId: string | number) {
 
         if (updateError) throw updateError;
 
-        // 3. Send Real Confirmation Email
-        try {
-            const { data: branchData } = await supabase
-                .from("branches")
-                .select("*")
-                .eq("id", order.branch_id)
-                .single();
+        // 3. Send Real Confirmation Email (Only for Visa/Card payments)
+        if (order.payment_method === 'Card' || order.payment_method === 'palpay') {
+            try {
+                const { data: branchData } = await supabase
+                    .from("branches")
+                    .select("*")
+                    .eq("id", order.branch_id)
+                    .single();
 
-            if (branchData) {
-                const branch = {
-                    id: branchData.id,
-                    nameAr: branchData.name_ar,
-                    phone: branchData.phone,
-                    whatsApp: branchData.whatsapp
-                } as any;
-                await sendOrderInvoiceEmail(order as any, items || [], branch);
+                if (branchData) {
+                    const branch = {
+                        id: branchData.id,
+                        nameAr: branchData.name_ar,
+                        phone: branchData.phone,
+                        whatsApp: branchData.whatsapp
+                    } as any;
+
+                    // Map Supabase snake_case to CamelCase expected by the email function
+                    const mappedOrder = {
+                        ...order,
+                        id: order.id,
+                        totalAmount: order.total_amount,
+                        customerEmail: order.customer_email,
+                        customerPhone: order.customer_phone,
+                        orderType: order.order_type,
+                        paymentMethod: order.payment_method,
+                        createdAt: (order as any).created_at || new Date().toISOString()
+                    };
+
+                    const mappedItems = (items || []).map(item => ({
+                        productNameAr: item.product_name_ar,
+                        productNameEn: item.product_name_en,
+                        quantity: item.quantity,
+                        price: item.price
+                    }));
+
+                    await sendOrderInvoiceEmail(mappedOrder as any, mappedItems as any, branch);
+                }
+            } catch (emailErr: any) {
+                console.error(`[finalizeOrder] 📧 Email failed but order is confirmed:`, emailErr.message);
             }
-        } catch (emailErr: any) {
-            console.error(`[finalizeOrder] 📧 Email failed but order is confirmed:`, emailErr.message);
+        } else {
+            console.log(`[finalizeOrder] ℹ️ Skipping email for non-card payment: ${order.payment_method}`);
         }
 
         console.log(`[finalizeOrder] ✅ Order ${orderId} finalized successfully.`);

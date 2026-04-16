@@ -259,13 +259,16 @@ const UI = {
                 }
             });
             
-            // Auto-select first item in meal-specific groups (Drink/Fries) if meal is selected
+            // Auto-select first item ONLY IF price is 0 (Regular Fries/Drink)
             if (isMealSelection()) {
                 visibleGroups.forEach(group => {
                    if (['MealDrink', 'MealFries'].includes(group.groupType)) {
                        const hasSelection = state.selectedAddOns.some(item => group.items.some(gi => gi.id === item.id));
                        if (!hasSelection && group.items.length) {
-                           state.selectedAddOns.push(group.items[0]);
+                           const firstItem = group.items[0];
+                           if (Number(firstItem.price || 0) === 0) {
+                               state.selectedAddOns.push(firstItem);
+                           }
                        }
                    }
                 });

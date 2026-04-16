@@ -98,9 +98,17 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
         const scheduledAt = scheduledDate && scheduledTime ? `${scheduledDate} — ${scheduledTime}` : null;
         const policyAccepted = (document.getElementById('policy-accept') as HTMLInputElement).checked;
 
-        if (!name || !phone || !email || !birthday) return alert(isAr ? 'يرجى ملأ جميع الحقول الأساسية (الاسم، الهاتف، البريد الإلكتروني، تاريخ الميلاد)' : 'Please fill all required fields (Name, Phone, Email, Dob)');
+        const isEmailRequired = paymentMethod === 'palpay';
+        if (!name || !phone || !birthday || (isEmailRequired && !email)) {
+            return alert(isAr 
+                ? `يرجى ملأ جميع الحقول الأساسية (${isEmailRequired ? 'الاسم، الهاتف، البريد الإلكتروني، تاريخ الميلاد' : 'الاسم، الهاتف، تاريخ الميلاد'})` 
+                : `Please fill all required fields (${isEmailRequired ? 'Name, Phone, Email, Dob' : 'Name, Phone, Dob'})`
+            );
+        }
         if (phone.length !== 10) return alert(isAr ? 'يجب أن يتكون رقم الهاتف من 10 أرقام' : 'Phone number must be exactly 10 digits');
-        if (paymentMethod === 'palpay' && !email) return alert(isAr ? 'البريد الإلكتروني مطلوب للدفع بالفيزا' : 'Email is required for Visa payments');
+        
+        // Final fallback just in case
+        if (isEmailRequired && !email) return alert(isAr ? 'البريد الإلكتروني مطلوب للدفع بالفيزا' : 'Email is required for Visa payments');
         if (orderType === 'delivery' && (!selectedZone || !street || !building)) return alert(isAr ? 'يرجى اختيار منطقة التوصيل وإدخال بيانات الشارع والبناية بالتفصيل' : 'Please select a delivery zone and enter street and building details');
         if (orderType === 'inRestaurant' && !pickupTime) return alert(isAr ? 'يرجى اختيار وقت الاستلام' : 'Please select pickup time');
         if (!policyAccepted) return alert(isAr ? 'يجب الموافقة على الشروط والسياسات للمتابعة' : 'You must accept the terms and policies to continue');
@@ -335,9 +343,9 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                         </div>
                         <div className="uptown-input-group">
                             <label>
-                                {isAr ? 'البريد الإلكتروني' : 'Email'} *
+                                {isAr ? 'البريد الإلكتروني' : 'Email'} {paymentMethod === 'palpay' ? '*' : `(${isAr ? 'اختياري' : 'Optional'})`}
                             </label>
-                            <input type="email" id="customer-email" className="uptown-input" required suppressHydrationWarning />
+                            <input type="email" id="customer-email" className="uptown-input" suppressHydrationWarning />
                         </div>
                         <div className="uptown-input-group">
                             <label>{isAr ? 'تاريخ الميلاد' : 'Birth Date'} *</label>

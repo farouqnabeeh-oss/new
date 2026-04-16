@@ -113,7 +113,7 @@ export type Order = {
   tableNumber: string | null;
   totalAmount: number;
   status: OrderStatus;
-  paymentMethod: "Cash" | "Card";
+  paymentMethod: "Cash" | "Card" | "palpay";
   paymentStatus: "Pending" | "Paid";
   createdAt: string;
   branch?: Branch;
