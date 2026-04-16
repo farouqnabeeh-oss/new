@@ -1,4 +1,4 @@
-// import { unstable_noStore as noStore } from "next/cache"; 
+import { unstable_noStore as noStore } from "next/cache"; 
 import { getSupabaseAdmin } from "@/lib/supabase";
 import type {
   AddonGroup,
@@ -554,7 +554,7 @@ export async function getAllAddonGroups() {
 }
 
 export async function getAdminData() {
-  // noStore();
+  noStore();
   if (isMockMode) {
     return {
       branches: mock.mockBranches,

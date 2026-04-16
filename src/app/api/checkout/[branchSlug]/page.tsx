@@ -125,6 +125,7 @@ export default function CheckoutPage() {
 
     // تأكيد الطلب (يحفظ في Supabase أولاً)
     const handleConfirm = async () => {
+        if (loading) return;
         if (!form.name || !form.phone) {
             setError("الاسم ورقم الهاتف مطلوبان");
             return;

@@ -342,18 +342,27 @@ export async function saveProductAction(formData: FormData): Promise<ActionResul
     // Actually, the simplest fix is to only update groups that were EXPLICITLY selected AND are currently unassigned to any other product.
     
     // Clear old links
-    await supabase.from("addon_groups").update({ product_id: null }).eq("product_id", productId);
+    // Safety check: We only manage product-specific addons. If it's unchecked, we delete it so it doesn't become category-wide.
+    const { data: myGroups } = await supabase.from("addon_groups").select("id").eq("product_id", productId);
+    const myGroupIds = myGroups?.map(g => g.id) || [];
     
-    if (linkedAddonGroups.length) {
-      // Only set product_id for groups that are NOT already category-wide 
-      // (Because category-wide groups are automatically inherited and don't need a product_id)
+    // Find missing ones (unchecked) and unlink them
+    const groupsToRemove = myGroupIds.filter(id => !linkedAddonGroups.includes(id));
+    if (groupsToRemove.length > 0) {
+      // FIX: Instead of deleting the entire group record, we just unlink it from this product.
+      // This allows the group to remain in the system (e.g. as a global group) and prevents data loss.
+      await supabase.from("addon_groups").update({ product_id: null }).in("id", groupsToRemove);
+    }
+    
+    // For newly checked ones (if they checked an addon from another category/global, we shouldn't steal it, but if we must, we can duplicate it. For now, we will assign it only if it's explicitly floating).
+    const newlyChecked = linkedAddonGroups.filter(id => !myGroupIds.includes(id));
+    if (newlyChecked.length > 0) {
       const { data: eligibleGroups } = await supabase
         .from("addon_groups")
         .select("id, category_id, product_id")
-        .in("id", linkedAddonGroups);
+        .in("id", newlyChecked);
 
-      const groupsToLink = eligibleGroups?.filter(g => !g.category_id || g.product_id === productId) || [];
-      
+      const groupsToLink = eligibleGroups?.filter(g => !g.category_id && g.product_id === null) || [];
       if (groupsToLink.length > 0) {
         await supabase
           .from("addon_groups")
@@ -681,6 +690,22 @@ export type CreateOrderInput = {
 
 export async function createOrderAction(input: CreateOrderInput): Promise<{ success: boolean; orderId?: number; error?: string }> {
   const supabase = getSupabaseAdmin();
+
+  // --- Duplication Prevention ---
+  // Check if a similar order from the same phone was placed in the last 60 seconds
+  const oneMinuteAgo = new Date(Date.now() - 60000).toISOString();
+  const { data: existingOrder } = await supabase
+    .from("orders")
+    .select("id")
+    .eq("customer_phone", input.customerPhone)
+    .eq("total_amount", input.totalAmount)
+    .gt("created_at", oneMinuteAgo)
+    .maybeSingle();
+
+  if (existingOrder) {
+    return { success: false, error: "Order already placed. Please wait a moment." };
+  }
+  // ------------------------------
   
   // Fetch delivery fee from settings
   let deliveryFee = 0;
