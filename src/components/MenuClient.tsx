@@ -92,9 +92,8 @@ export default function MenuClient({ categories = [], allProducts = [], allAddon
             
             // Filter addons based on category and product, mimicking API rules
             const deduplicatedGroupsMap = new Map();
-            allAddonGroups.forEach((dbRow: any) => {
-              // Normalize snake_case from DB to camelCase for UI.js
-              const row = {
+            const productAddonGroups = allAddonGroups
+              .map(dbRow => ({
                 id: dbRow.id,
                 nameAr: dbRow.name_ar,
                 nameEn: dbRow.name_en,
@@ -110,29 +109,15 @@ export default function MenuClient({ categories = [], allProducts = [], allAddon
                   price: it.price || 0,
                   isAvailable: it.is_active !== false
                 }))
-              };
-
-              // If this group is assigned to a DIFFERENT product, skip it
-              if (row.productId && String(row.productId) !== String(id)) return;
-
-              // If this group has no product assignment (category-level), it must match the product's category
-              const isCategoryGroup = !row.productId || String(row.productId) === "0";
-              if (isCategoryGroup && row.categoryId && String(row.categoryId) !== String(p.categoryId)) return;
-              
-              const rowKey = row.nameAr ? row.nameAr.trim() : (row.nameEn ? row.nameEn.trim() : String(row.id));
-              const existing = deduplicatedGroupsMap.get(rowKey);
-              if (!existing || (row.productId && (String(existing.productId) === "0" || !existing.productId))) {
-                 if (isCategoryGroup && String(row.categoryId) !== "0") {
-                    const hasSpecificOverride = allAddonGroups.some(
-                      (other: any) => String(other.product_id) === String(id) &&
-                        (other.group_type === row.groupType || other.name_ar === row.nameAr)
-                    );
-                    if (hasSpecificOverride) return;
-                 }
-                 deduplicatedGroupsMap.set(rowKey, row);
-              }
-            });
-            const productAddonGroups = Array.from(deduplicatedGroupsMap.values());
+              }))
+              .filter(row => {
+                // 1. If assigned to a DIFFERENT product, skip
+                if (row.productId && String(row.productId) !== String(id)) return false;
+                // 2. If category-level, must match product category
+                const isCategoryGroup = !row.productId || String(row.productId) === "0";
+                if (isCategoryGroup && row.categoryId && String(row.categoryId) !== String(p.categoryId)) return false;
+                return true;
+              });
             console.log("[MenuDebug] Addons found for " + id + ":", productAddonGroups.length, productAddonGroups);
             
             // Always show the product modal so the user can see the description (product details)

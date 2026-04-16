@@ -194,7 +194,7 @@ const UI = {
 
         const getVisibleGroups = () => {
             // Only apply Burger/Sandwich meal-specific hiding logic to those categories
-            const isBurgerOrSandwich = [1, 2].includes(product.categoryId);
+            const isBurgerOrSandwich = [1, 2, "1", "2"].includes(product.categoryId);
 
             return (addonGroups || []).filter(group => {
                 const nameEn = (group.nameEn || '').toLowerCase();
@@ -257,10 +257,13 @@ const UI = {
             const visibleGroups = getVisibleGroups();
             const visibleGroupIds = new Set(visibleGroups.map(group => group.id));
 
+            // Disable purging to prevent disappearance of groups when categories fluctuate
+            /*
             state.selectedAddOns = state.selectedAddOns.filter(item => {
                 const group = findGroupByItemId(item.id);
                 return group && visibleGroupIds.has(group.id);
             });
+            */
 
             visibleGroups.forEach(group => {
                 const isRequiredSingle = group.isRequired && !group.allowMultiple && group.items.length;
