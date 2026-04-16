@@ -257,7 +257,6 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                     window.open(waLink, '_blank');
                     window.location.href = `/checkout/success?orderId=${res.orderId}&branchSlug=${branch.slug}&method=cash`;
                 }
-            }
         } catch (err: any) {
             alert(isAr ? "عذراً، حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى." : "Critical Error: " + err.message);
         } finally {

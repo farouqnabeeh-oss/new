@@ -594,7 +594,7 @@ export function AdminProductsTab({ products, categories, branches, settings, add
                                         fd.set("isRequired", String(!group.isRequired));
                                         const res = await toggleAddonRequiredAction(fd);
                                         if (res.success) { showToast("Updated successfully"); router.refresh(); } 
-                                        else showToast(res.error, "error");
+                                        else showToast(res.error || "Error", "error");
                                       }}
                                       style={{ fontSize: '10px', fontWeight: 800, padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', border: 'none', background: group.isRequired ? '#ffebee' : '#e8f5e9', color: group.isRequired ? '#d32f2f' : '#2e7d32' }}
                                     >
@@ -610,7 +610,7 @@ export function AdminProductsTab({ products, categories, branches, settings, add
                                           fd.set("id", String(group.id));
                                           const res = await deleteAddonGroupAction(fd);
                                           if (res.success) { showToast("Deleted successfully"); router.refresh(); }
-                                          else showToast(res.error, "error");
+                                          else showToast(res.error || "Error", "error");
                                         }
                                       }}
                                       style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '12px' }}
