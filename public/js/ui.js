@@ -88,18 +88,18 @@ var UI = window.UI || {
                             ${item.selectedSize ? `<span class="badge-mini">${Lang.localized(item.selectedSize.nameAr, item.selectedSize.nameEn)}</span>` : ''}
                             ${item.selectedType ? `<span class="badge-mini">${Lang.localized(item.selectedType.nameAr, item.selectedType.nameEn)}</span>` : ''}
                             ${item.selectedAddOns && item.selectedAddOns.length > 0 ? (() => {
-                                const addons = item.selectedAddOns.filter(a => !((a.nameAr || '').includes('بدون') || (a.nameEn || '').toLowerCase().includes('without') || (a.nameEn || '').toLowerCase().includes('no ')));
-                                const notes = item.selectedAddOns.filter(a => ((a.nameAr || '').includes('بدون') || (a.nameEn || '').toLowerCase().includes('without') || (a.nameEn || '').toLowerCase().includes('no ')));
-                                
-                                let metaHtml = '';
-                                if (addons.length > 0) {
-                                    metaHtml += addons.map(a => `<span class="badge-mini">${Lang.localized(a.nameAr, a.nameEn)}</span>`).join('');
-                                }
-                                if (notes.length > 0) {
-                                    metaHtml += notes.map(a => `<span class="badge-mini" style="background: #fff; color: #dc2626; border: 1px solid #dc2626; font-weight: bold;">🚫 ${Lang.localized(a.nameAr, a.nameEn)}</span>`).join('');
-                                }
-                                return metaHtml;
-                            })() : ''}
+                    const addons = item.selectedAddOns.filter(a => !((a.nameAr || '').includes('بدون') || (a.nameEn || '').toLowerCase().includes('without') || (a.nameEn || '').toLowerCase().includes('no ')));
+                    const notes = item.selectedAddOns.filter(a => ((a.nameAr || '').includes('بدون') || (a.nameEn || '').toLowerCase().includes('without') || (a.nameEn || '').toLowerCase().includes('no ')));
+
+                    let metaHtml = '';
+                    if (addons.length > 0) {
+                        metaHtml += addons.map(a => `<span class="badge-mini">${Lang.localized(a.nameAr, a.nameEn)}</span>`).join('');
+                    }
+                    if (notes.length > 0) {
+                        metaHtml += notes.map(a => `<span class="badge-mini" style="background: #fff; color: #dc2626; border: 1px solid #dc2626; font-weight: bold;">🚫 ${Lang.localized(a.nameAr, a.nameEn)}</span>`).join('');
+                    }
+                    return metaHtml;
+                })() : ''}
                         </div>
                         <div class="cart-item-footer">
                             <div class="cart-qty-control">
@@ -173,7 +173,8 @@ var UI = window.UI || {
             if (type) {
                 const text = `${type.nameAr || ''} ${type.nameEn || ''}`.toLowerCase();
                 if (text.includes('meal') || text.includes('وجبة')) return true;
-                if (text.includes('sandwich') || text.includes('ساندويش') || text.includes('سندويش')) return false;
+                if (text.includes('sandwich') || text.includes('ساندويش') || text.includes('سندويش') ||
+                    text.includes('burger') || text.includes('برجر') || text.includes('برغر')) return false;
             }
 
             // 2. Check if an "Addon Group" of type 'type' has a 'Meal' item selected
@@ -184,18 +185,21 @@ var UI = window.UI || {
             if (typeAddon) {
                 const text = `${typeAddon.nameAr || ''} ${typeAddon.nameEn || ''}`.toLowerCase();
                 if (text.includes('meal') || text.includes('وجبة')) return true;
-                if (text.includes('sandwich') || text.includes('ساندويش') || text.includes('سندويش')) return false;
+                if (text.includes('sandwich') || text.includes('ساندويش') || text.includes('سندويش') ||
+                    text.includes('burger') || text.includes('برجر') || text.includes('برغر')) return false;
             }
 
             // Fallback if no specific selection yet:
-            // If the product has a 'Type' group with 'Sandwich' options, hide until explicitly chosen.
+            // If the product has a 'Type' group with 'Sandwich' or 'Burger' options, hide until explicitly chosen.
             // Otherwise, if it has a meal option flag, we can show it by default.
-            const hasTypeGroupWithSandwich = addonGroups.some(g =>
+            const hasTypeGroupWithSandwichOrBurger = addonGroups.some(g =>
                 ((g.groupType === 'type' || (g.nameAr || '').includes('النوع'))) &&
-                g.items.some(it => (it.nameAr || '').includes('ساندويش') || (it.nameAr || '').includes('سندويش'))
-            ) || (product.types || []).some(t => (t.nameAr || '').includes('ساندويش') || (t.nameAr || '').includes('سندويش'));
+                g.items.some(it => (it.nameAr || '').includes('ساندويش') || (it.nameAr || '').includes('سندويش') ||
+                    (it.nameAr || '').includes('برجر') || (it.nameAr || '').includes('برغر'))
+            ) || (product.types || []).some(t => (t.nameAr || '').includes('ساندويش') || (t.nameAr || '').includes('سندويش') ||
+                (t.nameAr || '').includes('برجر') || (t.nameAr || '').includes('برغر'));
 
-            if (hasTypeGroupWithSandwich) return false;
+            if (hasTypeGroupWithSandwichOrBurger) return false;
             return !!product.hasMealOption;
         };
 
@@ -492,10 +496,10 @@ var UI = window.UI || {
             html += visibleGroups.filter(g => g.items && g.items.length > 0).map(group => {
                 let groupLabel = Lang.localized(group.nameAr, group.nameEn);
                 // Better logic for labeling groups as "Type" (النوع)
-                const isTypeGroup = group.groupType?.toLowerCase().includes('type') || 
-                                  groupLabel.includes('نوع') || 
-                                  group.items.some(it => (it.nameAr || '').includes('وجبة') || (it.nameAr || '').includes('ساندويش'));
-                
+                const isTypeGroup = group.groupType?.toLowerCase().includes('type') ||
+                    groupLabel.includes('نوع') ||
+                    group.items.some(it => (it.nameAr || '').includes('وجبة') || (it.nameAr || '').includes('ساندويش'));
+
                 if (isTypeGroup) {
                     groupLabel = Lang.current === 'ar' ? 'النوع' : 'Type';
                 }
