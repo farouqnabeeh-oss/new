@@ -207,7 +207,7 @@ var UI = window.UI || {
 
         const getVisibleGroups = () => {
             // Only apply Burger/Sandwich meal-specific hiding logic to those categories
-            const isBurgerOrSandwich = [1, 2, "1", "2"].includes(product.categoryId);
+            const isBurgerOrSandwich = [1, 2,, 3, "1", "2", "3"].includes(product.categoryId);
 
             return (addonGroups || []).filter(group => {
                 const nameEn = (group.nameEn || '').toLowerCase();
