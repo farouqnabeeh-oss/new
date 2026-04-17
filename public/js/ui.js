@@ -174,7 +174,7 @@ var UI = window.UI || {
                 const text = `${type.nameAr || ''} ${type.nameEn || ''}`.toLowerCase();
                 if (text.includes('meal') || text.includes('وجبة')) return true;
                 if (text.includes('sandwich') || text.includes('ساندويش') || text.includes('سندويش') ||
-                    text.includes('burger') || text.includes('برجر') || text.includes('برغر')) return false;
+                    text.includes('burger') || text.includes('برجر')) return false;
             }
 
             // 2. Check if an "Addon Group" of type 'type' has a 'Meal' item selected
@@ -186,7 +186,7 @@ var UI = window.UI || {
                 const text = `${typeAddon.nameAr || ''} ${typeAddon.nameEn || ''}`.toLowerCase();
                 if (text.includes('meal') || text.includes('وجبة')) return true;
                 if (text.includes('sandwich') || text.includes('ساندويش') || text.includes('سندويش') ||
-                    text.includes('burger') || text.includes('برجر') || text.includes('برغر')) return false;
+                    text.includes('burger') || text.includes('برجر')) return false;
             }
 
             // Fallback if no specific selection yet:
@@ -195,9 +195,9 @@ var UI = window.UI || {
             const hasTypeGroupWithSandwichOrBurger = addonGroups.some(g =>
                 ((g.groupType === 'type' || (g.nameAr || '').includes('النوع'))) &&
                 g.items.some(it => (it.nameAr || '').includes('ساندويش') || (it.nameAr || '').includes('سندويش') ||
-                    (it.nameAr || '').includes('برجر') || (it.nameAr || '').includes('برغر'))
+                    (it.nameAr || '').includes('برجر'))
             ) || (product.types || []).some(t => (t.nameAr || '').includes('ساندويش') || (t.nameAr || '').includes('سندويش') ||
-                (t.nameAr || '').includes('برجر') || (t.nameAr || '').includes('برغر'));
+                (t.nameAr || '').includes('برجر'));
 
             if (hasTypeGroupWithSandwichOrBurger) return false;
             return !!product.hasMealOption;
