@@ -339,10 +339,11 @@ export async function seedRestaurantData() {
       await supabase.from("addon_group_items").upsert(mItems, { onConflict: 'addon_group_id,name_en' });
     }
 
-    const ribeye = prodData.find(p => p.name_en === "Ribeye Steak");
-    const fillet = prodData.find(p => p.name_en === "Fillet Steak");
-    if (ribeye || fillet) {
-      const { data: doneness } = await supabase.from("addon_groups").upsert([{ 
+    if (prodData) {
+      const ribeye = prodData.find(p => p.name_en === "Ribeye Steak");
+      const fillet = prodData.find(p => p.name_en === "Fillet Steak");
+      if (ribeye || fillet) {
+        const { data: doneness } = await supabase.from("addon_groups").upsert([{ 
         name_ar: "درجة الاستواء", name_en: "Doneness", category_id: mainMealsCatId, group_type: "Doneness", is_required: true, allow_multiple: false, sort_order: 2, is_active: true 
       }], { onConflict: 'name_en,category_id' }).select();
       if (doneness) {
@@ -354,16 +355,17 @@ export async function seedRestaurantData() {
       }
     }
 
-    const chickenSteak = prodData.find(p => p.name_en === "Grilled Chicken Steak");
-    if (chickenSteak) {
-      const { data: sauceG } = await supabase.from("addon_groups").upsert([{ 
-        name_ar: "النوع", name_en: "Sauce", category_id: mainMealsCatId, group_type: "sauce", is_required: true, allow_multiple: false, sort_order: 3, is_active: true 
-      }], { onConflict: 'name_en,category_id' }).select();
-      if (sauceG) {
-        await supabase.from("addon_group_items").upsert([
-          { addon_group_id: sauceG[0].id, name_ar: "مع ثوم و ليمون", name_en: "Garlic & Lemon", price: 0, sort_order: 1, is_active: true },
-          { addon_group_id: sauceG[0].id, name_ar: "مع وايت صوص", name_en: "White Sauce", price: 0, sort_order: 2, is_active: true },
-        ], { onConflict: 'addon_group_id,name_en' });
+      const chickenSteak = prodData.find(p => p.name_en === "Grilled Chicken Steak");
+      if (chickenSteak) {
+        const { data: sauceG } = await supabase.from("addon_groups").upsert([{ 
+          name_ar: "النوع", name_en: "Sauce", category_id: mainMealsCatId, group_type: "sauce", is_required: true, allow_multiple: false, sort_order: 3, is_active: true 
+        }], { onConflict: 'name_en,category_id' }).select();
+        if (sauceG) {
+          await supabase.from("addon_group_items").upsert([
+            { addon_group_id: sauceG[0].id, name_ar: "مع ثوم و ليمون", name_en: "Garlic & Lemon", price: 0, sort_order: 1, is_active: true },
+            { addon_group_id: sauceG[0].id, name_ar: "مع وايت صوص", name_en: "White Sauce", price: 0, sort_order: 2, is_active: true },
+          ], { onConflict: 'addon_group_id,name_en' });
+        }
       }
     }
   }
@@ -442,17 +444,19 @@ export async function seedRestaurantData() {
   }
 
   // Juice
-  const juice = prodData.find(p => p.name_en === "Fresh Juice");
-  if (juice) {
-    const { data: jType } = await supabase.from("addon_groups").upsert([{ 
-      name_ar: "النوع", name_en: "Type", category_id: categoryMap["Cold Drinks"], product_id: juice.id, group_type: "types", is_required: true, allow_multiple: false, sort_order: 1 
-    }], { onConflict: 'name_en,product_id' }).select();
-    if (jType) {
-      await supabase.from("addon_group_items").upsert([
-        { addon_group_id: jType[0].id, name_ar: "برتقال", name_en: "Orange", price: 0, sort_order: 1, is_active: true },
-        { addon_group_id: jType[0].id, name_ar: "ليمون", name_en: "Lemon", price: 0, sort_order: 2, is_active: true },
-        { addon_group_id: jType[0].id, name_ar: "ليمون و نعنع", name_en: "Lemon & Mint", price: 0, sort_order: 3, is_active: true },
-      ], { onConflict: 'addon_group_id,name_en' });
+  if (prodData) {
+    const juice = prodData.find(p => p.name_en === "Fresh Juice");
+    if (juice) {
+      const { data: jType } = await supabase.from("addon_groups").upsert([{ 
+        name_ar: "النوع", name_en: "Type", category_id: categoryMap["Cold Drinks"], product_id: juice.id, group_type: "types", is_required: true, allow_multiple: false, sort_order: 1 
+      }], { onConflict: 'name_en,product_id' }).select();
+      if (jType) {
+        await supabase.from("addon_group_items").upsert([
+          { addon_group_id: jType[0].id, name_ar: "برتقال", name_en: "Orange", price: 0, sort_order: 1, is_active: true },
+          { addon_group_id: jType[0].id, name_ar: "ليمون", name_en: "Lemon", price: 0, sort_order: 2, is_active: true },
+          { addon_group_id: jType[0].id, name_ar: "ليمون و نعنع", name_en: "Lemon & Mint", price: 0, sort_order: 3, is_active: true },
+        ], { onConflict: 'addon_group_id,name_en' });
+      }
     }
   }
 
