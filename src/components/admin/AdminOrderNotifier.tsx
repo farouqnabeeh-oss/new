@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useToast } from "./AdminToast";
 
 interface PendingOrder {
   id: number | string;
@@ -17,7 +18,8 @@ export function AdminOrderNotifier() {
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const seenIds = useRef<Set<string>>(new Set());
   const audioCtxRef = useRef<AudioContext | null>(null);
-  const alarmIntervalRef = useRef<any>(null);
+  const loopIntervalRef = useRef<any>(null);
+  const { showToast } = useToast();
 
   // Load seen/dismissed IDs from localStorage on mount
   useEffect(() => {
@@ -43,41 +45,36 @@ export function AdminOrderNotifier() {
   };
 
   const playAlarmTone = useCallback(() => {
+    if (!soundEnabled) return;
     try {
-      // First try to play physical MP3 file
       const audio = new Audio('/sounds/success.mp3');
       audio.play().catch(() => {
-        // Fallback to Synth Beep if MP3 is blocked or not found
+        // Fallback to Synth Beep
         try {
-          setSoundEnabled(false); // browser blocked it, need interaction
           if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
             audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
           }
           const ctx = audioCtxRef.current;
+          if (ctx.state === 'suspended') ctx.resume();
 
-          const playBeep = (freq: number, start: number, dur: number, type: OscillatorType = "square") => {
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.type = type;
-            osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
-            gain.gain.setValueAtTime(0.5, ctx.currentTime + start);
-            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + start + dur);
-            osc.start(ctx.currentTime + start);
-            osc.stop(ctx.currentTime + start + dur);
-          };
-
-          playBeep(987.77, 0.0, 0.1, "sawtooth"); // B5
-          playBeep(1318.51, 0.15, 0.1, "sawtooth"); // E6
-          playBeep(987.77, 0.3, 0.1, "sawtooth"); // B5
-          playBeep(1318.51, 0.45, 0.3, "sawtooth"); // E6
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          
+          osc.type = "sawtooth";
+          osc.frequency.setValueAtTime(880, ctx.currentTime); 
+          gain.gain.setValueAtTime(0.5, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.0);
+          
+          osc.start(ctx.currentTime);
+          osc.stop(ctx.currentTime + 1.0);
         } catch (e) { }
       });
     } catch (e) {
       console.log("Audio error:", e);
     }
-  }, []);
+  }, [soundEnabled]);
 
   const fetchPendingOrders = useCallback(async () => {
     try {
@@ -86,68 +83,102 @@ export function AdminOrderNotifier() {
       const data = await res.json();
       const orders: PendingOrder[] = data.orders || [];
 
-      // Filter out orders that have already been seen OR dismissed
+      // Filter out orders that have been dismissed
       const filteredPending = orders.filter(o => !dismissed.has(String(o.id)));
 
-      // Check for new orders (not in seenIds)
+      // Check for new orders
       const trulyNewOrders = filteredPending.filter(o => !seenIds.current.has(String(o.id)));
       if (trulyNewOrders.length > 0) {
-        trulyNewOrders.forEach(o => seenIds.current.add(String(o.id)));
+        trulyNewOrders.forEach(o => {
+          seenIds.current.add(String(o.id));
+          showToast(`📦 طلب جديد (#${o.id}): ${o.customerName}`, "info");
+        });
+        
         persistState(seenIds.current, "admin_seen_orders");
-        playAlarmTone();
+        playAlarmTone(); 
       }
 
       setPendingOrders(filteredPending);
     } catch (e) {
-      // Silently fail - DB might not be configured
+      // Silently fail
     }
-  }, [dismissed, playAlarmTone]);
+  }, [dismissed, playAlarmTone, showToast]);
 
   useEffect(() => {
     fetchPendingOrders();
-    const interval = setInterval(fetchPendingOrders, 8000); // Poll every 8s
+    const interval = setInterval(fetchPendingOrders, 6000); // Poll every 6s
     return () => clearInterval(interval);
   }, [fetchPendingOrders]);
 
-  // Removed persistent alarm sound every 5s loop as requested
-
-  const handleStartPreparing = async (orderId: string | number) => {
-    try {
-      await fetch("/api/admin/update-order-status", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId, status: "Preparing" }),
-      });
-      const updatedDismissed = new Set([...dismissed, String(orderId)]);
-      setDismissed(updatedDismissed);
-      persistState(updatedDismissed, "admin_dismissed_orders");
-      setPendingOrders(prev => prev.filter(o => String(o.id) !== String(orderId)));
-    } catch (e) {
-      alert("فشل تحديث حالة الطلب");
+  // Persistent alarm loop as long as there are pending orders
+  useEffect(() => {
+    if (pendingOrders.length > 0) {
+      if (!loopIntervalRef.current) {
+        loopIntervalRef.current = setInterval(playAlarmTone, 4000); // Beep every 4s
+      }
+    } else {
+      if (loopIntervalRef.current) {
+        clearInterval(loopIntervalRef.current);
+        loopIntervalRef.current = null;
+      }
     }
-  };
+    return () => {
+      if (loopIntervalRef.current) clearInterval(loopIntervalRef.current);
+    };
+  }, [pendingOrders.length, playAlarmTone]);
 
-  const handleDismiss = (orderId: string | number) => {
-    const updatedDismissed = new Set([...dismissed, String(orderId)]);
-    setDismissed(updatedDismissed);
-    persistState(updatedDismissed, "admin_dismissed_orders");
-    setPendingOrders(prev => prev.filter(o => String(o.id) !== String(orderId)));
-  };
-
-  // If sound is blocked initially by the browser policy, we can show a small invisible trigger or a floating button to activate it
   if (!soundEnabled) {
     return (
-      <div style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 9999 }}>
-        <button
-          onClick={() => {
-            setSoundEnabled(true);
-            playAlarmTone();
-          }}
-          className="btn btn-primary"
-          style={{ background: '#e63946', color: '#fff', padding: '10px 20px', borderRadius: '20px', fontWeight: 'bold', boxShadow: '0 4px 10px rgba(0,0,0,0.2)' }}
+      <div style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '20px' }}>
+        <div style={{ background: '#fff', padding: '40px', borderRadius: '32px', boxShadow: '0 20px 60px rgba(0,0,0,0.5)', maxWidth: '400px' }}>
+           <h2 style={{ fontWeight: 900, marginBottom: '20px' }}>📢 تفعيل التنبيهات</h2>
+           <p style={{ color: '#666', marginBottom: '30px', fontWeight: 600 }}>يجب تفعيل الصوت حتى يصلك رنين عند استلام طلبات جديدة من الزبائن.</p>
+           <button
+             onClick={() => {
+               setSoundEnabled(true);
+               playAlarmTone();
+             }}
+             className="btn btn-primary"
+             style={{ background: '#8b0000', color: '#fff', border: 'none', padding: '15px 30px', borderRadius: '20px', fontSize: '1.1rem', fontWeight: 900, width: '100%', cursor: 'pointer' }}
+           >
+             تفعيل الآن
+           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (pendingOrders.length > 0) {
+    return (
+      <div style={{ 
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10000, 
+        background: 'linear-gradient(to bottom, #8b0000, #dc2626)', 
+        color: '#fff', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.2)', borderBottom: '2px solid rgba(255,255,255,0.2)',
+        animation: 'slideDown 0.4s ease'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <div style={{ 
+            background: '#fff', color: '#8b0000', width: '32px', height: '32px', 
+            borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '18px', fontWeight: 900, animation: 'pulse 1s infinite'
+          }}>
+            {pendingOrders.length}
+          </div>
+          <span style={{ fontWeight: 800, fontSize: '16px' }}>
+             لديك {pendingOrders.length} طلبات جديدة متوقفة! الرجاء مراجعتها وتغيير حالتها إلى "قيد التحضير".
+          </span>
+        </div>
+        <button 
+          onClick={() => window.location.reload()} 
+          style={{ background: '#fff', color: '#8b0000', border: 'none', padding: '8px 16px', borderRadius: '12px', fontWeight: 900, cursor: 'pointer' }}
         >
-          🎵 تفعيل صوت الإشعارات للطلبات الجديدة
+          تحديث الصفحة
         </button>
+        <style dangerouslySetInnerHTML={{ __html: `
+          @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(1.1); } 100% { opacity: 1; transform: scale(1); } }
+          @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+        `}} />
       </div>
     );
   }

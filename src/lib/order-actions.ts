@@ -128,7 +128,7 @@ export async function finalizeOrder(orderId: string | number) {
                 console.error(`[finalizeOrder] 📧 Email failed but order is confirmed:`, emailErr.message);
             }
         } else {
-            console.log(`[finalizeOrder] ℹ️ Skipping email for non-card payment: ${order.payment_method}`);
+            console.log(`[finalizeOrder] ℹ️ Skipping email: Payment method is ${order.payment_method}. (Emails sent only for Card/Visa)`);
         }
 
         console.log(`[finalizeOrder] ✅ Order ${orderId} finalized successfully.`);
@@ -199,7 +199,8 @@ export async function saveOrderAction(orderData: any, items: any[], captchaToken
                 total_amount: totalAmount,
                 status: "Pending",
                 payment_method: orderData.paymentMethod,
-                payment_status: "Pending"
+                payment_status: "Pending",
+                scheduled_at: orderData.scheduledAt || null
             })
             .select("id")
             .single();

@@ -86,15 +86,25 @@ export async function sendOrderInvoiceEmail(order: Order, items: OrderItem[], br
     `;
 
     try {
+        if (!order.customerEmail || order.customerEmail.includes('customer@uptown.ps')) {
+             console.warn("[Email] ⚠️ No valid customer email found. Skipping send.");
+             return { success: false, error: "No valid email" };
+        }
+
         const { data, error } = await resend.emails.send({
-            from: 'أبتاون <onboarding@resend.dev>', // Note: in prod use your verified domain
+            from: 'أبتاون - UPTOWN <orders@uptownps.com>', 
             to: [order.customerEmail],
+            replyTo: 'uptownramallah@gmail.com',
             subject: `فاتورة طلبك من ${storeName} (#${orderNumber})`,
             html: emailHtml,
         });
 
         if (error) {
             console.error("Resend API Error:", error);
+            // If it's a domain verification issue, log a helpful message
+            if (error.message.includes('domain')) {
+                console.log("TIP: Verify your domain on Resend.com to send from a custom address.");
+            }
             return { success: false, error: error.message };
         }
 

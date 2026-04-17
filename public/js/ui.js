@@ -87,10 +87,19 @@ var UI = window.UI || {
                         <div class="cart-item-meta">
                             ${item.selectedSize ? `<span class="badge-mini">${Lang.localized(item.selectedSize.nameAr, item.selectedSize.nameEn)}</span>` : ''}
                             ${item.selectedType ? `<span class="badge-mini">${Lang.localized(item.selectedType.nameAr, item.selectedType.nameEn)}</span>` : ''}
-                            ${item.selectedAddOns && item.selectedAddOns.length > 0 ? item.selectedAddOns.map(a => {
-                const isNote = (a.nameAr || '').includes('بدون') || (a.nameEn || '').toLowerCase().includes('without') || (a.nameEn || '').toLowerCase().includes('no ');
-                return `<span class="badge-mini" style="background: ${isNote ? '#fff' : '#f0f0f0'}; color: ${isNote ? '#e63946' : '#555'}; border: ${isNote ? '1px solid #e63946' : 'none'};">${Lang.localized(a.nameAr, a.nameEn)}</span>`;
-            }).join('') : ''}
+                            ${item.selectedAddOns && item.selectedAddOns.length > 0 ? (() => {
+                                const addons = item.selectedAddOns.filter(a => !((a.nameAr || '').includes('بدون') || (a.nameEn || '').toLowerCase().includes('without') || (a.nameEn || '').toLowerCase().includes('no ')));
+                                const notes = item.selectedAddOns.filter(a => ((a.nameAr || '').includes('بدون') || (a.nameEn || '').toLowerCase().includes('without') || (a.nameEn || '').toLowerCase().includes('no ')));
+                                
+                                let metaHtml = '';
+                                if (addons.length > 0) {
+                                    metaHtml += addons.map(a => `<span class="badge-mini">${Lang.localized(a.nameAr, a.nameEn)}</span>`).join('');
+                                }
+                                if (notes.length > 0) {
+                                    metaHtml += notes.map(a => `<span class="badge-mini" style="background: #fff; color: #dc2626; border: 1px solid #dc2626; font-weight: bold;">🚫 ${Lang.localized(a.nameAr, a.nameEn)}</span>`).join('');
+                                }
+                                return metaHtml;
+                            })() : ''}
                         </div>
                         <div class="cart-item-footer">
                             <div class="cart-qty-control">
@@ -388,10 +397,10 @@ var UI = window.UI || {
                 const priceLabel = item.price > 0 ? `+${item.price}${currency}` : '';
 
                 return `
-                                <div class="option-item ${isSelected ? 'selected' : ''} ${isNote ? 'is-note-option' : ''}" data-action="addon" data-group-id="${group.id}" data-id="${item.id}">
+                                <div class="option-item ${isSelected ? 'selected' : ''} ${isNote ? 'is-note-option' : ''}" data-action="addon" data-group-id="${group.id}" data-id="${item.id}" style="${isNote ? 'border-color: #fca5a5; background: #fff5f5;' : ''}">
                                     <div class="option-item-label">
                                         <div class="${selectorClass}"></div>
-                                        <span class="option-item-name">${isNote ? '❌ ' : ''}${Lang.localized(itemNameAr, itemNameEn)}</span>
+                                        <span class="option-item-name" style="${isNote ? 'color: #dc2626; font-weight: 800;' : ''}">${isNote ? '❌ ' : ''}${Lang.localized(itemNameAr, itemNameEn)}</span>
                                     </div>
                                     ${priceLabel ? `<span class="option-item-price">${priceLabel}</span>` : ''}
                                 </div>
@@ -482,8 +491,12 @@ var UI = window.UI || {
 
             html += visibleGroups.filter(g => g.items && g.items.length > 0).map(group => {
                 let groupLabel = Lang.localized(group.nameAr, group.nameEn);
-                // Rename "إضافات" or "Addons" to "النوع" if it's a type-like group
-                if (group.groupType === 'types' || group.groupType === 'type' || groupLabel.includes('إضافات') && group.items.some(it => it.nameAr.includes('ساندويش'))) {
+                // Better logic for labeling groups as "Type" (النوع)
+                const isTypeGroup = group.groupType?.toLowerCase().includes('type') || 
+                                  groupLabel.includes('نوع') || 
+                                  group.items.some(it => (it.nameAr || '').includes('وجبة') || (it.nameAr || '').includes('ساندويش'));
+                
+                if (isTypeGroup) {
                     groupLabel = Lang.current === 'ar' ? 'النوع' : 'Type';
                 }
                 return `

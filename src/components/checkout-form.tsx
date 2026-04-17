@@ -105,7 +105,11 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                 : `Please fill all required fields (${isEmailRequired ? 'Name, Phone, Email, Dob' : 'Name, Phone, Dob'})`
             );
         }
-        if (phone.length !== 10) return alert(isAr ? 'يجب أن يتكون رقم الهاتف من 10 أرقام' : 'Phone number must be exactly 10 digits');
+
+        const phoneRegex = /^[0-9]{10}$/;
+        if (!phoneRegex.test(phone)) {
+            return alert(isAr ? 'يجب أن يتكون رقم الهاتف من 10 أرقام (مثلاً: 059xxxxxxx)' : 'Phone number must be exactly 10 digits (e.g., 059xxxxxxx)');
+        }
 
         // Final fallback just in case
         if (isEmailRequired && !email) return alert(isAr ? 'البريد الإلكتروني مطلوب للدفع بالفيزا' : 'Email is required for Visa payments');
@@ -141,11 +145,11 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
             
             const mappedItems = items.map((i: any) => {
                     const typeAddons = i.selectedAddOns?.filter((a: any) => (a.nameAr || '').includes('وجبة') || (a.nameAr || '').includes('ساندويش') || (a.nameEn || '').toLowerCase().includes('meal') || (a.nameEn || '').toLowerCase().includes('sandwich'));
-                    const noteAddons = i.selectedAddOns?.filter((a: any) => (a.nameAr || '').includes('بدون') || (a.nameEn || '').toLowerCase().includes('without') || (a.nameEn || '').toLowerCase().includes('no '));
+                    const noteAddons = i.selectedAddOns?.filter((a: any) => (a.nameAr || '').includes('بدون') || (a.nameEn || '').toLowerCase().includes('without') || (a.nameEn || '').toLowerCase().includes('no ') || (a.nameAr || '').includes('🚫'));
                     const normalAddons = i.selectedAddOns?.filter((a: any) => !typeAddons?.includes(a) && !noteAddons?.includes(a));
 
                     const parts = [];
-                    if (i.selectedSize) parts.push(`الحجم: ${isAr ? i.selectedSize.nameAr : i.selectedSize.nameEn}`);
+                    if (i.selectedSize) parts.push(`${isAr ? 'الحجم' : 'Size'}: ${isAr ? i.selectedSize.nameAr : i.selectedSize.nameEn}`);
 
                     let finalTypes = [];
                     if (i.selectedType) {
@@ -156,12 +160,12 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                         finalTypes.push(...typeAddons.map((a: any) => isAr ? a.nameAr : a.nameEn));
                     }
                     if (finalTypes.length) {
-                        parts.push(`النوع: ${finalTypes.join(' + ')}`);
+                        parts.push(`${isAr ? 'النوع' : 'Type'}: ${finalTypes.join(' + ')}`);
                     }
 
-                    if (normalAddons?.length) parts.push(`إضافات: ` + normalAddons.map((a: any) => isAr ? a.nameAr : a.nameEn).join(' + '));
-                    if (noteAddons?.length) parts.push(`ملاحظات (بدون): ` + noteAddons.map((a: any) => isAr ? a.nameAr : a.nameEn).join('، '));
-                    if (i.note) parts.push(`ملاحظة إضافية: ${i.note}`);
+                    if (normalAddons?.length) parts.push(`${isAr ? 'إضافات' : 'Addons'}: ` + normalAddons.map((a: any) => isAr ? a.nameAr : a.nameEn).join(' + '));
+                    if (noteAddons?.length) parts.push(`${isAr ? 'ملاحظات (بدون)' : 'Exclusions'}: ` + noteAddons.map((a: any) => (isAr ? a.nameAr : a.nameEn).replace('🚫', '').trim()).join('، '));
+                    if (i.note) parts.push(`${isAr ? 'ملاحظة إضافية' : 'Extra Note'}: ${i.note}`);
 
                     return { ...i, addonDetails: parts.join(' | ') };
                 });
@@ -175,7 +179,8 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                     address: finalAddress,
                     tableNumber: orderType === 'delivery' ? null : pickupTime,
                     totalAmount: freshTotal,
-                    paymentMethod: paymentMethod === 'cash' ? 'Cash' : 'Card'
+                    paymentMethod: paymentMethod === 'cash' ? 'Cash' : 'Card',
+                    scheduledAt: scheduledAt
                 }, mappedItems, captchaToken || undefined);
 
                 console.log("[Checkout] Order Save Result:", res);
@@ -311,7 +316,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
                             <div onClick={() => setOrderType('inRestaurant')} className={`premium-choice-card ${orderType === 'inRestaurant' ? 'active' : ''}`}>
                                 <Utensils size={32} />
-                                <span>{isAr ? 'داخل المطعم' : 'In Restaurant'}</span>
+                                <span>{isAr ? 'استلام من الفرع' : 'Pickup at Branch'}</span>
                             </div>
                             <div onClick={() => setOrderType('delivery')} className={`premium-choice-card ${orderType === 'delivery' ? 'active' : ''}`}>
                                 <Truck size={32} />
@@ -319,17 +324,6 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                             </div>
                         </div>
                     </div>
-
-                    {/* Removed Table Number Option as per new policy */}
-                    {orderType === 'inRestaurant' && (
-                        <div style={{ marginBottom: '40px' }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '15px' }}>
-                                <div className="premium-choice-card sm active" style={{ cursor: 'default' }}>
-                                    <span>{isAr ? 'الاستلام من الفرع' : 'Pickup at Branch'}</span>
-                                </div>
-                            </div>
-                        </div>
-                    )}
 
                     <form onSubmit={handleSubmit}>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '40px' }}>
@@ -551,6 +545,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                                 />
                             </div>
                         )}
+
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                             <button

@@ -167,8 +167,8 @@ function SuccessContent() {
         </h1>
         <p style={{ color: '#888', fontSize: '15px', marginBottom: '30px', fontWeight: 600 }}>
           {isAr
-            ? `رقم الطلب: #${orderId}. سنتواصل معك قريباً.`
-            : `Order reference: #${orderId}. We will contact you shortly.`}
+            ? `رقم الطلب: #${orderId}. تم استلام طلبك بنجاح وسنفوم بتجهيزه فوراً.`
+            : `Order reference: #${orderId}. Your order has been received and is being prepared.`}
         </p>
 
         {/* Invoice Summary */}

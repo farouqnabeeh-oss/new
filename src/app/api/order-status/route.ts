@@ -13,7 +13,19 @@ export async function GET(req: NextRequest) {
     const supabase = getSupabaseAdmin();
     const { data: order, error } = await supabase
       .from("orders")
-      .select("id, customer_name, status, order_type, total_amount, created_at, updated_at, table_number")
+      .select(`
+        id, 
+        customer_name, 
+        status, 
+        order_type, 
+        total_amount, 
+        created_at, 
+        updated_at, 
+        table_number,
+        estimated_time,
+        order_items (*),
+        branches (*)
+      `)
       .eq("id", orderId)
       .single();
 

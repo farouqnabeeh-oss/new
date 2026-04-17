@@ -237,17 +237,46 @@ function OrderStatusContent() {
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
             <span style={{ color: "#888" }}>{isAr ? "نوع الطلب" : "Order Type"}</span>
-            <span style={{ fontWeight: 800 }}>{order.order_type}</span>
+            <span style={{ fontWeight: 800 }}>{order.order_type === 'Delivery' ? (isAr ? 'توصيل' : 'Delivery') : (isAr ? 'استلام من الفرع' : 'Branch Pickup')}</span>
           </div>
           {order.table_number && (
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-              <span style={{ color: "#888" }}>{isAr ? "وقت الاستلام" : "Pickup Time"}</span>
+              <span style={{ color: "#888" }}>{isAr ? "وقت التجهيز" : "Prep Time"}</span>
               <span style={{ fontWeight: 800 }}>{order.table_number}</span>
             </div>
           )}
-          <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #f0f0f0", paddingTop: "12px" }}>
+          {order.scheduled_at && (
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "100px", background: '#FFFBEB', padding: '10px', borderRadius: '12px', border: '1px solid #FCD34D' }}>
+              <span style={{ color: "#92400E", fontWeight: 700 }}>{isAr ? "موعد الجدولة" : "Scheduled For"}</span>
+              <span style={{ fontWeight: 900, color: '#92400E' }}>{order.scheduled_at}</span>
+            </div>
+          )}
+          <div style={{ marginTop: '20px', borderTop: '1px solid #f0f0f0', paddingTop: '16px' }}>
+            <h4 style={{ fontWeight: 900, marginBottom: '12px', fontSize: '13px', color: '#666' }}>{isAr ? 'الأصناف' : 'Items'}</h4>
+            {order.order_items?.map((item: any, idx: number) => (
+                <div key={idx} style={{ marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800 }}>
+                        <span>{item.quantity}x {isAr ? item.product_name_ar : item.product_name_en}</span>
+                        <span>{Number(item.price).toFixed(0)} ₪</span>
+                    </div>
+                    {item.addon_details && (
+                        <div style={{ fontSize: '12px', color: '#888', marginTop: '4px', paddingRight: isAr ? '10px' : '0', paddingLeft: isAr ? '0' : '10px', borderRight: isAr ? '2px solid #eee' : 'none', borderLeft: isAr ? 'none' : '2px solid #eee' }}>
+                            {item.addon_details.split('|').map((part: string, pIdx: number) => {
+                                const isExclusion = part.includes('بدون') || part.toLowerCase().includes('exclusion') || part.toLowerCase().includes('without');
+                                return (
+                                    <div key={pIdx} style={{ color: isExclusion ? '#dc2626' : '#666', fontWeight: isExclusion ? 700 : 500 }}>
+                                        {isExclusion ? '🚫 ' : '• '}{part.trim()}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #f0f0f0", paddingTop: "12px", marginTop: '12px' }}>
             <span style={{ fontWeight: 900 }}>{isAr ? "الإجمالي" : "Total"}</span>
-            <span style={{ fontWeight: 900, color: "#8B0000", fontSize: "1.1rem" }}>
+            <span style={{ fontWeight: 900, color: "#8B0000", fontSize: "1.2rem" }}>
               {Number(order.total_amount).toFixed(2)} ₪
             </span>
           </div>
