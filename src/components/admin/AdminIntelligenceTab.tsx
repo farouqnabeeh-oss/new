@@ -25,8 +25,8 @@ export function AdminIntelligenceTab({ orders, branches, role }: Props) {
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
       // 1. Search Query (ID, Name, Phone, Email)
-      const matchesSearch = 
-        searchQuery === "" || 
+      const matchesSearch =
+        searchQuery === "" ||
         order.id.toString().includes(searchQuery) ||
         order.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.customerPhone.includes(searchQuery) ||
@@ -39,7 +39,7 @@ export function AdminIntelligenceTab({ orders, branches, role }: Props) {
       const matchesBranch = branchFilter === "All" || order.branchId.toString() === branchFilter;
 
       // 4. Payment Method Filter
-      const matchesPayment = paymentFilter === "All" || 
+      const matchesPayment = paymentFilter === "All" ||
         (paymentFilter === "Card" ? (order.paymentMethod === "Card" || order.paymentMethod === "palpay") : order.paymentMethod === "Cash");
 
       // 5. Period Filter
@@ -73,7 +73,8 @@ export function AdminIntelligenceTab({ orders, branches, role }: Props) {
 
   return (
     <div className="admin-intelligence-tab">
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         .filter-section {
           background: #fff;
           border-radius: 30px;
@@ -163,7 +164,7 @@ export function AdminIntelligenceTab({ orders, branches, role }: Props) {
         </h2>
         <div style={{ display: 'flex', gap: '10px' }}>
           <button className="btn btn-outline btn-sm" style={{ borderRadius: '15px' }} onClick={() => window.location.reload()}>
-             <RefreshCw size={16} /> 
+            <RefreshCw size={16} />
           </button>
         </div>
       </div>
@@ -187,8 +188,8 @@ export function AdminIntelligenceTab({ orders, branches, role }: Props) {
       <div className="filter-section">
         <div className="filter-grid">
           <div className="search-container">
-            <input 
-              className="search-input" 
+            <input
+              className="search-input"
               placeholder={isAr ? "رقم الطلب، الاسم، الهاتف، العنوان..." : "Search ID, Name, Phone..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -274,8 +275,8 @@ export function AdminIntelligenceTab({ orders, branches, role }: Props) {
                     </span>
                   </td>
                   <td>
-                    <span className={`ultra-branch-badge-fire ${order.status.toLowerCase()}`} style={{ 
-                      background: order.status === 'Paid' || order.status === 'Delivered' ? '#11a85f' : order.status === 'Cancelled' ? '#e63946' : '#8B0000', 
+                    <span className={`ultra-branch-badge-fire ${order.status.toLowerCase()}`} style={{
+                      background: order.status === 'Paid' || order.status === 'Delivered' ? '#11a85f' : order.status === 'Cancelled' ? '#e63946' : '#8B0000',
                       color: '#fff', fontSize: '11px', fontWeight: 900, padding: '4px 10px'
                     }}>
                       {order.status}
@@ -328,7 +329,7 @@ export function AdminIntelligenceTab({ orders, branches, role }: Props) {
               )) : (
                 <tr>
                   <td colSpan={8} style={{ textAlign: 'center', padding: '60px', opacity: 0.5 }}>
-                     {isAr ? "لا توجد طلبات تطابق الفلترة الحالية" : "No orders matching current filters."}
+                    {isAr ? "لا توجد طلبات تطابق الفلترة الحالية" : "No orders matching current filters."}
                   </td>
                 </tr>
               )}
@@ -337,7 +338,7 @@ export function AdminIntelligenceTab({ orders, branches, role }: Props) {
         </div>
       </div>
 
-      {/* 🔍 ORDER DETAILS MODAL */ }
+      {/* 🔍 ORDER DETAILS MODAL */}
       {selectedOrder && (
         <div style={{
           position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
