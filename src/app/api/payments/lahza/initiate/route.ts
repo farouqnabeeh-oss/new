@@ -19,6 +19,9 @@ export async function POST(req: Request) {
       throw new Error(`Invalid payment amount: ${amount}`);
     }
 
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").trim();
+    const paymentReference = `ORD-${orderId}-${Date.now()}`;
+
     // Amount needs to be in cents/agora (multiply by 100)
     const amountInCents = Math.round(numericAmount * 100);
     console.log(`[Lahza] Converting ${numericAmount} to ${amountInCents} cents/agora`);
@@ -28,8 +31,8 @@ export async function POST(req: Request) {
       amount: amountInCents.toString(),
       currency,
       mobile: customerPhone,
-      reference: `ORD-${orderId}-${Date.now()}`,
-      callback_url: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/success?orderId=${orderId}&branchSlug=${body.branchSlug}&method=card`,
+      reference: paymentReference,
+      callback_url: `${appUrl}/checkout/success?orderId=${orderId}&branchSlug=${body.branchSlug}&method=card`,
       metadata: {
         orderId,
         customerName,
@@ -52,7 +55,11 @@ export async function POST(req: Request) {
 
     if (result.status && result.data.authorization_url) {
         console.log("Lahza Authorization URL generated:", result.data.authorization_url);
-        return NextResponse.json({ success: true, authorizationUrl: result.data.authorization_url });
+        return NextResponse.json({
+            success: true,
+            authorizationUrl: result.data.authorization_url,
+            reference: result.data.reference || paymentReference
+        });
     } else {
         const msg = result.message || "Failed to get authorization URL from Lahza";
         if (msg.includes("Invalid Key") || msg.includes("Key")) {

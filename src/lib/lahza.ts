@@ -1,7 +1,7 @@
 import { SiteSettings } from "./types";
 
 const LAHZA_API_BASE = "https://api.lahza.io";
-const SECRET_KEY = process.env.LAHZA_SECRET_KEY;
+const SECRET_KEY = process.env.LAHZA_SECRET_KEY?.trim();
 
 export type LahzaInitializeResponse = {
   status: boolean;
@@ -54,6 +54,10 @@ export async function initializeLahzaTransaction(params: {
 }): Promise<LahzaInitializeResponse> {
   console.log("Lahza Initialize Payload:", JSON.stringify(params, null, 2));
 
+  if (!SECRET_KEY) {
+    throw new Error("Missing LAHZA_SECRET_KEY in environment");
+  }
+
   const response = await fetch(`${LAHZA_API_BASE}/transaction/initialize`, {
     method: "POST",
     headers: {
@@ -86,3 +90,4 @@ export async function verifyLahzaTransaction(reference: string): Promise<LahzaVe
 
   return data;
 }
+

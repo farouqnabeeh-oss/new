@@ -5,7 +5,7 @@ import { finalizeOrder } from "@/lib/order-actions";
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const reference = searchParams.get("reference");
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").trim();
 
   if (!reference) {
     console.warn("[verify] No reference parameter received.");

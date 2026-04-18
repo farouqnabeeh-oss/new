@@ -102,11 +102,10 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
         const scheduledAt = scheduledDate && scheduledTime ? `${scheduledDate} — ${scheduledTime}` : null;
         const policyAccepted = (document.getElementById('policy-accept') as HTMLInputElement).checked;
 
-        const isEmailRequired = paymentMethod === 'palpay';
-        if (!name || !phone || !birthday || (isEmailRequired && !email)) {
+        if (!name || !phone) {
             return alert(isAr
-                ? `يرجى ملأ جميع الحقول الأساسية (${isEmailRequired ? 'الاسم، الهاتف، البريد الإلكتروني، تاريخ الميلاد' : 'الاسم، الهاتف، تاريخ الميلاد'})`
-                : `Please fill all required fields (${isEmailRequired ? 'Name, Phone, Email, Dob' : 'Name, Phone, Dob'})`
+                ? `يرجى ملأ جميع الحقول الأساسية (الاسم، رقم الهاتف)`
+                : `Please fill all required fields (Name, Phone)`
             );
         }
 
@@ -115,8 +114,6 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
             return alert(isAr ? 'يجب أن يتكون رقم الهاتف من 10 أرقام (مثلاً: 059xxxxxxx)' : 'Phone number must be exactly 10 digits (e.g., 059xxxxxxx)');
         }
 
-        // Final fallback just in case
-        if (isEmailRequired && !email) return alert(isAr ? 'البريد الإلكتروني مطلوب للدفع بالفيزا' : 'Email is required for Visa payments');
         if (orderType === 'delivery' && (!selectedZone || !street || !building)) return alert(isAr ? 'يرجى اختيار منطقة التوصيل وإدخال بيانات الشارع والبناية بالتفصيل' : 'Please select a delivery zone and enter street and building details');
         if (orderType === 'inRestaurant' && !pickupTime) return alert(isAr ? 'يرجى اختيار وقت الاستلام' : 'Please select pickup time');
         if (!policyAccepted) return alert(isAr ? 'يجب الموافقة على الشروط والسياسات للمتابعة' : 'You must accept the terms and policies to continue');
@@ -243,11 +240,19 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                 });
 
                 const payData = await payRes.json();
-                if (payData.success && payData.authorizationUrl) {
+
+                console.log("🚀 Lahza API Response:", payData);
+
+                if (!payData.success) {
+                    throw new Error(payData.error || "Lahza initiation failed");
+                }
+
+                if (payData.authorizationUrl) {
+                    console.log("🔗 Redirecting to:", payData.authorizationUrl);
                     window.location.href = payData.authorizationUrl;
                 } else {
-                    console.error("Initiation Failed:", payData);
-                    alert(isAr ? `فشل بدء عملية الدفع: ${payData.error || 'خطأ فني'}` : `Failed to initiate payment: ${payData.error || 'Technical error'}`);
+                    alert(isAr ? "عذراً، لم نتمكن من الحصول على رابط الدفع." : "Error: Could not obtain payment URL.");
+                    setIsSubmitting(false);
                 }
             } else {
                 // Success for WhatsApp/Cash
@@ -364,13 +369,13 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                             </div>
                             <div className="uptown-input-group">
                                 <label>
-                                    {isAr ? 'البريد الإلكتروني' : 'Email'} {paymentMethod === 'palpay' ? '*' : `(${isAr ? 'اختياري' : 'Optional'})`}
+                                    {isAr ? 'البريد الإلكتروني' : 'Email'} ({isAr ? 'اختياري' : 'Optional'})
                                 </label>
                                 <input type="email" id="customer-email" className="uptown-input" suppressHydrationWarning />
                             </div>
                             <div className="uptown-input-group">
-                                <label>{isAr ? 'تاريخ الميلاد' : 'Birth Date'} *</label>
-                                <input type="date" id="customer-birthday" className="uptown-input" required />
+                                <label>{isAr ? 'تاريخ الميلاد' : 'Birth Date'} ({isAr ? 'اختياري' : 'Optional'})</label>
+                                <input type="date" id="customer-birthday" className="uptown-input" />
                             </div>
 
                             {orderType === 'delivery' && (
@@ -622,7 +627,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
 
                 {/* Lahza Payment Script */}
                 <Script
-                    src="https://js.lahza.io/v1/inline.js"
+                    src="https://js.lahza.io/inline.js"
                     strategy="afterInteractive"
                 />
             </div>
