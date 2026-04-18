@@ -58,12 +58,16 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                 const dAmount = (itemsTotal * dPercent) / 100;
 
                 // Delivery Logic
-                let effectiveFee = orderType === 'delivery' ? (deliveryFee || settings.deliveryFee || 0) : 0;
-
-                if (branch.freeDelivery) {
-                    effectiveFee = 0;
-                } else if (branch.deliveryDiscountPercent && branch.deliveryDiscountPercent > 0) {
-                    effectiveFee = effectiveFee - (effectiveFee * branch.deliveryDiscountPercent / 100);
+                let effectiveFee = 0;
+                if (orderType === 'delivery') {
+                    if (branch.freeDelivery) {
+                        effectiveFee = 0; // مجاني بغض النظر عن المنطقة
+                    } else {
+                        effectiveFee = deliveryFee || settings.deliveryFee || 0;
+                        if (branch.deliveryDiscountPercent && branch.deliveryDiscountPercent > 0) {
+                            effectiveFee = effectiveFee - (effectiveFee * branch.deliveryDiscountPercent / 100);
+                        }
+                    }
                 }
 
                 setSubtotal(itemsTotal);
@@ -132,11 +136,16 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
             const dPercent = branch.discountPercent || 0;
             const freshDAmount = (freshItemsTotal * dPercent) / 100;
 
-            let freshEffectiveFee = deliveryFee;
-            if (branch.freeDelivery) {
-                freshEffectiveFee = 0;
-            } else if (branch.deliveryDiscountPercent && branch.deliveryDiscountPercent > 0) {
-                freshEffectiveFee = freshEffectiveFee - (freshEffectiveFee * branch.deliveryDiscountPercent / 100);
+            let freshEffectiveFee = 0;
+            if (orderType === 'delivery') {
+                if (branch.freeDelivery) {
+                    freshEffectiveFee = 0;
+                } else {
+                    freshEffectiveFee = deliveryFee;
+                    if (branch.deliveryDiscountPercent && branch.deliveryDiscountPercent > 0) {
+                        freshEffectiveFee = freshEffectiveFee - (freshEffectiveFee * branch.deliveryDiscountPercent / 100);
+                    }
+                }
             }
 
             const freshTotal = Number((freshItemsTotal - freshDAmount + freshEffectiveFee).toFixed(2));
@@ -489,7 +498,11 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                                 {orderType === 'delivery' && (
                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#666', marginBottom: '8px' }}>
                                         <span>{isAr ? 'رسوم التوصيل' : 'Delivery Fee'}</span>
-                                        <span>{(deliveryFee || settings.deliveryFee || 0).toFixed(2)} {settings.currencySymbol}</span>
+                                        {branch.freeDelivery ? (
+                                            <span style={{ color: '#059669', fontWeight: 800 }}>{isAr ? '🎉 مجاني' : '🎉 Free'}</span>
+                                        ) : (
+                                            <span>{(deliveryFee || settings.deliveryFee || 0).toFixed(2)} ₪</span>
+                                        )}
                                     </div>
                                 )}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.2rem', color: '#8B0000', fontWeight: 900, marginTop: '10px' }}>
