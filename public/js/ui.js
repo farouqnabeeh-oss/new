@@ -173,8 +173,8 @@ var UI = window.UI || {
             if (type) {
                 const text = `${type.nameAr || ''} ${type.nameEn || ''}`.toLowerCase();
                 if (text.includes('meal') || text.includes('وجبة')) return true;
-                if (text.includes('sandwich') || text.includes('ساندويش') || text.includes('سندويش') ||
-                    text.includes('burger') || text.includes('برجر')) return false;
+                if (text.includes('sandwich') || text.includes('ساندويش') || text.includes('سندويش')) return false;
+                if (text.includes('burger') || text.includes('بيرجر') || text.includes('برجر')) return false; // ← هاد الجديد
             }
 
             // 2. Check if an "Addon Group" of type 'type' has a 'Meal' item selected
@@ -185,21 +185,22 @@ var UI = window.UI || {
             if (typeAddon) {
                 const text = `${typeAddon.nameAr || ''} ${typeAddon.nameEn || ''}`.toLowerCase();
                 if (text.includes('meal') || text.includes('وجبة')) return true;
-                if (text.includes('sandwich') || text.includes('ساندويش') || text.includes('سندويش') ||
-                    text.includes('burger') || text.includes('برجر')) return false;
+                if (text.includes('sandwich') || text.includes('ساندويش') || text.includes('سندويش')) return false;
+                if (text.includes('burger') || text.includes('بيرجر') || text.includes('برجر')) return false; // ← هاد الجديد
             }
 
-            // Fallback if no specific selection yet:
-            // If the product has a 'Type' group with 'Sandwich' or 'Burger' options, hide until explicitly chosen.
-            // Otherwise, if it has a meal option flag, we can show it by default.
-            const hasTypeGroupWithSandwichOrBurger = addonGroups.some(g =>
+            const hasTypeGroupWithSandwich = addonGroups.some(g =>
                 ((g.groupType === 'type' || (g.nameAr || '').includes('النوع'))) &&
-                g.items.some(it => (it.nameAr || '').includes('ساندويش') || (it.nameAr || '').includes('سندويش') ||
-                    (it.nameAr || '').includes('برجر'))
-            ) || (product.types || []).some(t => (t.nameAr || '').includes('ساندويش') || (t.nameAr || '').includes('سندويش') ||
-                (t.nameAr || '').includes('برجر'));
+                g.items.some(it => (it.nameAr || '').includes('ساندويش') || (it.nameAr || '').includes('سندويش'))
+            ) || (product.types || []).some(t => (t.nameAr || '').includes('ساندويش') || (t.nameAr || '').includes('سندويش'));
 
-            if (hasTypeGroupWithSandwichOrBurger) return false;
+            if (hasTypeGroupWithSandwich) return false;
+
+            const hasTypeGroup = addonGroups.some(g =>
+                g.groupType === 'type' || (g.nameAr || '').includes('النوع')
+            );
+            if (hasTypeGroup) return false;
+
             return !!product.hasMealOption;
         };
 
@@ -207,13 +208,16 @@ var UI = window.UI || {
 
         const getVisibleGroups = () => {
             // Only apply Burger/Sandwich meal-specific hiding logic to those categories
-            const isBurgerOrSandwich = [1, 2,, 3, "1", "2", "3"].includes(product.categoryId);
+            const isBurgerOrSandwich = [2, 3, "2", "3"].includes(product.categoryId);
+
+            console.log("isBurgerOrSandwich", isBurgerOrSandwich)
 
             return (addonGroups || []).filter(group => {
                 const nameEn = (group.nameEn || '').toLowerCase();
                 const nameAr = (group.nameAr || '').toLowerCase();
 
                 const type = group.groupType;
+                console.log("type", type)
                 const name = (group.nameAr || '') + ' ' + (group.nameEn || '');
 
                 // --- SIZE VISIBILITY: only hide redundant size for burger/sandwich ---
@@ -228,12 +232,15 @@ var UI = window.UI || {
                     ['اختيار المشروب', 'تبديل المشروب', 'تبديل البطاطا'].some(t => nameAr.includes(t));
 
                 if (isDrinkOrFries && isBurgerOrSandwich) {
+                    console.log("isDrinkOrFries matched - isMealSelection:", isMealSelection(), "type:", type); // ← أضف هاد السطر
                     return isMealSelection();
                 }
 
                 // --- MEAL-SPECIFIC GROUPS: only hide for burger/sandwich (MealDrink, MealFries, etc.) ---
                 const isMealSpecificGroup = ['MealDrink', 'MealDrinkUpgrade', 'MealFries'].includes(type);
                 if (isMealSpecificGroup && isBurgerOrSandwich) {
+                    console.log("isMealSelection()", isMealSelection(), "for type:", type); // ← أضف هاد
+
                     return isMealSelection();
                 }
 
