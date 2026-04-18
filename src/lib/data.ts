@@ -1,4 +1,4 @@
-import { unstable_noStore as noStore } from "next/cache"; 
+import { unstable_noStore as noStore } from "next/cache";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import type {
   AddonGroup,
@@ -49,6 +49,8 @@ function mapBranch(row: Record<string, unknown>): Branch {
       nameEn: z.nameEn || z.name_en || z.name || "",
       fee: toNumber(z.fee)
     })),
+    deliveryDiscountPercent: toNumber(row.delivery_discount_percent), // ← ناقص
+    freeDelivery: Boolean(row.is_free_delivery),
     promoVideoUrl: (row.promo_video_url as string | null) ?? null,
     createdAt: String(row.created_at ?? ""),
     updatedAt: String(row.updated_at ?? "")
@@ -462,15 +464,15 @@ export async function getProductById(id: number) {
 
       // Priority: Product-specific group > Category group
       if (!existing || (row.product_id !== null && existing.product_id === null)) {
-         // Check if this category group is explicitly overridden by another group of the same type/name
-         if (row.product_id === null && row.category_id !== null) {
-            const hasSpecificOverride = addonGroupsData?.some(
-              other => other.product_id === product.id &&
-                (other.group_type === row.group_type || other.name_ar === row.name_ar)
-            );
-            if (hasSpecificOverride) return;
-         }
-         deduplicatedGroupsMap.set(rowKey, row);
+        // Check if this category group is explicitly overridden by another group of the same type/name
+        if (row.product_id === null && row.category_id !== null) {
+          const hasSpecificOverride = addonGroupsData?.some(
+            other => other.product_id === product.id &&
+              (other.group_type === row.group_type || other.name_ar === row.name_ar)
+          );
+          if (hasSpecificOverride) return;
+        }
+        deduplicatedGroupsMap.set(rowKey, row);
       }
     });
 
