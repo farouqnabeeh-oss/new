@@ -207,67 +207,50 @@ var UI = window.UI || {
         const findGroupByItemId = (itemId) => addonGroups.find(group => group.items.some(item => item.id === itemId));
 
         const getVisibleGroups = () => {
-            // Only apply Burger/Sandwich meal-specific hiding logic to those categories
             const isBurgerOrSandwich = [2, 3, "2", "3"].includes(product.categoryId);
 
-            console.log("isBurgerOrSandwich", isBurgerOrSandwich)
-
-            return (addonGroups || []).filter(group => {
+            const filtered = (addonGroups || []).filter(group => {
                 const nameEn = (group.nameEn || '').toLowerCase();
                 const nameAr = (group.nameAr || '').toLowerCase();
-
                 const type = group.groupType;
-                console.log("type", type)
                 const name = (group.nameAr || '') + ' ' + (group.nameEn || '');
 
-                // --- SIZE VISIBILITY: only hide redundant size for burger/sandwich ---
                 const isSizeGroup = (type === 'Size' || type === 'sizes' || name.includes('الحجم') || name.toLowerCase().includes('size'));
-                if (isSizeGroup && product.id !== 87 && isBurgerOrSandwich) {
-                    return false;
-                }
+                if (isSizeGroup && product.id !== 87 && isBurgerOrSandwich) return false;
 
-                // --- DRINK / FRIES: only conditional for Burger/Sandwich (when meal) ---
                 const isDrinkOrFries =
                     ['choose drink', 'change drink', 'change fries', 'upgrade drink', 'upgrade fries', 'select drink', 'swap drink', 'swap fries'].some(t => nameEn.includes(t)) ||
                     ['اختيار المشروب', 'تبديل المشروب', 'تبديل البطاطا'].some(t => nameAr.includes(t));
 
-                if (isDrinkOrFries && isBurgerOrSandwich) {
-                    console.log("isDrinkOrFries matched - isMealSelection:", isMealSelection(), "type:", type); // ← أضف هاد السطر
-                    return isMealSelection();
-                }
+                if (isDrinkOrFries && isBurgerOrSandwich) return isMealSelection();
 
-                // --- MEAL-SPECIFIC GROUPS: only hide for burger/sandwich (MealDrink, MealFries, etc.) ---
                 const isMealSpecificGroup = ['MealDrink', 'MealDrinkUpgrade', 'MealFries'].includes(type);
-                if (isMealSpecificGroup && isBurgerOrSandwich) {
-                    console.log("isMealSelection()", isMealSelection(), "for type:", type); // ← أضف هاد
+                if (isMealSpecificGroup && isBurgerOrSandwich) return isMealSelection();
 
-                    return isMealSelection();
-                }
+                if (type === 'Doneness' || name.includes('الاستواء')) return !!product.hasDonenessOption;
 
-                // --- DONENESS VISIBILITY ---
-                if (type === 'Doneness' || name.includes('الاستواء')) {
-                    return !!product.hasDonenessOption;
-                }
-
-                // For all other categories (Family Meals, Kids, Wings, etc.): always show
                 return true;
             });
 
-            // --- CUSTOM ORDERING: Type -> Inside -> Side -> Without ---
-            return groups.sort((a, b) => {
+            return filtered.sort((a, b) => {
                 const nameA = (a.nameAr || '').toLowerCase();
                 const nameB = (b.nameAr || '').toLowerCase();
+                const type = (t) => (t.groupType || '').toLowerCase();
 
-                const priority = (name) => {
-                    if (name.includes('النوع')) return 1;
-                    if (name.includes('إضافة داخل') || name.includes('داخل البرغر') || name.includes('inside adds')) return 2;
-                    if (name.includes('على الجنب') || name.includes('إضافة على جنب') || name.includes('side adds')) return 3;
-                    if (name.includes('بدون') || name.includes('without')) return 4;
-                    return 10; // Everything else at the bottom (like Drinks/Fries if meal)
+                const priority = (group) => {
+                    const name = (group.nameAr || '').toLowerCase();
+                    const t = (group.groupType || '').toLowerCase();
+
+                    if (t === 'type') return 1;                                          // النوع
+                    if (t === 'addon' || name.includes('إضاف')) return 2;               // الإضافات
+                    if (t === 'mealdrinupgrade' || t === 'mealdrink') return 3;         // مشروب الوجبة
+                    if (t === 'mealfries') return 4;                                     // بطاطا الوجبة
+                    if (t === 'without' || name.includes('بدون')) return 5;             // بدون
+                    return 10;
                 };
 
-                const pA = priority(nameA);
-                const pB = priority(nameB);
+                const pA = priority(a);
+                const pB = priority(b);
                 if (pA !== pB) return pA - pB;
                 return (a.sortOrder || 0) - (b.sortOrder || 0);
             });
@@ -503,13 +486,12 @@ var UI = window.UI || {
             html += visibleGroups.filter(g => g.items && g.items.length > 0).map(group => {
                 let groupLabel = Lang.localized(group.nameAr, group.nameEn);
                 // Better logic for labeling groups as "Type" (النوع)
-                const isTypeGroup = group.groupType?.toLowerCase().includes('type') ||
-                    groupLabel.includes('نوع') ||
-                    group.items.some(it => (it.nameAr || '').includes('وجبة') || (it.nameAr || '').includes('ساندويش'));
+                const isTypeGroup = group.groupType?.toLowerCase() === 'type';
 
                 if (isTypeGroup) {
                     groupLabel = Lang.current === 'ar' ? 'النوع' : 'Type';
                 }
+
                 return `
                     <div class="option-group">
                         <div class="option-group-title" style="font-size:15px">${groupLabel}</div>
