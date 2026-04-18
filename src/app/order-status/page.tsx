@@ -4,12 +4,12 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 const STATUS_STEPS = [
-  { key: "Pending",          arLabel: "استلام الطلب",       enLabel: "Order Received",     icon: "📥" },
-  { key: "Confirmed",        arLabel: "تأكيد الطلب",        enLabel: "Order Confirmed",    icon: "✅" },
-  { key: "Preparing",        arLabel: "قيد التحضير",         enLabel: "Preparing",          icon: "👨‍🍳" },
-  { key: "Ready",            arLabel: "جاهز للاستلام",       enLabel: "Ready for Pickup",   icon: "🎉" },
-  { key: "Out for Delivery", arLabel: "في الطريق إليك",     enLabel: "Out for Delivery",   icon: "🛵" },
-  { key: "Delivered",        arLabel: "تم التسليم",          enLabel: "Delivered",          icon: "🏠" },
+  { key: "Pending", arLabel: "استلام الطلب", enLabel: "Order Received", icon: "📥" },
+  { key: "Confirmed", arLabel: "تأكيد الطلب", enLabel: "Order Confirmed", icon: "✅" },
+  { key: "Preparing", arLabel: "قيد التحضير", enLabel: "Preparing", icon: "👨‍🍳" },
+  { key: "Ready", arLabel: "جاهز للاستلام", enLabel: "Ready for Pickup", icon: "🎉" },
+  { key: "Out for Delivery", arLabel: "في الطريق إليك", enLabel: "Out for Delivery", icon: "🛵" },
+  { key: "Delivered", arLabel: "تم التسليم", enLabel: "Delivered", icon: "🏠" },
 ];
 
 const TERMINAL_STATUSES = ["Delivered", "Cancelled"];
@@ -94,11 +94,15 @@ function OrderStatusContent() {
 
   const currentStatusIndex = STATUS_STEPS.findIndex(s => s.key === order.status);
   const isCancelled = order.status === "Cancelled";
+
+  console.log("order.status:", JSON.stringify(order.status)); ///////////////////////////////////////////////////////////////////////////////
+
   const estimateMins = ESTIMATE_MINUTES[order.status] ?? 30;
 
   return (
     <div style={{ minHeight: "100vh", background: "#FAF9F6", padding: "24px", direction: isAr ? "rtl" : "ltr" }}>
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @keyframes pulse-ring {
           0% { box-shadow: 0 0 0 0 rgba(139,0,0,0.4); }
           70% { box-shadow: 0 0 0 16px rgba(139,0,0,0); }
@@ -131,8 +135,9 @@ function OrderStatusContent() {
           marginBottom: "20px",
         }}>
           {/* Current Status Banner */}
+          {/* Current Status Banner */}
           <div style={{
-            background: isCancelled ? "#FEE2E2" : "#FFF4F4",
+            background: isCancelled ? "#FEE2E2" : order.status === "Pending" ? "#FFF8E1" : "#FFF4F4",
             borderRadius: "20px",
             padding: "20px 24px",
             marginBottom: "28px",
@@ -142,32 +147,41 @@ function OrderStatusContent() {
           }}>
             <div style={{
               width: "56px", height: "56px", borderRadius: "50%",
-              background: isCancelled ? "#DC2626" : "#8B0000",
+              background: isCancelled ? "#DC2626" : order.status === "Pending" ? "#F59E0B" : "#8B0000",
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: "24px", flexShrink: 0,
             }} className={!isCancelled && !TERMINAL_STATUSES.includes(order.status) ? "step-active" : ""}>
-              {isCancelled ? "❌" : (STATUS_STEPS[currentStatusIndex]?.icon ?? "🔄")}
+              {isCancelled ? "❌" : order.status === "Pending" ? "⏳" : (STATUS_STEPS[currentStatusIndex]?.icon ?? "🔄")}
             </div>
             <div>
-              <div style={{ fontWeight: 900, fontSize: "1.2rem", color: isCancelled ? "#DC2626" : "#8B0000" }}>
-                {isCancelled
-                  ? (isAr ? "تم إلغاء الطلب" : "Order Cancelled")
-                  : (isAr
-                    ? STATUS_STEPS[currentStatusIndex]?.arLabel
-                    : STATUS_STEPS[currentStatusIndex]?.enLabel)}
-              </div>
-              {order.estimated_time ? (
-                <div style={{ color: "#059669", fontWeight: 800, fontSize: "14px", marginTop: "4px" }}>
-                  ⏱ {isAr ? "الوقت المقدر:" : "Estimated time:"} {order.estimated_time}
-                </div>
-              ) : (
-                !isCancelled && order.status !== "Delivered" && (
-                  <div style={{ color: "#555", fontWeight: 700, fontSize: "13px", marginTop: "4px" }}>
-                    ⏱ {isAr
-                      ? `الوقت المتبقي المتوقع: ~${estimateMins} دقيقة`
-                      : `Estimated time: ~${estimateMins} min`}
+              {order.status === "Pending" ? (
+                <>
+                  <div style={{ fontWeight: 900, fontSize: "1.2rem", color: "#D97706" }}>
+                    {isAr ? "طلبك قيد الانتظار" : "Your order is pending"}
                   </div>
-                )
+                  <div style={{ color: "#92400E", fontWeight: 700, fontSize: "13px", marginTop: "4px" }}>
+                    {isAr ? "بانتظار تأكيد المطعم..." : "Waiting for restaurant confirmation..."}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontWeight: 900, fontSize: "1.2rem", color: isCancelled ? "#DC2626" : "#8B0000" }}>
+                    {isCancelled
+                      ? (isAr ? "تم إلغاء الطلب" : "Order Cancelled")
+                      : (isAr ? STATUS_STEPS[currentStatusIndex]?.arLabel : STATUS_STEPS[currentStatusIndex]?.enLabel)}
+                  </div>
+                  {order.estimated_time ? (
+                    <div style={{ color: "#059669", fontWeight: 800, fontSize: "14px", marginTop: "4px" }}>
+                      ⏱ {isAr ? "الوقت المقدر:" : "Estimated time:"} {order.estimated_time}
+                    </div>
+                  ) : (
+                    !isCancelled && order.status !== "Delivered" && (
+                      <div style={{ color: "#555", fontWeight: 700, fontSize: "13px", marginTop: "4px" }}>
+                        ⏱ {isAr ? `الوقت المتبقي المتوقع: ~${estimateMins} دقيقة` : `Estimated time: ~${estimateMins} min`}
+                      </div>
+                    )
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -254,24 +268,24 @@ function OrderStatusContent() {
           <div style={{ marginTop: '20px', borderTop: '1px solid #f0f0f0', paddingTop: '16px' }}>
             <h4 style={{ fontWeight: 900, marginBottom: '12px', fontSize: '13px', color: '#666' }}>{isAr ? 'الأصناف' : 'Items'}</h4>
             {order.order_items?.map((item: any, idx: number) => (
-                <div key={idx} style={{ marginBottom: '12px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800 }}>
-                        <span>{item.quantity}x {isAr ? item.product_name_ar : item.product_name_en}</span>
-                        <span>{Number(item.price).toFixed(0)} ₪</span>
-                    </div>
-                    {item.addon_details && (
-                        <div style={{ fontSize: '12px', color: '#888', marginTop: '4px', paddingRight: isAr ? '10px' : '0', paddingLeft: isAr ? '0' : '10px', borderRight: isAr ? '2px solid #eee' : 'none', borderLeft: isAr ? 'none' : '2px solid #eee' }}>
-                            {item.addon_details.split('|').map((part: string, pIdx: number) => {
-                                const isExclusion = part.includes('بدون') || part.toLowerCase().includes('exclusion') || part.toLowerCase().includes('without');
-                                return (
-                                    <div key={pIdx} style={{ color: isExclusion ? '#dc2626' : '#666', fontWeight: isExclusion ? 700 : 500 }}>
-                                        {isExclusion ? '🚫 ' : '• '}{part.trim()}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
+              <div key={idx} style={{ marginBottom: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800 }}>
+                  <span>{item.quantity}x {isAr ? item.product_name_ar : item.product_name_en}</span>
+                  <span>{Number(item.price).toFixed(0)} ₪</span>
                 </div>
+                {item.addon_details && (
+                  <div style={{ fontSize: '12px', color: '#888', marginTop: '4px', paddingRight: isAr ? '10px' : '0', paddingLeft: isAr ? '0' : '10px', borderRight: isAr ? '2px solid #eee' : 'none', borderLeft: isAr ? 'none' : '2px solid #eee' }}>
+                    {item.addon_details.split('|').map((part: string, pIdx: number) => {
+                      const isExclusion = part.includes('بدون') || part.toLowerCase().includes('exclusion') || part.toLowerCase().includes('without');
+                      return (
+                        <div key={pIdx} style={{ color: isExclusion ? '#dc2626' : '#666', fontWeight: isExclusion ? 700 : 500 }}>
+                          {isExclusion ? '🚫 ' : '• '}{part.trim()}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             ))}
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #f0f0f0", paddingTop: "12px", marginTop: '12px' }}>

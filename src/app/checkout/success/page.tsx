@@ -164,12 +164,12 @@ function SuccessContent() {
         }}>✓</div>
 
         <h1 style={{ fontSize: '2.2rem', fontWeight: 900, marginBottom: '10px', color: '#000' }}>
-          {isAr ? 'تم استلام طلبك! 🎉' : 'Order Received! 🎉'}
+          {isAr ? 'تم إرسال طلبك! 🎉' : 'Order Sent! 🎉'}
         </h1>
         <p style={{ color: '#888', fontSize: '15px', marginBottom: '30px', fontWeight: 600 }}>
           {isAr
-            ? `رقم الطلب: #${orderId}. تم استلام طلبك بنجاح وسنفوم بتجهيزه فوراً.`
-            : `Order reference: #${orderId}. Your order has been received and is being prepared.`}
+            ? `رقم الطلب: #${orderId}. تم إرسال طلبك بنجاح، بانتظار تأكيد المطعم.`
+            : `Order reference: #${orderId}. Your order has been sent successfully, awaiting restaurant confirmation.`}
         </p>
 
         {/* Invoice Summary */}
