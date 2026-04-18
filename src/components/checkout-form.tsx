@@ -14,7 +14,11 @@ type Props = {
 };
 
 export default function CheckoutForm({ branch, settings, lang: initialLang }: Props) {
+    console.log("initialLang received:", initialLang); // ← هاد
+
     const [lang, setLang] = useState(initialLang);
+    console.log("lang state:", lang); // ← وهاد
+
     const [orderType, setOrderType] = useState<"inRestaurant" | "delivery">("inRestaurant");
     const [subType, setSubType] = useState<"table" | "pickup">("table");
     const [paymentMethod, setPaymentMethod] = useState<"cash" | "palpay">("cash");

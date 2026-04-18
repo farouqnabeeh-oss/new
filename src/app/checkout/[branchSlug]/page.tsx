@@ -1,6 +1,9 @@
+export const dynamic = "force-dynamic";
+
 import { redirect } from "next/navigation";
 import { getBranchBySlug, getSiteSettings } from "@/lib/data";
 import CheckoutFormWrapper from "@/components/checkout-form-wrapper";
+import { cookies } from "next/headers";
 
 type CheckoutPageProps = {
   params: Promise<{
@@ -10,7 +13,15 @@ type CheckoutPageProps = {
 
 export default async function CheckoutPage({ params }: CheckoutPageProps) {
   const { branchSlug } = await params;
-  const [branch, settings] = await Promise.all([getBranchBySlug(branchSlug), getSiteSettings()]);
+
+  const cookieStore = await cookies();
+  // استخراج اللغة من الكوكيز أو اعتماد 'ar' كقيمة افتراضية
+  const lang = cookieStore.get("language")?.value || "ar";
+
+  const [branch, settings] = await Promise.all([
+    getBranchBySlug(branchSlug),
+    getSiteSettings()
+  ]);
 
   if (!branch) {
     redirect("/");
@@ -31,7 +42,8 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
         }
       `}</style>
       <div className="checkout-page-container">
-        <CheckoutFormWrapper branch={branch} settings={settings as any} lang="ar" />
+        {/* التعديل هنا: مرر متغير lang بدلاً من القيمة الثابتة "ar" */}
+        <CheckoutFormWrapper branch={branch} settings={settings as any} lang={lang} />
       </div>
     </div>
   );

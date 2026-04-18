@@ -21,7 +21,7 @@ interface Props {
 }
 
 export default function MenuClient({ categories = [], allProducts = [], allAddonGroups = [], branch, isAr, currency }: Props) {
-  
+
   const updateBadge = useCallback(() => {
     if (!window.UI || !window.Cart) return;
     window.UI.updateCartBadge(branch.slug);
@@ -50,14 +50,17 @@ export default function MenuClient({ categories = [], allProducts = [], allAddon
         content += `<div class="up-sec" id="up-${cat.id}">
           <h2 class="up-sec-title">${isAr ? cat.nameAr : cat.nameEn}</h2>
           <div class="up-grid">`;
-        
-          prods.forEach(p => {
-            const priceRaw = Number(p.basePrice || 0);
-            const disc = Number(p.discount || 0);
-            const finalPrice = Math.round(priceRaw * (1 - disc / 100));
-            const image = p.imagePath || '/images/classic-cheeseburger__0x1e3y1qv68eiip.jpg';
-            
-            content += `
+
+        prods.forEach(p => {
+          const priceRaw = Number(p.basePrice || 0);
+          const disc = Number(p.discount || 0) || Number(branch.discountPercent || 0);
+
+          console.log("product:", p.nameAr, "discount:", p.discount, "disc:", disc);
+
+          const finalPrice = Math.round(priceRaw * (1 - disc / 100));
+          const image = p.imagePath || '/images/classic-cheeseburger__0x1e3y1qv68eiip.jpg';
+
+          content += `
               <div class="up-card" data-pid="${p.id}">
                 ${disc > 0 ? `<div class="up-fire-badge">🔥 ${isAr ? 'خصم' : 'OFF'} ${disc}%</div>` : ''}
                 <div class="up-img-wrap" onclick="window.viewP('${p.id}')" style="cursor:pointer"><img src="${image}" class="up-img" loading="lazy" /></div>
@@ -72,7 +75,7 @@ export default function MenuClient({ categories = [], allProducts = [], allAddon
                   </div>
                 </div>
               </div>`;
-          });
+        });
         content += "</div></div>";
       });
 
@@ -85,11 +88,11 @@ export default function MenuClient({ categories = [], allProducts = [], allAddon
           const card = document.querySelector(`[data-pid="${id}"]`);
           const btn = card?.querySelector('.up-add-pill');
           const originalText = btn ? btn.textContent : '';
-          
+
           try {
             const p = allProducts.find(x => String(x.id) === String(id));
             if (!p) throw new Error("Product data fetch failed");
-            
+
             // Filter addons based on category and product, mimicking API rules
             const deduplicatedGroupsMap = new Map();
             const productAddonGroups = allAddonGroups
@@ -97,7 +100,7 @@ export default function MenuClient({ categories = [], allProducts = [], allAddon
                 // Normalize data access to support different mappings
                 const cid = dbRow.categoryId || dbRow.category_id;
                 const pid = dbRow.productId || dbRow.product_id;
-                
+
                 return {
                   id: dbRow.id,
                   nameAr: dbRow.nameAr || dbRow.name_ar,
@@ -119,16 +122,16 @@ export default function MenuClient({ categories = [], allProducts = [], allAddon
               .filter(row => {
                 // 1. If assigned to a SPECIFIC product, it must match
                 if (row.productId && String(row.productId) !== "0" && String(row.productId) !== "null") {
-                   return String(row.productId) === String(id);
+                  return String(row.productId) === String(id);
                 }
                 // 2. Otherwise, check category-level match
                 if (row.categoryId && String(row.categoryId) !== "0" && String(row.categoryId) !== "null") {
-                   return String(row.categoryId) === String(p.categoryId);
+                  return String(row.categoryId) === String(p.categoryId);
                 }
                 return true;
               });
             console.log("[MenuDebug] Addons found for " + id + ":", productAddonGroups.length, productAddonGroups);
-            
+
             // Always show the product modal so the user can see the description (product details)
             // since it's cached, this is instantaneous!
             if (window.UI && window.UI.renderProductModal) {
@@ -145,7 +148,7 @@ export default function MenuClient({ categories = [], allProducts = [], allAddon
             if (btn) btn.textContent = originalText;
           }
         } catch (fatal: any) {
-           alert("Fatal click error: " + fatal.message + " | Stack: " + fatal.stack);
+          alert("Fatal click error: " + fatal.message + " | Stack: " + fatal.stack);
         }
       };
 
@@ -176,7 +179,7 @@ export default function MenuClient({ categories = [], allProducts = [], allAddon
 
       const handleScroll = () => {
         if (isManualScroll) return;
-        
+
         const secs = document.querySelectorAll(".up-sec");
         let cur = "";
         const threshold = window.innerHeight * 0.3; // Detect section when it's 30% from the top
@@ -189,8 +192,8 @@ export default function MenuClient({ categories = [], allProducts = [], allAddon
         });
 
         if (!cur && secs.length > 0) {
-           // Fallback if top of page
-           if (window.pageYOffset < 300) cur = (secs[0] as HTMLElement).id.replace("up-", "");
+          // Fallback if top of page
+          if (window.pageYOffset < 300) cur = (secs[0] as HTMLElement).id.replace("up-", "");
         }
 
         if (cur && cur !== lastActiveId) {
@@ -204,7 +207,7 @@ export default function MenuClient({ categories = [], allProducts = [], allAddon
               const pillOffset = p.offsetLeft;
               const pillWidth = p.offsetWidth;
               const targetScroll = pillOffset - (containerWidth / 2) + (pillWidth / 2);
-              
+
               scrollContainer.scrollTo({
                 left: targetScroll,
                 behavior: "smooth"
@@ -220,10 +223,10 @@ export default function MenuClient({ categories = [], allProducts = [], allAddon
         p.onclick = () => {
           isManualScroll = true;
           if (originalOnClick) originalOnClick();
-          
+
           pills.forEach((pill: any) => pill.classList.toggle("active", pill === p));
           lastActiveId = p.dataset.id;
-          
+
           // Re-enable scroll spy after smooth scroll finishes
           setTimeout(() => { isManualScroll = false; }, 800);
         };

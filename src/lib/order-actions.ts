@@ -51,18 +51,63 @@ async function verifyRecaptcha(token: string) {
  * @param orderId The order reference
  */
 async function sendSMSNotification(phone: string, amount: number, orderId: string | number) {
-    // هذه الطباعة ستظهر لك في الـ Terminal
-    console.log(`\n--- 📱 محاكاة إرسال رسالة SMS ---`);
-    console.log(`المستلم: ${phone}`);
-    console.log(`المبلغ: ${amount} ₪`);
-    console.log(`رقم الطلب: #${orderId}`);
+    console.log(`\n--- 📱 جاري إرسال رسالة SMS حقيقية (Twilio) ---`);
+
+    // تحويل الرقم الفلسطيني للصيغة الدولية التي تقبلها Twilio
+    let formattedPhone = phone;
+    if (formattedPhone.startsWith('0')) {
+        formattedPhone = '+970' + formattedPhone.substring(1);
+    }
+
+    console.log(`المستلم: ${formattedPhone} | الطلب: #${orderId}`);
 
     const smsMessage = `تم استلام دفعتك بقيمة ${amount} ₪ لطلبك رقم #${orderId} من مطاعم أبتاون. شكراً لك!`;
 
-    console.log(`نص الرسالة: "${smsMessage}"`);
-    console.log(`--------------------------------\n`);
+    try {
+        const accountSid = process.env.TWILIO_ACCOUNT_SID;
+        const authToken = process.env.TWILIO_AUTH_TOKEN;
+        const fromPhone = process.env.TWILIO_PHONE_NUMBER;
 
-    return true; // نرجع true حالياً للتجربة
+        if (!accountSid || !authToken || !fromPhone) {
+            console.warn("⚠️ إعدادات Twilio مفقودة في ملف .env");
+            return false;
+        }
+
+        // بناء البيانات حسب توثيق Twilio (من رقم إلى رقم)
+        const payload = new URLSearchParams({
+            To: formattedPhone,
+            From: fromPhone, // رقم Twilio الخاص بك
+            Body: smsMessage
+        });
+
+        // تشفير بيانات الدخول للـ API
+        const basicAuth = Buffer.from(`${accountSid}:${authToken}`).toString('base64');
+
+        const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Authorization": `Basic ${basicAuth}`
+            },
+            body: payload.toString()
+        });
+
+        const responseData = await response.json();
+
+        // فحص وجود أخطاء من سيرفر Twilio
+        if (!response.ok) {
+            throw new Error(responseData.message || "فشل الاتصال بـ Twilio");
+        }
+
+        console.log(`✅ تم الإرسال بنجاح! ID الرسالة:`, responseData.sid);
+        console.log(`--------------------------------\n`);
+        return true;
+
+    } catch (error: any) {
+        console.error(`❌ فشل إرسال الرسالة:`, error.message);
+        console.log(`--------------------------------\n`);
+        return false;
+    }
 }
 
 /** * Finalizes an order after payment (Cash or Online).
@@ -148,6 +193,9 @@ export async function finalizeOrder(orderId: string | number) {
         return { success: false, error: err.message || "Failed to finalize order" };
     }
 }
+
+
+
 
 export async function saveOrderAction(orderData: any, items: any[], captchaToken?: string) {
     console.log(`[saveOrderAction] Processing order for: ${orderData.customerName}`);
