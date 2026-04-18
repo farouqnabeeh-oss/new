@@ -142,126 +142,130 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
             const freshTotal = Number((freshItemsTotal - freshDAmount + freshEffectiveFee).toFixed(2));
 
             const finalAddress = orderType === 'delivery' ? `${selectedZone} - ${address}` : address;
-            
+
             const mappedItems = items.map((i: any) => {
-                    const typeAddons = i.selectedAddOns?.filter((a: any) => (a.nameAr || '').includes('وجبة') || (a.nameAr || '').includes('ساندويش') || (a.nameEn || '').toLowerCase().includes('meal') || (a.nameEn || '').toLowerCase().includes('sandwich'));
-                    const noteAddons = i.selectedAddOns?.filter((a: any) => (a.nameAr || '').includes('بدون') || (a.nameEn || '').toLowerCase().includes('without') || (a.nameEn || '').toLowerCase().includes('no ') || (a.nameAr || '').includes('🚫'));
-                    const normalAddons = i.selectedAddOns?.filter((a: any) => !typeAddons?.includes(a) && !noteAddons?.includes(a));
+                const withoutAddons = i.selectedAddOns?.filter((a: any) =>
+                    a.groupType === 'Without' ||
+                    (a.nameAr || '').includes('بدون')
+                );
 
-                    const parts = [];
-                    if (i.selectedSize) parts.push(`${isAr ? 'الحجم' : 'Size'}: ${isAr ? i.selectedSize.nameAr : i.selectedSize.nameEn}`);
+                const normalAddons = i.selectedAddOns?.filter((a: any) =>
+                    a.groupType !== 'Without' &&
+                    !['MealDrink', 'MealDrinkUpgrade', 'MealFries'].includes(a.groupType)
+                );
 
-                    let finalTypes = [];
-                    if (i.selectedType) {
-                        const typeName = isAr ? i.selectedType.nameAr : i.selectedType.nameEn;
-                        finalTypes.push(typeName);
-                    }
-                    if (typeAddons?.length) {
-                        finalTypes.push(...typeAddons.map((a: any) => isAr ? a.nameAr : a.nameEn));
-                    }
-                    if (finalTypes.length) {
-                        parts.push(`${isAr ? 'النوع' : 'Type'}: ${finalTypes.join(' + ')}`);
-                    }
+                const parts = [];
 
-                    if (normalAddons?.length) parts.push(`${isAr ? 'إضافات' : 'Addons'}: ` + normalAddons.map((a: any) => isAr ? a.nameAr : a.nameEn).join(' + '));
-                    if (noteAddons?.length) parts.push(`${isAr ? 'ملاحظات (بدون)' : 'Exclusions'}: ` + noteAddons.map((a: any) => (isAr ? a.nameAr : a.nameEn).replace('🚫', '').trim()).join('، '));
-                    if (i.note) parts.push(`${isAr ? 'ملاحظة إضافية' : 'Extra Note'}: ${i.note}`);
+                if (i.selectedSize)
+                    parts.push(`${isAr ? 'الحجم' : 'Size'}: ${isAr ? i.selectedSize.nameAr : i.selectedSize.nameEn}`);
 
-                    return { ...i, addonDetails: parts.join(' | ') };
+                if (i.selectedType)
+                    parts.push(`${isAr ? 'النوع' : 'Type'}: ${isAr ? i.selectedType.nameAr : i.selectedType.nameEn}`);
+
+                if (normalAddons?.length)
+                    parts.push(`${isAr ? 'إضافات' : 'Addons'}: ${normalAddons.map((a: any) => isAr ? a.nameAr : a.nameEn).join(' + ')}`);
+
+                if (withoutAddons?.length)
+                    parts.push(`${isAr ? 'بدون' : 'Without'}: ${withoutAddons.map((a: any) => (isAr ? a.nameAr : a.nameEn).replace('🚫', '').trim()).join('، ')}`);
+
+                if (i.note)
+                    parts.push(`${isAr ? 'ملاحظة' : 'Note'}: ${i.note}`);
+
+                return { ...i, addonDetails: parts.join(' | ') };
+            });
+
+            const res = await saveOrderAction({
+                branchId: branch.id,
+                customerName: name,
+                customerPhone: phone,
+                customerEmail: email,
+                orderType: orderType === 'delivery' ? 'Delivery' : 'Pickup',
+                address: finalAddress,
+                tableNumber: orderType === 'delivery' ? null : pickupTime,
+                totalAmount: freshTotal,
+                paymentMethod: paymentMethod === 'cash' ? 'Cash' : 'Card',
+                scheduledAt: scheduledAt
+            }, mappedItems, captchaToken || undefined);
+
+            console.log("[Checkout] Order Save Result:", res);
+
+            // Check if order was saved successfully
+            if (!res.success || !res.orderId) {
+                alert(isAr
+                    ? `فشل حفظ الطلب: ${res.error || 'خطأ غير متوقع، يرجى المحاولة مرة أخرى'}`
+                    : `Failed to save order: ${res.error || 'Unexpected error, please try again'}`
+                );
+                return;
+            }
+
+            if (res.isDemo && typeof window !== "undefined") {
+                console.log("[Checkout] Saving demo data locally for success page fallback");
+                const demoStore = {
+                    customer_name: name,
+                    order_type: orderType === 'delivery' ? 'Delivery' : 'Pickup',
+                    total_amount: freshTotal,
+                    order_items: items.map((i: any) => ({
+                        product_name_ar: i.nameAr,
+                        product_name_en: i.nameEn,
+                        quantity: i.quantity,
+                        price: i.finalPrice
+                    })),
+                    branches: { discount_percent: branch.discountPercent },
+                    method: paymentMethod
+                };
+                sessionStorage.setItem(`demo_order_${res.orderId}`, JSON.stringify(demoStore));
+            }
+
+            if (paymentMethod === "palpay") {
+                console.log(`[Checkout] Initiating online payment for ${freshTotal} ${settings.currencySymbol || '₪'}`);
+
+                const payRes = await fetch("/api/payments/lahza/initiate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        orderId: res.orderId,
+                        email: email || "customer@uptown.ps", // Fallback for optional email
+                        amount: freshTotal,
+                        currency: settings.currencySymbol === "₪" ? "ILS" : settings.currencySymbol || "USD",
+                        customerName: name,
+                        customerPhone: phone,
+                        branchSlug: branch.slug
+                    })
                 });
 
-                const res = await saveOrderAction({
-                    branchId: branch.id,
-                    customerName: name,
-                    customerPhone: phone,
-                    customerEmail: email,
-                    orderType: orderType === 'delivery' ? 'Delivery' : 'Pickup',
-                    address: finalAddress,
-                    tableNumber: orderType === 'delivery' ? null : pickupTime,
-                    totalAmount: freshTotal,
-                    paymentMethod: paymentMethod === 'cash' ? 'Cash' : 'Card',
-                    scheduledAt: scheduledAt
-                }, mappedItems, captchaToken || undefined);
-
-                console.log("[Checkout] Order Save Result:", res);
-
-                // Check if order was saved successfully
-                if (!res.success || !res.orderId) {
-                    alert(isAr
-                        ? `فشل حفظ الطلب: ${res.error || 'خطأ غير متوقع، يرجى المحاولة مرة أخرى'}`
-                        : `Failed to save order: ${res.error || 'Unexpected error, please try again'}`
-                    );
-                    return;
-                }
-
-                if (res.isDemo && typeof window !== "undefined") {
-                    console.log("[Checkout] Saving demo data locally for success page fallback");
-                    const demoStore = {
-                        customer_name: name,
-                        order_type: orderType === 'delivery' ? 'Delivery' : 'Pickup',
-                        total_amount: freshTotal,
-                        order_items: items.map((i: any) => ({
-                            product_name_ar: i.nameAr,
-                            product_name_en: i.nameEn,
-                            quantity: i.quantity,
-                            price: i.finalPrice
-                        })),
-                        branches: { discount_percent: branch.discountPercent },
-                        method: paymentMethod
-                    };
-                    sessionStorage.setItem(`demo_order_${res.orderId}`, JSON.stringify(demoStore));
-                }
-
-                if (paymentMethod === "palpay") {
-                    console.log(`[Checkout] Initiating online payment for ${freshTotal} ${settings.currencySymbol || '₪'}`);
-
-                    const payRes = await fetch("/api/payments/lahza/initiate", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            orderId: res.orderId,
-                            email: email || "customer@uptown.ps", // Fallback for optional email
-                            amount: freshTotal,
-                            currency: settings.currencySymbol === "₪" ? "ILS" : settings.currencySymbol || "USD",
-                            customerName: name,
-                            customerPhone: phone,
-                            branchSlug: branch.slug
-                        })
-                    });
-
-                    const payData = await payRes.json();
-                    if (payData.success && payData.authorizationUrl) {
-                        window.location.href = payData.authorizationUrl;
-                    } else {
-                        console.error("Initiation Failed:", payData);
-                        alert(isAr ? `فشل بدء عملية الدفع: ${payData.error || 'خطأ فني'}` : `Failed to initiate payment: ${payData.error || 'Technical error'}`);
-                    }
+                const payData = await payRes.json();
+                if (payData.success && payData.authorizationUrl) {
+                    window.location.href = payData.authorizationUrl;
                 } else {
-                    // Success for WhatsApp/Cash
-                    try {
-                        const audio = new Audio('/sounds/success.mp3');
-                        audio.play().catch(e => console.log("Sound play error", e));
-                    } catch (e) { }
-
-                    // Construct WhatsApp Message
-                    const orderTypeLabel = orderType === 'delivery' ? (isAr ? 'توصيل' : 'Delivery') : (isAr ? 'استلام' : 'Pickup');
-                    const itemsTxt = mappedItems.map((i: any) => `- ${i.quantity}x ${isAr ? i.nameAr : i.nameEn} (${i.finalPrice} ₪) %0A   ${i.addonDetails || ''}`).join('%0A');
-                    const scheduledLine = scheduledAt ? `%0A*وقت التجهيز المجددل:* ${scheduledAt}` : '';
-                    const msg = `*طلب جديد من UPTOWN*%0A%0A` +
-                        `*العميل:* ${name}%0A` +
-                        `*الهاتف:* ${phone}%0A` +
-                        `*نوع الطلب:* ${orderTypeLabel}%0A` +
-                        `${orderType === 'delivery' ? `*العنوان:* ${finalAddress}` : `*وقت الاستلام:* ${pickupTime}`}${scheduledLine}%0A%0A` +
-                        `*الأصناف:*%0A${itemsTxt}%0A%0A` +
-                        `*المجموع:* ${freshTotal} ₪%0A%0A` +
-                        `_تم إرسال الطب عبر الموقع الإلكتروني_`;
-
-                    const waLink = `https://wa.me/${branch.whatsApp.replace(/\+/g, '').replace(/\s/g, '')}?text=${msg}`;
-
-                    // Redirect to success but open WhatsApp
-                    window.open(waLink, '_blank');
-                    window.location.href = `/checkout/success?orderId=${res.orderId}&branchSlug=${branch.slug}&method=cash`;
+                    console.error("Initiation Failed:", payData);
+                    alert(isAr ? `فشل بدء عملية الدفع: ${payData.error || 'خطأ فني'}` : `Failed to initiate payment: ${payData.error || 'Technical error'}`);
                 }
+            } else {
+                // Success for WhatsApp/Cash
+                try {
+                    const audio = new Audio('/sounds/success.mp3');
+                    audio.play().catch(e => console.log("Sound play error", e));
+                } catch (e) { }
+
+                // Construct WhatsApp Message
+                const orderTypeLabel = orderType === 'delivery' ? (isAr ? 'توصيل' : 'Delivery') : (isAr ? 'استلام' : 'Pickup');
+                const itemsTxt = mappedItems.map((i: any) => `- ${i.quantity}x ${isAr ? i.nameAr : i.nameEn} (${i.finalPrice} ₪) %0A   ${i.addonDetails || ''}`).join('%0A');
+                const scheduledLine = scheduledAt ? `%0A*وقت التجهيز المجددل:* ${scheduledAt}` : '';
+                const msg = `*طلب جديد من UPTOWN*%0A%0A` +
+                    `*العميل:* ${name}%0A` +
+                    `*الهاتف:* ${phone}%0A` +
+                    `*نوع الطلب:* ${orderTypeLabel}%0A` +
+                    `${orderType === 'delivery' ? `*العنوان:* ${finalAddress}` : `*وقت الاستلام:* ${pickupTime}`}${scheduledLine}%0A%0A` +
+                    `*الأصناف:*%0A${itemsTxt}%0A%0A` +
+                    `*المجموع:* ${freshTotal} ₪%0A%0A` +
+                    `_تم إرسال الطب عبر الموقع الإلكتروني_`;
+
+                const waLink = `https://wa.me/${branch.whatsApp.replace(/\+/g, '').replace(/\s/g, '')}?text=${msg}`;
+
+                // Redirect to success but open WhatsApp
+                window.open(waLink, '_blank');
+                window.location.href = `/checkout/success?orderId=${res.orderId}&branchSlug=${branch.slug}&method=cash`;
+            }
         } catch (err: any) {
             alert(isAr ? "عذراً، حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى." : "Critical Error: " + err.message);
         } finally {

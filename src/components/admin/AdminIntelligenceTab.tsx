@@ -13,6 +13,11 @@ type Props = {
 
 export function AdminIntelligenceTab({ orders, branches, role }: Props) {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
+
+  const [statusModal, setStatusModal] = useState<{ orderId: any, currentStatus: string } | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{ orderId: any, newStatus: string } | null>(null);
+  const [estimatedTime, setEstimatedTime] = useState("");
+
   const isCashier = role?.toLowerCase() === "cashier";
 
   // Filter States
@@ -25,8 +30,8 @@ export function AdminIntelligenceTab({ orders, branches, role }: Props) {
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
       // 1. Search Query (ID, Name, Phone, Email)
-      const matchesSearch = 
-        searchQuery === "" || 
+      const matchesSearch =
+        searchQuery === "" ||
         order.id.toString().includes(searchQuery) ||
         order.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.customerPhone.includes(searchQuery) ||
@@ -39,7 +44,7 @@ export function AdminIntelligenceTab({ orders, branches, role }: Props) {
       const matchesBranch = branchFilter === "All" || order.branchId.toString() === branchFilter;
 
       // 4. Payment Method Filter
-      const matchesPayment = paymentFilter === "All" || 
+      const matchesPayment = paymentFilter === "All" ||
         (paymentFilter === "Card" ? (order.paymentMethod === "Card" || order.paymentMethod === "palpay") : order.paymentMethod === "Cash");
 
       // 5. Period Filter
@@ -73,7 +78,8 @@ export function AdminIntelligenceTab({ orders, branches, role }: Props) {
 
   return (
     <div className="admin-intelligence-tab">
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         .filter-section {
           background: #fff;
           border-radius: 30px;
@@ -163,7 +169,7 @@ export function AdminIntelligenceTab({ orders, branches, role }: Props) {
         </h2>
         <div style={{ display: 'flex', gap: '10px' }}>
           <button className="btn btn-outline btn-sm" style={{ borderRadius: '15px' }} onClick={() => window.location.reload()}>
-             <RefreshCw size={16} /> 
+            <RefreshCw size={16} />
           </button>
         </div>
       </div>
@@ -187,8 +193,8 @@ export function AdminIntelligenceTab({ orders, branches, role }: Props) {
       <div className="filter-section">
         <div className="filter-grid">
           <div className="search-container">
-            <input 
-              className="search-input" 
+            <input
+              className="search-input"
               placeholder={isAr ? "رقم الطلب، الاسم، الهاتف، العنوان..." : "Search ID, Name, Phone..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -274,8 +280,8 @@ export function AdminIntelligenceTab({ orders, branches, role }: Props) {
                     </span>
                   </td>
                   <td>
-                    <span className={`ultra-branch-badge-fire ${order.status.toLowerCase()}`} style={{ 
-                      background: order.status === 'Paid' || order.status === 'Delivered' ? '#11a85f' : order.status === 'Cancelled' ? '#e63946' : '#8B0000', 
+                    <span className={`ultra-branch-badge-fire ${order.status.toLowerCase()}`} style={{
+                      background: order.status === 'Paid' || order.status === 'Delivered' ? '#11a85f' : order.status === 'Cancelled' ? '#e63946' : '#8B0000',
                       color: '#fff', fontSize: '11px', fontWeight: 900, padding: '4px 10px'
                     }}>
                       {order.status}
@@ -285,42 +291,26 @@ export function AdminIntelligenceTab({ orders, branches, role }: Props) {
                     {new Date(order.createdAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
                   </td>
                   <td>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <select
-                        defaultValue={order.status}
-                        className="filter-select"
-                        style={{ padding: '4px 8px', fontSize: '11px', borderRadius: '8px' }}
-                        onChange={async (e) => {
-                          const newStatus = e.target.value;
-                          let estTime = "";
-                          if (newStatus === "Confirmed") {
-                            estTime = prompt(role === 'Cashier' ? "الوقت المتوقع للتجهيز (مثلاً: 30 دقيقة):" : "Estimated preparation time (e.g. 30 mins):") || "";
-                          }
-                          const res = await updateOrderStatus(order.id, newStatus, estTime);
-                          if (res.success) window.location.reload();
-                          else alert('Failed to update status: ' + res.error);
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+                      <button
+                        onClick={() => setStatusModal({ orderId: order.id, currentStatus: order.status })}
+                        style={{
+                          padding: '6px 14px', borderRadius: '10px', border: '1px solid #eee',
+                          background: '#f5f5f5', fontWeight: 700, fontSize: '12px', cursor: 'pointer',
+                          color: '#1a1a1a', whiteSpace: 'nowrap', flex: 1
                         }}
                       >
-                        <option value="Pending">Pending</option>
-                        <option value="Confirmed">Confirmed</option>
-                        <option value="Paid">Paid</option>
-                        <option value="Preparing">Preparing</option>
-                        <option value="Ready">Ready</option>
-                        <option value="Out for Delivery">Out for Delivery</option>
-                        <option value="Delivered">Delivered</option>
-                        <option value="Cancelled">Cancelled</option>
-                      </select>
+                        {order.status} ▼
+                      </button>
                       <button
                         className="btn btn-primary btn-sm"
-                        style={{ fontSize: '11px', padding: '6px 12px', background: '#000', color: '#fff', borderRadius: '8px' }}
+                        style={{ fontSize: '11px', padding: '6px 12px', background: '#000', color: '#fff', borderRadius: '8px', flex: 1 }}
                         onClick={async () => {
                           const res = await getOrderSummary(order.id);
-                          if (res.success) {
-                            setSelectedOrder(res.order);
-                          }
+                          if (res.success) setSelectedOrder(res.order);
                         }}
                       >
-                        {isAr ? "تفاصيل" : "Details"}
+                        تفاصيل
                       </button>
                     </div>
                   </td>
@@ -328,7 +318,7 @@ export function AdminIntelligenceTab({ orders, branches, role }: Props) {
               )) : (
                 <tr>
                   <td colSpan={8} style={{ textAlign: 'center', padding: '60px', opacity: 0.5 }}>
-                     {isAr ? "لا توجد طلبات تطابق الفلترة الحالية" : "No orders matching current filters."}
+                    {isAr ? "لا توجد طلبات تطابق الفلترة الحالية" : "No orders matching current filters."}
                   </td>
                 </tr>
               )}
@@ -337,7 +327,7 @@ export function AdminIntelligenceTab({ orders, branches, role }: Props) {
         </div>
       </div>
 
-      {/* 🔍 ORDER DETAILS MODAL */ }
+      {/* 🔍 ORDER DETAILS MODAL */}
       {selectedOrder && (
         <div style={{
           position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
@@ -414,6 +404,182 @@ export function AdminIntelligenceTab({ orders, branches, role }: Props) {
           </div>
         </div>
       )}
+
+      {confirmModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+          background: 'rgba(0,0,0,0.6)', zIndex: 99999, display: 'flex',
+          alignItems: 'center', justifyContent: 'center', padding: '20px',
+          backdropFilter: 'blur(10px)'
+        }} onClick={() => setConfirmModal(null)}>
+          <div style={{
+            background: '#fff', borderRadius: '32px', width: '100%', maxWidth: '420px',
+            padding: '32px', border: '0.5px solid #eee', direction: 'rtl',
+            boxShadow: '0 25px 50px rgba(0,0,0,0.2)'
+          }} onClick={e => e.stopPropagation()}>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <div>
+                <p style={{ fontSize: '13px', color: '#888', margin: '0 0 4px' }}>تأكيد استلام الطلب</p>
+                <p style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>#{confirmModal.orderId}</p>
+              </div>
+              <div style={{
+                width: '44px', height: '44px', borderRadius: '50%',
+                background: '#FFF4F4', border: '1px solid #8B0000',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8B0000" strokeWidth="1.8"><polyline points="20 6 9 17 4 12" /></svg>
+              </div>
+            </div>
+
+            <p style={{ fontSize: '13px', color: '#888', margin: '0 0 24px' }}>حدد الوقت المقدر للتجهيز</p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '16px' }}>
+              {['10', '15', '20', '30', '45', '60'].map(t => {
+                const val = `${t} دقيقة`;
+                const isSelected = estimatedTime === val;
+                return (
+                  <button key={t} onClick={() => setEstimatedTime(val)} style={{
+                    padding: '14px 8px', borderRadius: '14px',
+                    border: isSelected ? '2px solid #8B0000' : '1px solid #eee',
+                    background: isSelected ? '#FFF4F4' : '#fafafa',
+                    cursor: 'pointer', textAlign: 'center'
+                  }}>
+                    <p style={{ fontSize: '15px', fontWeight: 700, color: isSelected ? '#8B0000' : '#1a1a1a', margin: 0 }}>{t}</p>
+                    <p style={{ fontSize: '11px', color: isSelected ? '#B91C1C' : '#999', margin: 0 }}>دقيقة</p>
+                  </button>
+                );
+              })}
+            </div>
+
+            <input
+              type="text"
+              placeholder="أو اكتب وقتاً مخصصاً..."
+              value={estimatedTime}
+              onChange={e => setEstimatedTime(e.target.value)}
+              style={{
+                width: '100%', padding: '14px 16px', borderRadius: '14px',
+                border: '1px solid #eee', fontSize: '14px', marginBottom: '24px',
+                boxSizing: 'border-box', outline: 'none', background: '#fafafa'
+              }}
+            />
+
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => { setConfirmModal(null); setStatusModal({ orderId: confirmModal.orderId, currentStatus: 'Pending' }); }} style={{
+                flex: 1, padding: '14px', borderRadius: '16px', border: '1px solid #eee',
+                background: '#f5f5f5', fontWeight: 700, fontSize: '14px', cursor: 'pointer'
+              }}>رجوع</button>
+              <button onClick={async () => {
+                const res = await updateOrderStatus(confirmModal.orderId, confirmModal.newStatus, estimatedTime);
+                if (res.success) { setConfirmModal(null); window.location.reload(); }
+                else alert('فشل التحديث: ' + res.error);
+              }} style={{
+                flex: 2, padding: '14px', borderRadius: '16px', border: 'none',
+                background: '#8B0000', color: '#fff', fontWeight: 700,
+                fontSize: '14px', cursor: 'pointer', display: 'flex',
+                alignItems: 'center', justifyContent: 'center', gap: '8px'
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
+                تأكيد الاستلام
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {statusModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+          background: 'rgba(0,0,0,0.6)', zIndex: 99999, display: 'flex',
+          alignItems: 'center', justifyContent: 'center', padding: '20px',
+          backdropFilter: 'blur(10px)'
+        }} onClick={() => setStatusModal(null)}>
+          <div style={{
+            background: '#fff', borderRadius: '32px', width: '100%', maxWidth: '460px',
+            padding: '32px', border: '0.5px solid #eee', direction: 'rtl',
+            boxShadow: '0 25px 50px rgba(0,0,0,0.2)'
+          }} onClick={e => e.stopPropagation()}>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+              <div>
+                <p style={{ fontSize: '13px', color: '#888', margin: '0 0 4px' }}>تغيير حالة الطلب</p>
+                <p style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>#{statusModal.orderId}</p>
+              </div>
+              <button onClick={() => setStatusModal(null)} style={{
+                width: '32px', height: '32px', borderRadius: '50%', border: '1px solid #eee',
+                background: '#f5f5f5', cursor: 'pointer', display: 'flex',
+                alignItems: 'center', justifyContent: 'center', fontSize: '14px'
+              }}>✕</button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              {[
+                { status: 'Pending', label: 'قيد الانتظار', sub: 'Pending', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg> },
+                { status: 'Confirmed', label: 'تم التأكيد', sub: 'Confirmed', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><polyline points="20 6 9 17 4 12" /></svg> },
+                { status: 'Preparing', label: 'قيد التحضير', sub: 'Preparing', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="3" /><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" /></svg> },
+                { status: 'Ready', label: 'جاهز', sub: 'Ready', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><polyline points="9 11 12 14 22 4" /><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" /></svg> },
+                { status: 'Out for Delivery', label: 'في الطريق', sub: 'Out for Delivery', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="5.5" cy="17.5" r="2.5" /><circle cx="17.5" cy="17.5" r="2.5" /><path d="M8 17.5h7M1 2h2l2.5 12h11l2-7H6" /></svg> },
+                { status: 'Delivered', label: 'تم التسليم', sub: 'Delivered', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg> },
+              ].map(({ status, label, sub, icon }) => {
+                const isCurrent = statusModal.currentStatus === status;
+                return (
+                  <button key={status} onClick={async () => {
+                    if (status === 'Confirmed') {
+                      setEstimatedTime('');
+                      setConfirmModal({ orderId: statusModal.orderId, newStatus: status });
+                      setStatusModal(null);
+                    } else {
+                      const res = await updateOrderStatus(statusModal.orderId, status);
+                      if (res.success) { setStatusModal(null); window.location.reload(); }
+                      else alert('فشل التحديث: ' + res.error);
+                    }
+                  }} style={{
+                    padding: '16px 12px', borderRadius: '16px',
+                    border: isCurrent ? '2px solid #8B0000' : '1px solid #eee',
+                    background: isCurrent ? '#FFF4F4' : '#fafafa',
+                    cursor: 'pointer', display: 'flex', alignItems: 'center',
+                    gap: '10px', position: 'relative', textAlign: 'right'
+                  }}>
+                    <span style={{ color: isCurrent ? '#8B0000' : '#666' }}>{icon}</span>
+                    <div>
+                      <p style={{ fontSize: '13px', fontWeight: 700, color: isCurrent ? '#8B0000' : '#1a1a1a', margin: 0 }}>{label}</p>
+                      <p style={{ fontSize: '11px', color: isCurrent ? '#B91C1C' : '#999', margin: 0 }}>{sub}</p>
+                    </div>
+                    {isCurrent && <span style={{ position: 'absolute', top: '-8px', right: '10px', background: '#8B0000', color: '#fff', fontSize: '10px', padding: '2px 8px', borderRadius: '20px' }}>الحالية</span>}
+                  </button>
+                );
+              })}
+
+              <button onClick={async () => {
+                const res = await updateOrderStatus(statusModal.orderId, 'Cancelled');
+                if (res.success) { setStatusModal(null); window.location.reload(); }
+                else alert('فشل التحديث: ' + res.error);
+              }} style={{
+                padding: '16px 12px', borderRadius: '16px', border: '1px solid #F09595',
+                background: '#FCEBEB', cursor: 'pointer', display: 'flex',
+                alignItems: 'center', gap: '10px', gridColumn: 'span 2', textAlign: 'right'
+              }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A32D2D" strokeWidth="1.8"><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
+                <div>
+                  <p style={{ fontSize: '13px', fontWeight: 700, color: '#791F1F', margin: 0 }}>إلغاء الطلب</p>
+                  <p style={{ fontSize: '11px', color: '#A32D2D', margin: 0 }}>Cancel order</p>
+                </div>
+              </button>
+            </div>
+
+            <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #f0f0f0', display: 'flex', gap: '10px' }}>
+              <button onClick={() => setStatusModal(null)} style={{
+                flex: 1, padding: '14px', borderRadius: '16px', border: '1px solid #eee',
+                background: '#f5f5f5', fontWeight: 700, fontSize: '14px', cursor: 'pointer'
+              }}>إلغاء</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+
+
     </div>
   );
 }
