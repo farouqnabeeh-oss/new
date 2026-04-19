@@ -52,38 +52,49 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
 
     useEffect(() => {
         const syncData = () => {
-            if ((window as any).Cart) {
-                const items = (window as any).Cart.getItems(branch.slug);
-                setCartItems(items);
-                const itemsTotal = (window as any).Cart.getTotal(branch.slug);
+            // 1. التأكد من وجود الكائن Cart
+            if (typeof window === "undefined" || !(window as any).Cart) return;
 
-                // Calculate Discount
-                const dPercent = branch.discountPercent || 0;
-                const dAmount = (itemsTotal * dPercent) / 100;
+            const cart = (window as any).Cart;
+            const slug = branch.slug;
 
-                // Delivery Logic
-                let effectiveFee = 0;
-                if (orderType === 'delivery') {
-                    if (branch.freeDelivery) {
-                        effectiveFee = 0; // مجاني بغض النظر عن المنطقة
-                    } else {
-                        effectiveFee = deliveryFee || settings.deliveryFee || 0;
-                        if (branch.deliveryDiscountPercent && branch.deliveryDiscountPercent > 0) {
-                            effectiveFee = effectiveFee - (effectiveFee * branch.deliveryDiscountPercent / 100);
-                        }
+            // 2. جلب العناصر وتحديث الـ State (هاد السطر اللي كان ناقصك)
+            const items = cart.getItems(slug);
+            setCartItems(items);
+
+            // 3. الحسابات
+            const itemsTotal = cart.getTotal(slug);
+            const dPercent = branch.discountPercent || 0;
+
+            // نرجع السعر الأصلي قبل الخصم
+            const originalTotal = dPercent > 0 ? itemsTotal / (1 - dPercent / 100) : itemsTotal;
+            const dAmount = originalTotal - itemsTotal;
+
+            let effectiveFee = 0;
+            if (orderType === 'delivery') {
+                if (branch.freeDelivery) {
+                    effectiveFee = 0;
+                } else {
+                    effectiveFee = deliveryFee || settings.deliveryFee || 0;
+                    if (branch.deliveryDiscountPercent && branch.deliveryDiscountPercent > 0) {
+                        effectiveFee = effectiveFee - (effectiveFee * branch.deliveryDiscountPercent / 100);
                     }
                 }
-
-                setSubtotal(itemsTotal);
-                setDiscount(dAmount);
-                setTotal(itemsTotal - dAmount + effectiveFee);
             }
+
+            setSubtotal(originalTotal);
+            setDiscount(dAmount);
+            setTotal(itemsTotal + effectiveFee);
         };
+
         syncData();
+        // الـ interval مهم جداً هنا لأن Cart.js بيشتغل خارج React
         const interval = setInterval(syncData, 1000);
         return () => clearInterval(interval);
-    }, [branch.slug, branch.discountPercent, deliveryFee, branch.freeDelivery, branch.deliveryDiscountPercent]);
+    }, [branch.slug, branch.discountPercent, deliveryFee, branch.freeDelivery, branch.deliveryDiscountPercent, orderType]);
+    // ضفنا orderType للمصفوفة عشان يحدث السعر فوراً لما تغير نوع الطلب
 
+    
     // No client-side payment intent needed for Lahza redirect flow
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -150,9 +161,10 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
         try {
             // Recalculate fresh values to avoid stale state
             const items = (window as any).Cart.getItems(branch.slug);
+            setCartItems(items);
             const freshItemsTotal = (window as any).Cart.getTotal(branch.slug);
             const dPercent = branch.discountPercent || 0;
-            const freshDAmount = (freshItemsTotal * dPercent) / 100;
+
 
             let freshEffectiveFee = 0;
             if (orderType === 'delivery') {
@@ -166,7 +178,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                 }
             }
 
-            const freshTotal = Number((freshItemsTotal - freshDAmount + freshEffectiveFee).toFixed(2));
+            const freshTotal = Number((freshItemsTotal + freshEffectiveFee).toFixed(2));
 
             const finalAddress = orderType === 'delivery' ? `${selectedZone} - ${address}` : address;
 
@@ -251,7 +263,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         orderId: res.orderId,
-                        email: email || "customer@uptown.ps", // Fallback for optional email
+                        email: email || "customer@uptownps.com", // Fallback for optional email
                         amount: freshTotal,
                         currency: settings.currencySymbol === "₪" ? "ILS" : settings.currencySymbol || "USD",
                         customerName: name,
@@ -514,8 +526,9 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                         {/* 📦 SUMMARY BOX */}
                         <div style={{ background: '#fff', border: '1px solid #eee', padding: '30px', borderRadius: '30px', marginBottom: '40px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: '15px', marginBottom: '15px' }}>
-                                <span style={{ fontWeight: 800 }}>{cartItems.length} {isAr ? 'أصناف في السلة' : 'Items'}</span>
-                                <span style={{ color: '#666', fontSize: '14px' }}>{isAr ? 'المجموع' : 'Subtotal'}: {subtotal.toFixed(2)}</span>
+                                <span style={{ fontWeight: 800 }}>
+                                    {cartItems.reduce((sum: number, item: any) => sum + item.quantity, 0)} {isAr ? 'أصناف في السلة' : 'Items'}
+                                </span>                                <span style={{ color: '#666', fontSize: '14px' }}>{isAr ? 'المجموع' : 'Subtotal'}: {subtotal.toFixed(2)}</span>
                             </div>
                             {cartItems.map((item: any, i: number) => (
                                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginBottom: '8px', color: '#666' }}>

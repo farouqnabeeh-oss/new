@@ -90,11 +90,11 @@ export async function loginAction(_: { error?: string } | undefined, formData: F
 
   if ((username.toLowerCase() === envAdminUser.toLowerCase()) && password === envAdminPass) {
     // Try to find the first available admin or use a virtual one
-    const user = await getAdminUserByEmail("admin@uptown.ps");
+    const user = await getAdminUserByEmail("admin@uptownps.com");
 
     await setAdminSession({
       sub: user?.id || "00000000-0000-0000-0000-000000000000",
-      email: user?.email || "admin@uptown.ps",
+      email: user?.email || "admin@uptownps.com",
       displayName: user?.displayName || "Super Admin",
       role: "admin"
     });
@@ -103,7 +103,7 @@ export async function loginAction(_: { error?: string } | undefined, formData: F
   }
 
   // Legacy fallback or standard email login
-  const email = username.includes("@") ? username : "admin@uptown.ps";
+  const email = username.includes("@") ? username : "admin@uptownps.com";
   const user = await getAdminUserByEmail(email);
 
   if (!user || !verifyAspNetIdentityV3Hash(password, user.passwordHash)) {
@@ -112,7 +112,7 @@ export async function loginAction(_: { error?: string } | undefined, formData: F
 
   await setAdminSession({
     sub: user.id || "00000000-0000-0000-0000-000000000000",
-    email: user.email || "admin@uptown.ps",
+    email: user.email || "admin@uptownps.com",
     displayName: user.displayName || "Admin",
     role: "admin"
   });

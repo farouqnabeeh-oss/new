@@ -41,10 +41,10 @@ export default async function AdminPage() {
   return (
     <AdminToastProvider>
       <div className="admin-page">
-        <AdminOrderNotifier />
+        <AdminOrderNotifier role={(session.role || "cashier").toLowerCase()} />
         <div className="admin-header">
           <h1 className="admin-title">
-            {isCashier 
+            {isCashier
               ? (isAr ? "📋 نظام إدارة الطلبات" : "📋 Order Management")
               : (isAr ? "⚙️ لوحة التحكم الإدارية" : "⚙️ Admin Panel")
             }

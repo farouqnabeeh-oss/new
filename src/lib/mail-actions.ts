@@ -81,7 +81,7 @@ export async function sendOrderInvoiceEmail(order: any, items: any[], branch: an
                     ${b.whatsApp ? `<p style="margin: 4px 0 0;">واتساب: ${b.whatsApp}</p>` : ''}
                 </div>
                 <div style="margin-top: 30px; text-align: center;">
-                    <a href="https://uptown.ps/order-status?orderId=${o.id}" style="background: #8B0000; color: #fff; padding: 12px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px;">تتبع حالة الطلب</a>
+                    <a href="https://uptownps.com/order-status?orderId=${o.id}" style="background: #8B0000; color: #fff; padding: 12px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px;">تتبع حالة الطلب</a>
                 </div>
             </div>
             <div style="background: #f4f4f4; padding: 25px; text-align: center; font-size: 12px; color: #888;">
@@ -91,7 +91,7 @@ export async function sendOrderInvoiceEmail(order: any, items: any[], branch: an
     `;
 
     try {
-        if (!o.customerEmail || o.customerEmail.includes('customer@uptown.ps')) {
+        if (!o.customerEmail || o.customerEmail.includes('customer@uptownps.com')) {
              console.warn("[Email] ⚠️ No valid customer email found.");
              return { success: false };
         }

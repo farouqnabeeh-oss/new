@@ -164,7 +164,7 @@ export async function finalizeOrder(orderId: string | number) {
         };
 
         // 5. إرسال الإيميل
-        if (orderData.customer_email && !orderData.customer_email.includes('customer@uptown.ps')) {
+        if (orderData.customer_email && !orderData.customer_email.includes('customer@uptownps.com')) {
             console.log(`📧 [Action] محاولة إرسال فاتورة للإيميل: ${orderData.customer_email}`);
             try {
                 // نمرر mappedOrder الذي يحتوي على النوعين (snake & camel) لضمان العمل
