@@ -262,6 +262,11 @@ export async function saveProductAction(formData: FormData): Promise<ActionResul
     await requireSession();
     const supabase = getSupabaseAdmin();
     const id = toNumber(formData.get("Id"));
+    console.log("branchDiscountsJson:", formData.get("branchDiscountsJson"));
+    console.log("branch:", formData.get("1_branchDiscountsJson"));
+    console.log("all keys:", [...formData.keys()]);
+
+    
     const productImage = formData.get("productImage");
     const baseValues: Record<string, unknown> = {
       name_ar: String(formData.get("NameAr") ?? ""),
@@ -277,6 +282,7 @@ export async function saveProductAction(formData: FormData): Promise<ActionResul
       has_doneness_option: toBoolean(formData.get("HasDonenessOption")),
       sort_order: toNumber(formData.get("SortOrder")),
       is_active: toBoolean(formData.get("IsActive")),
+      branch_discounts: parseJson<Record<string, number>>(formData.get("branchDiscountsJson")) ?? {},
       updated_at: new Date().toISOString()
     };
 
@@ -301,16 +307,19 @@ export async function saveProductAction(formData: FormData): Promise<ActionResul
       const { error } = await supabase.from("products").update(baseValues).eq("id", id);
       if (error) return { success: false, error: error.message };
 
-      const [sizesDelete, typesDelete] = await Promise.all([
+      const [sizesDelete, typesDelete, addonsDelete] = await Promise.all([
         supabase.from("product_sizes").delete().eq("product_id", id),
-        supabase.from("product_types").delete().eq("product_id", id)
+        supabase.from("product_types").delete().eq("product_id", id),
+        supabase.from("product_addons").delete().eq("product_id", id)
       ]);
       if (sizesDelete.error) return { success: false, error: sizesDelete.error.message };
       if (typesDelete.error) return { success: false, error: typesDelete.error.message };
+      if (addonsDelete.error) return { success: false, error: addonsDelete.error.message };
     }
 
     const sizes = parseJson<ProductSizeInput[]>(formData.get("sizesJson")) ?? [];
     const types = parseJson<ProductTypeInput[]>(formData.get("typesJson")) ?? [];
+    const simpleAddons = parseJson<{ NameAr: string; NameEn: string; Price: number }[]>(formData.get("simpleAddonsJson")) ?? [];
 
     if (sizes.length) {
       const { error } = await supabase.from("product_sizes").insert(
@@ -334,41 +343,36 @@ export async function saveProductAction(formData: FormData): Promise<ActionResul
       if (error) return { success: false, error: error.message };
     }
 
-    // --- Link Addon Groups ---
-    const linkedAddonGroups = parseJson<number[]>(formData.get("linkedAddonGroupsJson")) ?? [];
-    
-    // Safety check: Don't let a product "Steal" a group from another product or from being Category-wide
-    // Only update groups that are either already linked to this product OR are NOT linked to ANY product/category.
-    // Actually, the simplest fix is to only update groups that were EXPLICITLY selected AND are currently unassigned to any other product.
-    
-    // Clear old links
-    // Safety check: We only manage product-specific addons. If it's unchecked, we delete it so it doesn't become category-wide.
-    const { data: myGroups } = await supabase.from("addon_groups").select("id").eq("product_id", productId);
-    const myGroupIds = myGroups?.map(g => g.id) || [];
-    
-    // Find missing ones (unchecked) and unlink them
-    const groupsToRemove = myGroupIds.filter(id => !linkedAddonGroups.includes(id));
-    if (groupsToRemove.length > 0) {
-      // FIX: Instead of deleting the entire group record, we just unlink it from this product.
-      // This allows the group to remain in the system (e.g. as a global group) and prevents data loss.
-      await supabase.from("addon_groups").update({ product_id: null }).in("id", groupsToRemove);
+    if (simpleAddons.length) {
+      const { error } = await supabase.from("product_addons").insert(
+        simpleAddons.map((addon, index) => ({
+          product_id: productId,
+          name_ar: addon.NameAr ?? "",
+          name_en: addon.NameEn ?? "",
+          price: toNumber(addon.Price),
+          sort_order: index
+        }))
+      );
+      if (error) return { success: false, error: error.message };
     }
-    
-    // For newly checked ones (if they checked an addon from another category/global, we shouldn't steal it, but if we must, we can duplicate it. For now, we will assign it only if it's explicitly floating).
-    const newlyChecked = linkedAddonGroups.filter(id => !myGroupIds.includes(id));
-    if (newlyChecked.length > 0) {
-      const { data: eligibleGroups } = await supabase
-        .from("addon_groups")
-        .select("id, category_id, product_id")
-        .in("id", newlyChecked);
 
-      const groupsToLink = eligibleGroups?.filter(g => !g.category_id && g.product_id === null) || [];
-      if (groupsToLink.length > 0) {
-        await supabase
-          .from("addon_groups")
-          .update({ product_id: productId })
-          .in("id", groupsToLink.map(g => g.id));
-      }
+    // --- Link Addon Groups (Many-to-many) ---
+    const linkedAddonGroups = parseJson<number[]>(formData.get("linkedAddonGroupsJson")) ?? [];
+
+    const { error: deleteLinksError } = await supabase
+      .from("product_addon_groups")
+      .delete()
+      .eq("product_id", productId);
+    if (deleteLinksError) return { success: false, error: deleteLinksError.message };
+
+    if (linkedAddonGroups.length > 0) {
+      const { error: insertLinksError } = await supabase.from("product_addon_groups").insert(
+        linkedAddonGroups.map((addonGroupId) => ({
+          product_id: productId,
+          addon_group_id: addonGroupId
+        }))
+      );
+      if (insertLinksError) return { success: false, error: insertLinksError.message };
     }
     // -------------------------
 
@@ -409,6 +413,7 @@ export async function saveAddonGroupAction(formData: FormData): Promise<ActionRe
       allow_multiple: toBoolean(formData.get("AllowMultiple")),
       sort_order: toNumber(formData.get("SortOrder")),
       is_active: toBoolean(formData.get("IsActive")),
+      branch_discounts: parseJson<Record<string, number>>(formData.get("branchDiscountsJson")) ?? {},
       updated_at: new Date().toISOString()
     };
 
@@ -544,6 +549,7 @@ export async function saveMenuBannerAction(formData: FormData): Promise<ActionRe
       image_path: await saveUploadedFile(bannerImage, "mainscreen"),
       sort_order: toNumber(formData.get("SortOrder")),
       is_active: toBoolean(formData.get("IsActive")),
+      branch_discounts: parseJson<Record<string, number>>(formData.get("branchDiscountsJson")) ?? {},
       updated_at: new Date().toISOString()
     };
 
@@ -706,7 +712,7 @@ export async function createOrderAction(input: CreateOrderInput): Promise<{ succ
     return { success: false, error: "Order already placed. Please wait a moment." };
   }
   // ------------------------------
-  
+
   // Fetch delivery fee from settings
   let deliveryFee = 0;
   const { data: settings } = await supabase.from("site_settings").select("delivery_fee").eq("id", 1).single();

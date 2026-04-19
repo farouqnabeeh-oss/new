@@ -595,7 +595,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#059669', fontWeight: 700, marginBottom: '8px' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                                             <Sparkles size={14} />
-                                            <span>{isAr ? 'خصم التوصيل الذكي' : 'Smart Delivery Discount'}</span>
+                                            <span>{isAr ? 'خصم التوصيل ' : 'Delivery Discount'}</span>
                                         </div>
                                         <span>-{smartDeliveryDiscount.toFixed(2)} {settings.currencySymbol}</span>
                                     </div>

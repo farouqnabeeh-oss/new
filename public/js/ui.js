@@ -142,13 +142,14 @@ var UI = window.UI || {
             </div>`;
     },
 
-    renderProductModal(product, addonGroups, branchSlug, currency, branchDiscount) {
+    renderProductModal(product, addonGroups, branchSlug, currency, branchDiscount, branchId) {
         const panel = document.getElementById('product-modal');
         let state = {
             quantity: 1,
             selectedSize: product.sizes?.length ? product.sizes[0] : null,
             selectedType: null, // Will be set below
             selectedAddOns: [],
+            selectedSimpleAddons: [], // إضافات بسيطة مباشرة على المنتج
             note: ''
         };
 
@@ -309,10 +310,18 @@ var UI = window.UI || {
 
         const calculateUnitPrice = () => {
             const addonsPrice = state.selectedAddOns.reduce((sum, addon) => sum + (addon.price || 0), 0);
-            let unitPrice = calculateBasePrice() + addonsPrice;
+            const simpleAddonsPrice = state.selectedSimpleAddons.reduce((sum, addon) => sum + (addon.price || 0), 0);
+            let unitPrice = calculateBasePrice() + addonsPrice + simpleAddonsPrice;
+
+            // خصم حسب الفرع
+            const bDiscounts = product.branchDiscounts || product.branch_discounts || {};
+            let effectiveDiscount = branchDiscount;
+            if (branchId !== undefined && bDiscounts[branchId] !== undefined) {
+                effectiveDiscount = Number(bDiscounts[branchId]);
+            }
 
             if (product.discount > 0) unitPrice = unitPrice - (unitPrice * product.discount / 100);
-            if (branchDiscount > 0) unitPrice = unitPrice - (unitPrice * branchDiscount / 100);
+            if (effectiveDiscount > 0) unitPrice = unitPrice - (unitPrice * effectiveDiscount / 100);
 
             return unitPrice;
         };
@@ -520,6 +529,34 @@ var UI = window.UI || {
                     <label style="text-align:right; display:block; margin-bottom:10px; font-weight:900; font-size:14px">${Lang.t('addNote')}</label>
                     <textarea id="product-note" placeholder="${Lang.t('notes')}..." style="width:100%; border-radius:15px; border:2px solid #eee; padding:15px; text-align:right; font-size:14px">${state.note}</textarea>
                 </div>
+            `;
+
+            // إضافات بسيطة
+            if (product.simpleAddons && product.simpleAddons.length > 0) {
+                html += `
+                    <div class="option-group">
+                        <div class="option-group-title" style="font-size:15px">${Lang.current === 'ar' ? 'الإضافات' : 'Add-ons'}</div>
+                        <div class="option-stack">
+                            ${product.simpleAddons.map(addon => {
+                    const isSelected = state.selectedSimpleAddons.some(a => a.id === addon.id);
+                    const priceText = addon.price > 0 ? `+${addon.price}${currency}` : '';
+                    const name = Lang.localized(addon.nameAr, addon.nameEn);
+                    return `
+                                    <div class="option-item ${isSelected ? 'selected' : ''}" data-action="simple-addon" data-addon-id="${addon.id}" style="padding:10px 15px">
+                                        <span class="option-item-price">${priceText}</span>
+                                        <div class="option-item-label">
+                                            <span class="option-item-name" style="font-size:14px">${name}</span>
+                                            <div class="option-item-check"></div>
+                                        </div>
+                                    </div>
+                                `;
+                }).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            html += `
                 </div>
                 <div class="modal-footer">
                     <button class="add-to-cart-btn" data-action="add-to-cart" style="padding:15px; font-size:15px">${Lang.t('addToCart')} (${totalPrice.toFixed(0)}${currency})</button>
@@ -559,6 +596,20 @@ var UI = window.UI || {
                         return;
                     }
 
+                    if (action === 'simple-addon') {
+                        const addonId = Number(element.dataset.addonId);
+                        const addon = product.simpleAddons?.find(a => a.id === addonId);
+                        if (!addon) return;
+                        const alreadySelected = state.selectedSimpleAddons.some(a => a.id === addonId);
+                        if (alreadySelected) {
+                            state.selectedSimpleAddons = state.selectedSimpleAddons.filter(a => a.id !== addonId);
+                        } else {
+                            state.selectedSimpleAddons.push(addon);
+                        }
+                        render();
+                        return;
+                    }
+
                     if (action === 'qty-minus') {
                         if (state.quantity > 1) state.quantity--;
                         render();
@@ -575,13 +626,14 @@ var UI = window.UI || {
                         state.note = document.getElementById('product-note')?.value || '';
                         if (!validateRequiredGroups()) return;
 
+                        const allAddons = [...state.selectedAddOns, ...state.selectedSimpleAddons];
                         Cart.addItem(
                             branchSlug,
                             product,
                             state.quantity,
                             state.selectedSize,
                             state.selectedType,
-                            state.selectedAddOns,
+                            allAddons,
                             state.note,
                             branchDiscount
                         );

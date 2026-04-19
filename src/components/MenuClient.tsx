@@ -53,9 +53,15 @@ export default function MenuClient({ categories = [], allProducts = [], allAddon
 
         prods.forEach(p => {
           const priceRaw = Number(p.basePrice || 0);
-          const disc = Number(p.discount || 0) || Number(branch.discountPercent || 0);
-
-          console.log("product:", p.nameAr, "discount:", p.discount, "disc:", disc);
+          // خصم حسب الفرع
+          const branchDiscounts = (p as any).branchDiscounts || (p as any).branch_discounts || {};
+          const branchDiscountVal = branchDiscounts[branch.id];
+          let disc: number;
+          if (branchDiscountVal !== undefined) {
+            disc = Number(branchDiscountVal);
+          } else {
+            disc = Number(p.discount || 0) || Number(branch.discountPercent || 0);
+          }
 
           const finalPrice = Math.round(priceRaw * (1 - disc / 100));
           const image = p.imagePath || '/images/classic-cheeseburger__0x1e3y1qv68eiip.jpg';
@@ -135,7 +141,7 @@ export default function MenuClient({ categories = [], allProducts = [], allAddon
             // Always show the product modal so the user can see the description (product details)
             // since it's cached, this is instantaneous!
             if (window.UI && window.UI.renderProductModal) {
-              window.UI.renderProductModal(p, productAddonGroups, branch.slug, currency, branch.discountPercent || 0);
+              window.UI.renderProductModal(p, productAddonGroups, branch.slug, currency, branch.discountPercent || 0, branch.id);
             } else {
               console.warn("[MenuDebug] UI.renderProductModal is not available yet");
             }
@@ -143,7 +149,7 @@ export default function MenuClient({ categories = [], allProducts = [], allAddon
           } catch (e: any) {
             console.error("[Product Modal] Error for Product #" + id + ":", e);
             const p = allProducts.find(x => String(x.id) === String(id));
-            if (p) window.UI.renderProductModal(p, [], branch.slug, currency, branch.discountPercent || 0);
+            if (p) window.UI.renderProductModal(p, [], branch.slug, currency, branch.discountPercent || 0, branch.id);
           } finally {
             if (btn) btn.textContent = originalText;
           }

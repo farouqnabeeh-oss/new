@@ -59,6 +59,14 @@ export async function GET(_: Request, { params }: RouteContext) {
         nameEn: item.nameEn,
         price: item.price
       }))
-    }))
+    })),
+
+    simpleAddons: (product.simpleAddons || []).map((addon: any) => ({   // ← أضف هاد
+      id: addon.id,
+      nameAr: addon.nameAr,
+      nameEn: addon.nameEn,
+      price: addon.price
+    })),
+    branchDiscounts: (product as any).branchDiscounts || {}
   });
 }

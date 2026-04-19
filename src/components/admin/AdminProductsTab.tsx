@@ -10,6 +10,7 @@ import type { Branch, Category, Product, SiteSettings, AddonGroup } from "@/lib/
 
 type SizeEntry = { NameAr: string; NameEn: string; Price: number };
 type TypeEntry = { NameAr: string; NameEn: string; Price: number; Description: string | null };
+type SimpleAddonEntry = { NameAr: string; NameEn: string; Price: number };
 
 type AdminProduct = Product & { category: Category; branch?: Branch | null };
 
@@ -31,6 +32,8 @@ export function AdminProductsTab({ products, categories, branches, settings, add
 
   const [sizes, setSizes] = useState<SizeEntry[]>([]);
   const [types, setTypes] = useState<TypeEntry[]>([]);
+  const [simpleAddons, setSimpleAddons] = useState<SimpleAddonEntry[]>([]);
+  const [branchDiscounts, setBranchDiscounts] = useState<Record<number, number>>({});
   const [selectedAddonGroupIds, setSelectedAddonGroupIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
   const [formCategoryId, setFormCategoryId] = useState<number | null>(null);
@@ -43,6 +46,9 @@ export function AdminProductsTab({ products, categories, branches, settings, add
   const typeArRef = useRef<HTMLInputElement>(null);
   const typeEnRef = useRef<HTMLInputElement>(null);
   const typePriceRef = useRef<HTMLInputElement>(null);
+  const addonArRef = useRef<HTMLInputElement>(null);
+  const addonEnRef = useRef<HTMLInputElement>(null);
+  const addonPriceRef = useRef<HTMLInputElement>(null);
 
   const [showExtrasModal, setShowExtrasModal] = useState(false);
   const [activeExtraTab, setActiveExtraTab] = useState<'sizes' | 'types' | 'addons'>('sizes');
@@ -57,17 +63,21 @@ export function AdminProductsTab({ products, categories, branches, settings, add
     if (containerRef.current) containerRef.current.style.display = "none";
     setSizes([]);
     setTypes([]);
+    setSimpleAddons([]);
     setSelectedAddonGroupIds([]);
     setShowExtrasModal(false);
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
   }, []);
 
   const handleSave = useCallback(async (formData?: FormData) => {
-    const data = formData || new FormData(formRef.current!);
+    const data = new FormData(formRef.current!);
+    console.log("branchDiscounts state:", branchDiscounts); // ← هون
     data.set("Id", String(editId));
     data.set("sizesJson", JSON.stringify(sizes));
     data.set("typesJson", JSON.stringify(types));
+    data.set("simpleAddonsJson", JSON.stringify(simpleAddons));
     data.set("linkedAddonGroupsJson", JSON.stringify(selectedAddonGroupIds));
+    data.set("branchDiscountsJson", JSON.stringify(branchDiscounts));
 
     // Check if we have minimal data before auto-saving
     if (!data.get("NameAr") && !data.get("NameEn")) return;
@@ -91,7 +101,7 @@ export function AdminProductsTab({ products, categories, branches, settings, add
     } else {
       showToast(result.error || "Failed to save product.", "error");
     }
-  }, [editId, sizes, types, selectedAddonGroupIds, resetForm, router, showToast]);
+  }, [editId, sizes, types, simpleAddons, selectedAddonGroupIds, branchDiscounts, resetForm, router, showToast]);
 
   const handleFormChange = useCallback(() => {
     if (editId === 0) return; // Only auto-save existing products
@@ -163,8 +173,21 @@ export function AdminProductsTab({ products, categories, branches, settings, add
       setTypes((data.types || []).map((t: { nameAr?: string; nameEn?: string; price?: number; description?: string | null }) => ({
         NameAr: t.nameAr || "", NameEn: t.nameEn || "", Price: Number(t.price || 0), Description: t.description || null
       })));
+      setSimpleAddons((data.simpleAddons || []).map((a: { nameAr?: string; nameEn?: string; price?: number }) => ({
+        NameAr: a.nameAr || "", NameEn: a.nameEn || "", Price: Number(a.price || 0)
+      })));
 
       setSelectedAddonGroupIds((data.addonGroups || []).map((g: any) => g.id));
+      const existingDiscounts = data.branchDiscounts || {};
+      const initialDiscounts: Record<number, number> = {};
+      branches.forEach((branch) => {
+        if (existingDiscounts[branch.id] !== undefined) {
+          initialDiscounts[branch.id] = existingDiscounts[branch.id];
+        } else {
+          initialDiscounts[branch.id] = branch.discountPercent || 0;
+        }
+      });
+      setBranchDiscounts(initialDiscounts);
       containerRef.current.style.display = "block";
       containerRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
 
@@ -188,6 +211,7 @@ export function AdminProductsTab({ products, categories, branches, settings, add
       setFormCategoryId(null);
       setSizes([]);
       setTypes([]);
+      setSimpleAddons([]);
       setSelectedAddonGroupIds([]);
       const form = formRef.current;
       if (form) {
@@ -202,6 +226,22 @@ export function AdminProductsTab({ products, categories, branches, settings, add
       containerRef.current.style.display = "none";
     }
   }, []);
+
+  const updateSimpleAddons = (val: SimpleAddonEntry[] | ((prev: SimpleAddonEntry[]) => SimpleAddonEntry[])) => {
+    setSimpleAddons(val);
+    if (!skipAutoSaveRef.current) handleFormChange();
+  };
+
+  const addSimpleAddon = () => {
+    const nameAr = addonArRef.current?.value.trim() || "";
+    const nameEn = addonEnRef.current?.value.trim() || "";
+    const price = parseFloat(addonPriceRef.current?.value || "") || 0;
+    if (!nameAr && !nameEn) return;
+    updateSimpleAddons((prev) => [...prev, { NameAr: nameAr, NameEn: nameEn, Price: price }]);
+    if (addonArRef.current) addonArRef.current.value = "";
+    if (addonEnRef.current) addonEnRef.current.value = "";
+    if (addonPriceRef.current) addonPriceRef.current.value = "";
+  };
 
   const addSize = () => {
     const nameAr = sizeArRef.current?.value.trim() || "";
@@ -242,7 +282,7 @@ export function AdminProductsTab({ products, categories, branches, settings, add
 
       <div ref={containerRef} style={{ display: "none", marginBottom: 20 }}>
         <div className="admin-form-container">
-          <form ref={formRef} action={handleSave} onChange={handleFormChange}>
+          <form ref={formRef} onSubmit={(e) => { e.preventDefault(); handleSave(); }} onChange={handleFormChange}>
             <input type="hidden" name="Id" value={editId} readOnly />
 
             {/* Section 1: Identity */}
@@ -289,6 +329,45 @@ export function AdminProductsTab({ products, categories, branches, settings, add
               </div>
             </div>
 
+            {/* Section 2b: Branch Discounts */}
+            {branches.length > 0 && (
+              <div className="form-section">
+                <div className="form-section-title">🏪 خصم حسب الفرع</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
+                  {branches.map((branch) => (
+                    <div key={branch.id} className="premium-input-group">
+                      <label style={{ fontSize: '13px' }}>{branch.nameAr} <span style={{ color: '#999', fontSize: '11px' }}>({branch.nameEn})</span></label>
+                      <input
+                        type="number"
+                        className="premium-input"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        placeholder="0 = بدون خصم"
+                        value={branchDiscounts[branch.id] ?? ""}
+                        onChange={(e) => {
+                          const val = e.target.value === "" ? undefined : Number(e.target.value);
+                          setBranchDiscounts(prev => {
+                            const next = { ...prev };
+                            if (val === undefined || val === 0) {
+                              next[branch.id] = 0;
+                            } else {
+                              next[branch.id] = val;
+                            }
+                            return next;
+                          });
+                          handleFormChange();
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div style={{ fontSize: '12px', color: '#999', marginTop: '8px' }}>
+                  💡 0 = بدون خصم في هاد الفرع (يستثني المنتج من خصم الفرع العام)، فارغ = يرث خصم الفرع
+                </div>
+              </div>
+            )}
+
             {/* Section 3: Classification & Logic */}
             <div className="form-section">
               <div className="form-section-title">📂 {t('classification') || 'Classification & Location'}</div>
@@ -322,20 +401,43 @@ export function AdminProductsTab({ products, categories, branches, settings, add
               <div className="form-section-title">✨ {t('customization') || 'Product Customization'}</div>
 
               <div className="customization-container">
+                {/* Simple Addons Section */}
+                <div className="custom-box span-2">
+                  <div className="custom-box-header">➕ الإضافات (Addons)</div>
+                  <div className="extra-list">
+                    {simpleAddons.map((a, i) => (
+                      <div key={i} className="extra-item-mini">
+                        <span>{a.NameAr} {a.NameEn && `/ ${a.NameEn}`} <span style={{ color: 'var(--primary)', fontWeight: 900 }}>+{a.Price}</span></span>
+                        <button type="button" className="remove-btn-tiny" onClick={() => updateSimpleAddons((prev) => prev.filter((_, idx) => idx !== i))}>&times;</button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="extra-mini-form">
+                    <input ref={addonArRef} placeholder="عربي" style={{ flex: 2 }} />
+                    <input ref={addonEnRef} placeholder="English" style={{ flex: 2 }} />
+                    <input ref={addonPriceRef} type="number" placeholder="سعر +" style={{ flex: 1 }} />
+                    <button type="button" onClick={addSimpleAddon} className="add-btn-mini">+</button>
+                  </div>
+                </div>
+
                 {/* Sizes Section */}
                 <div className="custom-box">
                   <div className="custom-box-header">📏 {t('sizes') || 'Sizes'}</div>
                   <div className="extra-list">
                     {sizes.map((s, i) => (
                       <div key={i} className="extra-item-mini">
-                        <span>{s.NameAr} ({s.Price})</span>
+                        <span>
+                          {s.NameAr}
+                          {s.NameEn ? ` / ${s.NameEn}` : ""} <span style={{ color: 'var(--primary)', fontWeight: 900 }}>+{s.Price}</span>
+                        </span>
                         <button type="button" className="remove-btn-tiny" onClick={() => updateSizes((prev) => prev.filter((_, idx) => idx !== i))}>&times;</button>
                       </div>
                     ))}
                   </div>
                   <div className="extra-mini-form">
-                    <input ref={sizeArRef} placeholder="Ar" style={{ width: '40px' }} />
-                    <input ref={sizePriceRef} type="number" placeholder="Price" style={{ width: '50px' }} />
+                    <input ref={sizeArRef} placeholder="Ar" style={{ flex: 2 }} />
+                    <input ref={sizeEnRef} placeholder="En" style={{ flex: 2 }} />
+                    <input ref={sizePriceRef} type="number" placeholder="Price" style={{ flex: 1, minWidth: '70px' }} />
                     <button type="button" onClick={addSize} className="add-btn-mini">+</button>
                   </div>
                 </div>
@@ -346,14 +448,18 @@ export function AdminProductsTab({ products, categories, branches, settings, add
                   <div className="extra-list">
                     {types.map((t, i) => (
                       <div key={i} className="extra-item-mini">
-                        <span>{t.NameAr} ({t.Price})</span>
+                        <span>
+                          {t.NameAr}
+                          {t.NameEn ? ` / ${t.NameEn}` : ""} <span style={{ color: 'var(--primary)', fontWeight: 900 }}>+{t.Price}</span>
+                        </span>
                         <button type="button" className="remove-btn-tiny" onClick={() => updateTypes((prev) => prev.filter((_, idx) => idx !== i))}>&times;</button>
                       </div>
                     ))}
                   </div>
                   <div className="extra-mini-form">
-                    <input ref={typeArRef} placeholder="Ar" style={{ width: '40px' }} />
-                    <input ref={typePriceRef} type="number" placeholder="Price" style={{ width: '50px' }} />
+                    <input ref={typeArRef} placeholder="Ar" style={{ flex: 2 }} />
+                    <input ref={typeEnRef} placeholder="En" style={{ flex: 2 }} />
+                    <input ref={typePriceRef} type="number" placeholder="Price" style={{ flex: 1, minWidth: '70px' }} />
                     <button type="button" onClick={addType} className="add-btn-mini">+</button>
                   </div>
                 </div>
@@ -378,8 +484,7 @@ export function AdminProductsTab({ products, categories, branches, settings, add
                           (g.nameAr || '').includes(addonSearchTerm) ||
                           (g.nameEn || '').toLowerCase().includes(addonSearchTerm.toLowerCase())
                         )).map(group => {
-                          const isCategoryWide = !!(group.categoryId && !group.productId);
-                          const isSelected = !!(isCategoryWide || selectedAddonGroupIds.includes(group.id));
+                          const isSelected = selectedAddonGroupIds.includes(group.id);
                           return (
                             <div key={group.id} className={`inline-addon-chip ${isSelected ? 'active' : ''}`} style={{ display: 'flex', flexDirection: 'column', padding: '10px', height: 'auto', gap: '8px' }}>
                               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', width: '100%' }}>
@@ -593,14 +698,14 @@ export function AdminProductsTab({ products, categories, branches, settings, add
                                         fd.set("id", String(group.id));
                                         fd.set("isRequired", String(!group.isRequired));
                                         const res = await toggleAddonRequiredAction(fd);
-                                        if (res.success) { showToast("Updated successfully"); router.refresh(); } 
+                                        if (res.success) { showToast("Updated successfully"); router.refresh(); }
                                         else showToast(res.error || "Error", "error");
                                       }}
                                       style={{ fontSize: '10px', fontWeight: 800, padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', border: 'none', background: group.isRequired ? '#ffebee' : '#e8f5e9', color: group.isRequired ? '#d32f2f' : '#2e7d32' }}
                                     >
                                       {group.isRequired ? "Required (Click to make Optional)" : "Optional (Click to make Required)"}
                                     </button>
-                                    
+
                                     <button
                                       type="button"
                                       onClick={async (e) => {

@@ -95,12 +95,26 @@ function mapProductType(row: Record<string, unknown>): ProductType {
   };
 }
 
+function mapProductAddon(row: Record<string, unknown>) {
+  return {
+    id: Number(row.id),
+    productId: Number(row.product_id),
+    nameAr: String(row.name_ar ?? ""),
+    nameEn: String(row.name_en ?? ""),
+    price: toNumber(row.price),
+    sortOrder: Number(row.sort_order ?? 0)
+  };
+}
+
 function mapProduct(row: Record<string, unknown>): Product {
   const sizes = Array.isArray(row.product_sizes)
     ? row.product_sizes.map((size) => mapProductSize(size as Record<string, unknown>))
     : [];
   const types = Array.isArray(row.product_types)
     ? row.product_types.map((type) => mapProductType(type as Record<string, unknown>))
+    : [];
+  const addons = Array.isArray(row.product_addons)
+    ? row.product_addons.map((a) => mapProductAddon(a as Record<string, unknown>))
     : [];
 
   return {
@@ -122,7 +136,9 @@ function mapProduct(row: Record<string, unknown>): Product {
     createdAt: String(row.created_at ?? ""),
     updatedAt: String(row.updated_at ?? ""),
     sizes: sizes.sort((left, right) => left.sortOrder - right.sortOrder),
-    types: types.sort((left, right) => left.sortOrder - right.sortOrder)
+    types: types.sort((left, right) => left.sortOrder - right.sortOrder),
+    simpleAddons: addons.sort((left, right) => left.sortOrder - right.sortOrder),
+    branchDiscounts: (row.branch_discounts as Record<string, number>) ?? {}
   };
 }
 
@@ -382,7 +398,7 @@ export async function getProducts(branchSlug?: string | null, categoryId?: numbe
 
     let query = supabase
       .from("products")
-      .select("*, product_sizes(*), product_types(*)")
+      .select("*, product_sizes(*), product_types(*), product_addons(*)")
       .eq("is_active", true)
       .order("sort_order")
       .order("id");
