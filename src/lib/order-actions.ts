@@ -23,6 +23,7 @@ function isDBConfigured(): boolean {
  * Verifies the reCAPTCHA token with Google's API.
  */
 async function verifyRecaptcha(token: string) {
+    // return true; // تجاوز الفحص مؤقتاً
     const secret = process.env.RECAPTCHA_SECRET_KEY;
     if (!secret) {
         console.warn("[reCAPTCHA] ⚠️ RECAPTCHA_SECRET_KEY not set. Skipping verification.");
@@ -118,84 +119,70 @@ async function sendSMSNotification(phone: string, amount: number, orderId: strin
  * يضبط الحالة إلى "Paid" ويرسل الإشعارات.
  */
 export async function finalizeOrder(orderId: string | number) {
-    if (!isDBConfigured()) {
-        console.warn(`[finalizeOrder] ⚠️ DB not configured. Skipping finalization for order: ${orderId}`);
-        return { success: true, isSimulated: true };
-    }
-
     console.log(`\n--- ⏳ بدء عملية الإنهاء للطلب رقم: #${orderId} ---`);
 
     try {
         const supabase = getSupabaseAdmin();
 
-        // 1. جلب بيانات الطلب
-        const { data: order, error: orderError } = await supabase
+        // 1. تحديث حالة الطلب أولاً
+        await supabase
             .from("orders")
-            .select("id, branch_id, total_amount, customer_email, customer_phone, order_type, payment_method")
+            .update({ status: "paid", updated_at: new Date().toISOString() })
+            .eq("id", orderId);
+
+        // 2. جلب البيانات كاملة (الطلب + الفرع + المنتجات)
+        // ملاحظة: تأكد أن الأسماء (branches, order_items) تطابق أسماء الجداول عندك
+        const { data: orderData, error: fetchErr } = await supabase
+            .from("orders")
+            .select(`
+                *,
+                branches (*),
+                order_items (*)
+            `)
             .eq("id", orderId)
             .single();
 
-        if (orderError) throw orderError;
-        if (!order) throw new Error("Order not found");
-
-        const { data: items, error: itemsError } = await supabase
-            .from("order_items")
-            .select("*")
-            .eq("order_id", orderId);
-
-        // 2. تحديث حالة الطلب إلى "مدفوع" و "مؤكد"
-        const { error: updateError } = await supabase
-            .from("orders")
-            .update({
-                payment_status: "Paid",
-                status: "Confirmed",
-                updated_at: new Date().toISOString()
-            })
-            .eq("id", orderId);
-
-        if (updateError) throw updateError;
-        console.log(`✅ [Database] تم تحديث حالة الطلب #${orderId} إلى مدفوع (Paid).`);
-
-        // 3. إرسال الإشعارات (فقط لعمليات الدفع الإلكتروني Visa/Card)
-        if (order.payment_method === 'Card' || order.payment_method === 'palpay') {
-
-            console.log(`📱 [Action] محاولة إرسال إشعار SMS للرقم: ${order.customer_phone}`);
-
-            if (order.customer_phone) {
-                // استدعاء دالة الـ SMS (التي تطبع حالياً في الكونسول)
-                await sendSMSNotification(order.customer_phone, order.total_amount, order.id);
-            } else {
-                console.warn(`⚠️ [finalizeOrder] لا يمكن إرسال SMS: لا يوجد رقم هاتف للطلب #${order.id}`);
-            }
-
-            // 3.2 إرسال إيميل الفاتورة
-            if (order.customer_email) {
-                console.log(`📧 [Action] محاولة إرسال فاتورة للإيميل: ${order.customer_email}`);
-                try {
-                    // (كود جلب بيانات الفرع المعتاد لديك...)
-                    // await sendOrderInvoiceEmail(mappedOrder, mappedItems, branch);
-                    console.log(`✅ [Email Service] تم إرسال الفاتورة بنجاح.`);
-                } catch (emailErr: any) {
-                    console.error(`📧 [Error] فشل إرسال الإيميل ولكن الطلب مؤكد:`, emailErr.message);
-                }
-            }
-        } else {
-            console.log(`ℹ️ [finalizeOrder] الدفع نقدي، سيتم تخطي إشعارات الدفع الإلكتروني.`);
+        if (fetchErr || !orderData) {
+            console.error("❌ فشل جلب البيانات من الداتابيز:", fetchErr?.message);
+            return { success: true };
         }
 
-        console.log(`✨ [Final Success] تم إنهاء الطلب #${orderId} بنجاح تام.`);
-        console.log(`-----------------------------------------------\n`);
+        // 3. تجهيز المتغيرات
+        const branchData = orderData.branches;
+        const itemsData = orderData.order_items || [];
 
+        // 4. حل مشكلة الـ undefined والـ Types
+        // ندمج بيانات القاعدة مع مسميات الـ Type التي تتوقعها الدالة
+        const mappedOrder: any = {
+            ...orderData, // مسميات snake_case مثل customer_name (للإيميل)
+            branchId: orderData.branch_id, // مسميات camelCase (للـ TypeScript)
+            customerName: orderData.customer_name,
+            customerPhone: orderData.customer_phone,
+            customerEmail: orderData.customer_email,
+            totalAmount: orderData.total_amount,
+            orderType: orderData.order_type,
+        };
+
+        // 5. إرسال الإيميل
+        if (orderData.customer_email && !orderData.customer_email.includes('customer@uptown.ps')) {
+            console.log(`📧 [Action] محاولة إرسال فاتورة للإيميل: ${orderData.customer_email}`);
+            try {
+                // نمرر mappedOrder الذي يحتوي على النوعين (snake & camel) لضمان العمل
+                await sendOrderInvoiceEmail(mappedOrder, itemsData, branchData);
+                console.log(`✅ [Email Service] تم إرسال الفاتورة بنجاح.`);
+            } catch (emailErr: any) {
+                console.error(`📧 [Error] فشل في دالة الإرسال:`, emailErr.message);
+            }
+        }
+
+        console.log(`✨ [Final Success] تم إنهاء الطلب #${orderId} بنجاح.`);
         return { success: true };
 
     } catch (err: any) {
-        console.error(`❌ [finalizeOrder Error]:`, err.message);
-        return { success: false, error: err.message || "Failed to finalize order" };
+        console.error(`❌ [Finalize Error] خطأ عام:`, err.message);
+        return { success: false, error: err.message };
     }
 }
-
-
-
 
 export async function saveOrderAction(orderData: any, items: any[], captchaToken?: string) {
     console.log(`[saveOrderAction] Processing order for: ${orderData.customerName}`);

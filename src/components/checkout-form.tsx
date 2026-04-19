@@ -118,6 +118,23 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
             return alert(isAr ? 'يجب أن يتكون رقم الهاتف من 10 أرقام (مثلاً: 059xxxxxxx)' : 'Phone number must be exactly 10 digits (e.g., 059xxxxxxx)');
         }
 
+        // --- إضافة التحقق من الإيميل عند اختيار الفيزا ---
+        if (paymentMethod === 'palpay') {
+            // 1. التأكد أن الحقل ليس فارغاً
+            if (!email) {
+                setIsSubmitting(false); // لإعادة تفعيل الزر إذا كان هناك خطأ
+                return alert(isAr ? 'يرجى إدخال البريد الإلكتروني لإتمام عملية الدفع' : 'Please enter your email to complete the payment');
+            }
+
+            // 2. التأكد من صحة صيغة الإيميل (التحقق العادي)
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                setIsSubmitting(false);
+                return alert(isAr ? 'يرجى إدخال بريد إلكتروني صحيح (مثال: name@example.com)' : 'Please enter a valid email address');
+            }
+        }
+        // ------------------------------------------
+
         if (orderType === 'delivery' && (!selectedZone || !street || !building)) return alert(isAr ? 'يرجى اختيار منطقة التوصيل وإدخال بيانات الشارع والبناية بالتفصيل' : 'Please select a delivery zone and enter street and building details');
         if (orderType === 'inRestaurant' && !pickupTime) return alert(isAr ? 'يرجى اختيار وقت الاستلام' : 'Please select pickup time');
         if (!policyAccepted) return alert(isAr ? 'يجب الموافقة على الشروط والسياسات للمتابعة' : 'You must accept the terms and policies to continue');
@@ -371,11 +388,27 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                                     }}
                                 />
                             </div>
-                            <div className="uptown-input-group">
+                            <div className="uptown-input-group" style={{ gridColumn: paymentMethod === 'palpay' ? 'span 2' : 'auto' }}>
                                 <label>
-                                    {isAr ? 'البريد الإلكتروني' : 'Email'} ({isAr ? 'اختياري' : 'Optional'})
+                                    {isAr ? 'البريد الإلكتروني' : 'Email'}
+                                    {paymentMethod === 'palpay' ? ' *' : ` (${isAr ? 'اختياري' : 'Optional'})`}
                                 </label>
-                                <input type="email" id="customer-email" className="uptown-input" suppressHydrationWarning />
+                                <input
+                                    type="email"
+                                    id="customer-email"
+                                    className="uptown-input"
+                                    required={paymentMethod === 'palpay'}
+                                    placeholder={paymentMethod === 'palpay' ? (isAr ? "example@gmail.com" : "example@gmail.com") : ""}
+                                    suppressHydrationWarning
+                                />
+                                {paymentMethod === 'palpay' && (
+                                    <p style={{ fontSize: '12px', color: '#8B0000', marginTop: '5px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                        <Info size={14} />
+                                        {isAr
+                                            ? 'ضروري جداً لإرسال تفاصيل الدفع وفاتورة الطلب إليك.'
+                                            : 'Required to send payment details and order receipt to you.'}
+                                    </p>
+                                )}
                             </div>
                             <div className="uptown-input-group">
                                 <label>{isAr ? 'تاريخ الميلاد' : 'Birth Date'} ({isAr ? 'اختياري' : 'Optional'})</label>

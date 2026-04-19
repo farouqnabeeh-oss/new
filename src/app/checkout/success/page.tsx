@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense, useRef } from "react";
 import { useSearchParams } from "next/navigation";
-import { getOrderSummary } from "@/lib/order-actions";
+import { finalizeOrder, getOrderSummary } from "@/lib/order-actions";
 
 function SuccessContent() {
   const searchParams = useSearchParams();
@@ -55,42 +55,32 @@ function SuccessContent() {
       playSequence(0);
     } catch (e) { }
   };
-
   useEffect(() => {
-    // 1. Clear cart for this branch
+    // 1. تنظيف السلة
     if (typeof window !== "undefined" && (window as any).Cart && branchSlug) {
       (window as any).Cart.clear(branchSlug);
     }
 
-    // 2. Fetch Order Details
+    // 2. تأكيد الطلب وإرسال الإيميل + جلب البيانات
     if (orderId) {
-      getOrderSummary(orderId).then(res => {
-        if (res.success) {
-          if (res.isDemo && typeof window !== "undefined") {
-            const localData = sessionStorage.getItem(`demo_order_${orderId}`);
-            if (localData) {
-              try {
-                const parsed = JSON.parse(localData);
-                setOrderData(parsed);
-              } catch (e) {
-                setOrderData(res.order);
-              }
-            } else {
-              setOrderData(res.order);
-            }
-          } else {
+      // --- الخطوة الأهم: استدعاء دالة التأكيد التي ترسل الإيميل ---
+      finalizeOrder(orderId).then(() => {
+        console.log("✅ Order finalized and email trigger attempt finished.");
+
+        // بعد التأكيد، نجلب البيانات لعرض الفاتورة
+        getOrderSummary(orderId).then(res => {
+          if (res.success) {
             setOrderData(res.order);
           }
-        }
-        setLoading(false);
-        playSuccessSound();
+          setLoading(false);
+          playSuccessSound();
+        });
       });
     } else {
       setLoading(false);
       playSuccessSound();
     }
   }, [orderId, branchSlug]);
-
   // Detect language from cookie
   const isAr = typeof document !== "undefined"
     ? document.cookie.includes("language=ar") || !document.cookie.includes("language=en")
