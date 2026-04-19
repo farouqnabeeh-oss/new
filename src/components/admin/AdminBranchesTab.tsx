@@ -70,8 +70,6 @@ export function AdminBranchesTab({ branches }: Props) {
     (form.elements.namedItem("Latitude") as HTMLInputElement).value = String(branch.latitude || "");
     (form.elements.namedItem("Longitude") as HTMLInputElement).value = String(branch.longitude || "");
     (form.elements.namedItem("PromoVideoUrl") as HTMLInputElement).value = branch.promoVideoUrl || "";
-    (form.elements.namedItem("DeliveryDiscountPercent") as HTMLInputElement).value = String(branch.deliveryDiscountPercent || 0);
-    (form.elements.namedItem("FreeDelivery") as HTMLInputElement).checked = !!branch.freeDelivery;
     
     containerRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
@@ -167,21 +165,6 @@ export function AdminBranchesTab({ branches }: Props) {
           </div>
 
           <div className="form-row">
-            <div className="form-group">
-              <label>General Delivery Fee</label>
-              <input type="number" name="DeliveryFee" min="0" step="0.01" defaultValue="0" />
-            </div>
-            <div className="form-group">
-              <label>Delivery Discount %</label>
-              <input type="number" name="DeliveryDiscountPercent" min="0" max="100" defaultValue="0" />
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 10, alignSelf: 'flex-end', marginBottom: 15 }}>
-               <input type="checkbox" name="FreeDelivery" value="true" style={{ width: 'auto' }} />
-               <label style={{ marginBottom: 0 }}>Free Delivery (Active)</label>
-            </div>
             <div className="form-group">
               <label>Sort Order</label>
               <input type="number" name="SortOrder" defaultValue="0" />
