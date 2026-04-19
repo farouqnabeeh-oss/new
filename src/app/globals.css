@@ -1,5 +1,10 @@
 @import "../styles/site.css";
 @import "../styles/home-redesign.css";
+@import "tailwindcss";
+
+@theme {
+    --color-primary: #8B0000;
+}
 
 /* 🛒 PREMIUM CART UPGRADE */
 .premium-cart-header {
@@ -302,6 +307,7 @@ html[dir="ltr"] .side-panel {
     left: auto;
     transform: translateX(100%);
 }
+
 html[dir="ltr"] .side-panel.is-active {
     transform: translateX(0);
 }
@@ -312,12 +318,15 @@ html[dir="rtl"] .side-panel {
     right: auto;
     transform: translateX(-100%);
 }
+
 html[dir="rtl"] .side-panel.is-active {
     transform: translateX(0);
 }
 
 @media (max-width: 480px) {
-    .side-panel { max-width: 100%; }
+    .side-panel {
+        max-width: 100%;
+    }
 }
 
 .modal-header {

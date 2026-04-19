@@ -46,11 +46,28 @@ export const adminTranslations = {
     descAr: "الوصف (بالعربية)",
     descEn: "الوصف (بالإنجليزية)",
     stats: {
-        totalOrders: "إجمالي الطلبات",
-        totalRevenue: "إجمالي الإيرادات",
-        topBranch: "أفضل فرع",
-        activeProducts: "منتجات نشطة"
+      totalOrders: "إجمالي الطلبات",
+      totalRevenue: "إجمالي الإيرادات",
+      topBranch: "أفضل فرع",
+      activeProducts: "منتجات نشطة"
+    },
+    discounts: "خصومات التوصيل",
+    invoiceDiscounts: {
+      title: "خصم رسوم التوصيل بناءً على قيمة الطلب",
+      tier: "قيمة المشتريات",
+      discountAmount: "قيمة الخصم من التوصيل",
+      ranges: {
+        tier1: "المشتريات من 0 إلى 50 ₪",
+        tier2: "المشتريات من 50 إلى 100 ₪",
+        tier3: "المشتريات من 100 إلى 250 ₪",
+        tier4: "المشتريات أكبر من 250 ₪"
+      },
+      placeholders: {
+        amount: "أدخل قيمة الخصم (₪)",
+        percentage: "أدخل النسبة (%)"
+      }
     }
+
   },
   en: {
     dashboardTitle: "⚙️ Admin Panel",
@@ -99,11 +116,29 @@ export const adminTranslations = {
     descAr: "Description (Arabic)",
     descEn: "Description (English)",
     stats: {
-        totalOrders: "Total Orders",
-        totalRevenue: "Total Revenue",
-        topBranch: "Top Branch",
-        activeProducts: "Active Products"
+      totalOrders: "Total Orders",
+      totalRevenue: "Total Revenue",
+      topBranch: "Top Branch",
+      activeProducts: "Active Products"
+    },
+    // The new line
+    discounts: "Delivery Discounts",
+    invoiceDiscounts: {
+      title: "Delivery Fee Discount based on Order Value",
+      tier: "Order Value",
+      discountAmount: "Discount from Delivery",
+      ranges: {
+        tier1: "Orders from 0 to 50 ₪",
+        tier2: "Orders from 50 to 100 ₪",
+        tier3: "Orders from 100 to 250 ₪",
+        tier4: "Orders over 250 ₪"
+      },
+      placeholders: {
+        amount: "Discount amount (₪)",
+        percentage: "Percentage (%)"
+      }
     }
+
   }
 };
 

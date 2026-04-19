@@ -4,7 +4,7 @@ import { useState, useEffect, useTransition } from "react";
 import { Branch, SiteSettings } from "@/lib/types";
 import { saveOrderAction } from "@/lib/order-actions";
 import Script from "next/script";
-import { ShoppingBag, Truck, Utensils, Clock, CreditCard, Banknote, CheckCircle2, Info } from "lucide-react";
+import { ShoppingBag, Truck, Utensils, Clock, CreditCard, Banknote, CheckCircle2, Info, Sparkles } from "lucide-react";
 import ReCAPTCHA from "react-google-recaptcha";
 
 type Props = {
@@ -31,6 +31,9 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
     const [total, setTotal] = useState(0);
     const [isOpen, setIsOpen] = useState(true);
     const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+    const [discountRules, setDiscountRules] = useState<any[]>([]);
+    const [smartDeliveryDiscount, setSmartDeliveryDiscount] = useState(0);
+    const [effectiveDeliveryFee, setEffectiveDeliveryFee] = useState<number | null>(null);
 
     const isAr = lang === "ar";
 
@@ -51,52 +54,101 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
     }, [branch.openingTime, branch.closingTime]);
 
     useEffect(() => {
+        async function fetchRules() {
+            try {
+                const res = await fetch("/api/admin/invoice-discounts");
+                const data = await res.json();
+                if (data.rules) setDiscountRules(data.rules);
+            } catch (error) {
+                console.error("Error fetching discount rules:", error);
+            }
+        }
+        fetchRules();
+    }, []);
+    useEffect(() => {
         const syncData = () => {
-            // 1. التأكد من وجود الكائن Cart
             if (typeof window === "undefined" || !(window as any).Cart) return;
 
             const cart = (window as any).Cart;
             const slug = branch.slug;
 
-            // 2. جلب العناصر وتحديث الـ State (هاد السطر اللي كان ناقصك)
             const items = cart.getItems(slug);
             setCartItems(items);
 
-            // 3. الحسابات
             const itemsTotal = cart.getTotal(slug);
-            const dPercent = branch.discountPercent || 0;
 
-            // نرجع السعر الأصلي قبل الخصم
-            const originalTotal = dPercent > 0 ? itemsTotal / (1 - dPercent / 100) : itemsTotal;
-            const dAmount = originalTotal - itemsTotal;
+            // 💰 مبدئياً المجموع هو نفسه (لأنه أصلاً بعد خصم المنتجات)
+            const subtotal = itemsTotal;
 
-            let effectiveFee = 0;
-            if (orderType === 'delivery') {
-                if (branch.freeDelivery) {
-                    effectiveFee = 0;
-                } else {
-                    effectiveFee = deliveryFee || settings.deliveryFee || 0;
-                    if (branch.deliveryDiscountPercent && branch.deliveryDiscountPercent > 0) {
-                        effectiveFee = effectiveFee - (effectiveFee * branch.deliveryDiscountPercent / 100);
+            // ========================
+            // 🚚 DELIVERY LOGIC
+            // ========================
+            let smartDiscountAmount = 0;
+            let baseFee = 0;
+
+            if (orderType === "delivery") {
+                baseFee = deliveryFee ?? settings.deliveryFee ?? 0;
+
+                const rule = discountRules.find((r: any) =>
+                    itemsTotal >= r.min &&
+                    (r.max === null || itemsTotal <= r.max)
+                );
+
+                if (rule) {
+                    switch (rule.type) {
+                        case "free":
+                            smartDiscountAmount = baseFee;
+                            break;
+
+                        case "fixed":
+                            smartDiscountAmount = rule.value;
+                            break;
+
+                        case "percentage":
+                            smartDiscountAmount = (baseFee * rule.value) / 100;
+                            break;
+
+                        default:
+                            smartDiscountAmount = 0;
                     }
                 }
+
+                smartDiscountAmount = Math.min(smartDiscountAmount, baseFee);
             }
 
-            setSubtotal(originalTotal);
-            setDiscount(dAmount);
-            setTotal(itemsTotal + effectiveFee);
+            setSmartDeliveryDiscount(smartDiscountAmount);
+
+            // 🚚 final delivery fee (إذا ما في توصيل = null)
+            const finalDeliveryFee =
+                orderType === "delivery"
+                    ? Math.max(baseFee - smartDiscountAmount, 0)
+                    : null;
+
+            setEffectiveDeliveryFee(finalDeliveryFee);
+
+            // ========================
+            // 💰 TOTAL CALCULATION
+            // ========================
+            const deliveryPart =
+                orderType === "delivery" ? (finalDeliveryFee ?? 0) : 0;
+
+            const finalTotal = subtotal + deliveryPart;
+
+            setSubtotal(subtotal);
+            setTotal(finalTotal);
         };
 
         syncData();
-        // الـ interval مهم جداً هنا لأن Cart.js بيشتغل خارج React
+
         const interval = setInterval(syncData, 1000);
         return () => clearInterval(interval);
-    }, [branch.slug, branch.discountPercent, deliveryFee, branch.freeDelivery, branch.deliveryDiscountPercent, orderType]);
-    // ضفنا orderType للمصفوفة عشان يحدث السعر فوراً لما تغير نوع الطلب
-
-    
-    // No client-side payment intent needed for Lahza redirect flow
-
+    }, [
+        branch.slug,
+        deliveryFee,
+        orderType,
+        discountRules,
+        settings.deliveryFee
+    ]);
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (cartItems.length === 0) return alert(isAr ? "السلة فارغة" : "Cart is empty");
@@ -167,152 +219,147 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
 
 
             let freshEffectiveFee = 0;
+
             if (orderType === 'delivery') {
-                if (branch.freeDelivery) {
-                    freshEffectiveFee = 0;
-                } else {
-                    freshEffectiveFee = deliveryFee;
-                    if (branch.deliveryDiscountPercent && branch.deliveryDiscountPercent > 0) {
-                        freshEffectiveFee = freshEffectiveFee - (freshEffectiveFee * branch.deliveryDiscountPercent / 100);
-                    }
-                }
-            }
+                const baseFee = deliveryFee ?? settings.deliveryFee ?? 0;
+                freshEffectiveFee = baseFee - smartDeliveryDiscount;
 
-            const freshTotal = Number((freshItemsTotal + freshEffectiveFee).toFixed(2));
+                const freshTotal = Number((freshItemsTotal + freshEffectiveFee).toFixed(2));
 
-            const finalAddress = orderType === 'delivery' ? `${selectedZone} - ${address}` : address;
+                const finalAddress = orderType === 'delivery' ? `${selectedZone} - ${address}` : address;
 
-            const mappedItems = items.map((i: any) => {
-                const withoutAddons = i.selectedAddOns?.filter((a: any) =>
-                    a.groupType === 'Without' ||
-                    (a.nameAr || '').includes('بدون')
-                );
+                const mappedItems = items.map((i: any) => {
+                    const withoutAddons = i.selectedAddOns?.filter((a: any) =>
+                        a.groupType === 'Without' ||
+                        (a.nameAr || '').includes('بدون')
+                    );
 
-                const normalAddons = i.selectedAddOns?.filter((a: any) =>
-                    a.groupType !== 'Without' &&
-                    !['MealDrink', 'MealDrinkUpgrade', 'MealFries'].includes(a.groupType)
-                );
+                    const normalAddons = i.selectedAddOns?.filter((a: any) =>
+                        a.groupType !== 'Without' &&
+                        !['MealDrink', 'MealDrinkUpgrade', 'MealFries'].includes(a.groupType)
+                    );
 
-                const parts = [];
+                    const parts = [];
 
-                if (i.selectedSize)
-                    parts.push(`${isAr ? 'الحجم' : 'Size'}: ${isAr ? i.selectedSize.nameAr : i.selectedSize.nameEn}`);
+                    if (i.selectedSize)
+                        parts.push(`${isAr ? 'الحجم' : 'Size'}: ${isAr ? i.selectedSize.nameAr : i.selectedSize.nameEn}`);
 
-                if (i.selectedType)
-                    parts.push(`${isAr ? 'النوع' : 'Type'}: ${isAr ? i.selectedType.nameAr : i.selectedType.nameEn}`);
+                    if (i.selectedType)
+                        parts.push(`${isAr ? 'النوع' : 'Type'}: ${isAr ? i.selectedType.nameAr : i.selectedType.nameEn}`);
 
-                if (normalAddons?.length)
-                    parts.push(`${isAr ? 'إضافات' : 'Addons'}: ${normalAddons.map((a: any) => isAr ? a.nameAr : a.nameEn).join(' + ')}`);
+                    if (normalAddons?.length)
+                        parts.push(`${isAr ? 'إضافات' : 'Addons'}: ${normalAddons.map((a: any) => isAr ? a.nameAr : a.nameEn).join(' + ')}`);
 
-                if (withoutAddons?.length)
-                    parts.push(`${isAr ? 'بدون' : 'Without'}: ${withoutAddons.map((a: any) => (isAr ? a.nameAr : a.nameEn).replace('🚫', '').trim()).join('، ')}`);
+                    if (withoutAddons?.length)
+                        parts.push(`${isAr ? 'بدون' : 'Without'}: ${withoutAddons.map((a: any) => (isAr ? a.nameAr : a.nameEn).replace('🚫', '').trim()).join('، ')}`);
 
-                if (i.note)
-                    parts.push(`${isAr ? 'ملاحظة' : 'Note'}: ${i.note}`);
+                    if (i.note)
+                        parts.push(`${isAr ? 'ملاحظة' : 'Note'}: ${i.note}`);
 
-                return { ...i, addonDetails: parts.join(' | ') };
-            });
-
-            const res = await saveOrderAction({
-                branchId: branch.id,
-                customerName: name,
-                customerPhone: phone,
-                customerEmail: email,
-                orderType: orderType === 'delivery' ? 'Delivery' : 'Pickup',
-                address: finalAddress,
-                tableNumber: orderType === 'delivery' ? null : pickupTime,
-                totalAmount: freshTotal,
-                paymentMethod: paymentMethod === 'cash' ? 'Cash' : 'Card',
-                scheduledAt: scheduledAt
-            }, mappedItems, captchaToken || undefined);
-
-            console.log("[Checkout] Order Save Result:", res);
-
-            // Check if order was saved successfully
-            if (!res.success || !res.orderId) {
-                alert(isAr
-                    ? `فشل حفظ الطلب: ${res.error || 'خطأ غير متوقع، يرجى المحاولة مرة أخرى'}`
-                    : `Failed to save order: ${res.error || 'Unexpected error, please try again'}`
-                );
-                return;
-            }
-
-            if (res.isDemo && typeof window !== "undefined") {
-                console.log("[Checkout] Saving demo data locally for success page fallback");
-                const demoStore = {
-                    customer_name: name,
-                    order_type: orderType === 'delivery' ? 'Delivery' : 'Pickup',
-                    total_amount: freshTotal,
-                    order_items: items.map((i: any) => ({
-                        product_name_ar: i.nameAr,
-                        product_name_en: i.nameEn,
-                        quantity: i.quantity,
-                        price: i.finalPrice
-                    })),
-                    branches: { discount_percent: branch.discountPercent },
-                    method: paymentMethod
-                };
-                sessionStorage.setItem(`demo_order_${res.orderId}`, JSON.stringify(demoStore));
-            }
-
-            if (paymentMethod === "palpay") {
-                console.log(`[Checkout] Initiating online payment for ${freshTotal} ${settings.currencySymbol || '₪'}`);
-
-                const payRes = await fetch("/api/payments/lahza/initiate", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        orderId: res.orderId,
-                        email: email || "customer@uptownps.com", // Fallback for optional email
-                        amount: freshTotal,
-                        currency: settings.currencySymbol === "₪" ? "ILS" : settings.currencySymbol || "USD",
-                        customerName: name,
-                        customerPhone: phone,
-                        branchSlug: branch.slug
-                    })
+                    return { ...i, addonDetails: parts.join(' | ') };
                 });
 
-                const payData = await payRes.json();
+                const res = await saveOrderAction({
+                    branchId: branch.id,
+                    customerName: name,
+                    customerPhone: phone,
+                    customerEmail: email,
+                    orderType: orderType === 'delivery' ? 'Delivery' : 'Pickup',
+                    address: finalAddress,
+                    tableNumber: orderType === 'delivery' ? null : pickupTime,
+                    totalAmount: freshTotal,
+                    paymentMethod: paymentMethod === 'cash' ? 'Cash' : 'Card',
+                    scheduledAt: scheduledAt
+                }, mappedItems, captchaToken || undefined);
 
-                console.log("🚀 Lahza API Response:", payData);
+                console.log("[Checkout] Order Save Result:", res);
 
-                if (!payData.success) {
-                    throw new Error(payData.error || "Lahza initiation failed");
+                // Check if order was saved successfully
+                if (!res.success || !res.orderId) {
+                    alert(isAr
+                        ? `فشل حفظ الطلب: ${res.error || 'خطأ غير متوقع، يرجى المحاولة مرة أخرى'}`
+                        : `Failed to save order: ${res.error || 'Unexpected error, please try again'}`
+                    );
+                    return;
                 }
 
-                if (payData.authorizationUrl) {
-                    console.log("🔗 Redirecting to:", payData.authorizationUrl);
-                    window.location.href = payData.authorizationUrl;
+                if (res.isDemo && typeof window !== "undefined") {
+                    console.log("[Checkout] Saving demo data locally for success page fallback");
+                    const demoStore = {
+                        customer_name: name,
+                        order_type: orderType === 'delivery' ? 'Delivery' : 'Pickup',
+                        total_amount: freshTotal,
+                        order_items: items.map((i: any) => ({
+                            product_name_ar: i.nameAr,
+                            product_name_en: i.nameEn,
+                            quantity: i.quantity,
+                            price: i.finalPrice
+                        })),
+                        branches: { discount_percent: branch.discountPercent },
+                        method: paymentMethod
+                    };
+                    sessionStorage.setItem(`demo_order_${res.orderId}`, JSON.stringify(demoStore));
+                }
+
+                if (paymentMethod === "palpay") {
+                    console.log(`[Checkout] Initiating online payment for ${freshTotal} ${settings.currencySymbol || '₪'}`);
+
+                    const payRes = await fetch("/api/payments/lahza/initiate", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            orderId: res.orderId,
+                            email: email || "customer@uptownps.com", // Fallback for optional email
+                            amount: freshTotal,
+                            currency: settings.currencySymbol === "₪" ? "ILS" : settings.currencySymbol || "USD",
+                            customerName: name,
+                            customerPhone: phone,
+                            branchSlug: branch.slug
+                        })
+                    });
+
+                    const payData = await payRes.json();
+
+                    console.log("🚀 Lahza API Response:", payData);
+
+                    if (!payData.success) {
+                        throw new Error(payData.error || "Lahza initiation failed");
+                    }
+
+                    if (payData.authorizationUrl) {
+                        console.log("🔗 Redirecting to:", payData.authorizationUrl);
+                        window.location.href = payData.authorizationUrl;
+                    } else {
+                        alert(isAr ? "عذراً، لم نتمكن من الحصول على رابط الدفع." : "Error: Could not obtain payment URL.");
+                        setIsSubmitting(false);
+                    }
                 } else {
-                    alert(isAr ? "عذراً، لم نتمكن من الحصول على رابط الدفع." : "Error: Could not obtain payment URL.");
-                    setIsSubmitting(false);
+                    // Success for WhatsApp/Cash
+                    try {
+                        const audio = new Audio('/sounds/success.mp3');
+                        audio.play().catch(e => console.log("Sound play error", e));
+                    } catch (e) { }
+
+                    // Construct WhatsApp Message
+                    const orderTypeLabel = orderType === 'delivery' ? (isAr ? 'توصيل' : 'Delivery') : (isAr ? 'استلام' : 'Pickup');
+                    const itemsTxt = mappedItems.map((i: any) => `- ${i.quantity}x ${isAr ? i.nameAr : i.nameEn} (${i.finalPrice} ₪) %0A   ${i.addonDetails || ''}`).join('%0A');
+                    const scheduledLine = scheduledAt ? `%0A*وقت التجهيز المجددل:* ${scheduledAt}` : '';
+                    const msg = `*طلب جديد من UPTOWN*%0A%0A` +
+                        `*العميل:* ${name}%0A` +
+                        `*الهاتف:* ${phone}%0A` +
+                        `*نوع الطلب:* ${orderTypeLabel}%0A` +
+                        `${orderType === 'delivery' ? `*العنوان:* ${finalAddress}` : `*وقت الاستلام:* ${pickupTime}`}${scheduledLine}%0A%0A` +
+                        `*الأصناف:*%0A${itemsTxt}%0A%0A` +
+                        `*المجموع:* ${freshTotal} ₪%0A%0A` +
+                        `_تم إرسال الطب عبر الموقع الإلكتروني_`;
+
+                    const waLink = `https://wa.me/${branch.whatsApp.replace(/\+/g, '').replace(/\s/g, '')}?text=${msg}`;
+
+                    // Redirect to success but open WhatsApp
+                    window.open(waLink, '_blank');
+                    window.location.href = `/checkout/success?orderId=${res.orderId}&branchSlug=${branch.slug}&method=cash`;
                 }
-            } else {
-                // Success for WhatsApp/Cash
-                try {
-                    const audio = new Audio('/sounds/success.mp3');
-                    audio.play().catch(e => console.log("Sound play error", e));
-                } catch (e) { }
-
-                // Construct WhatsApp Message
-                const orderTypeLabel = orderType === 'delivery' ? (isAr ? 'توصيل' : 'Delivery') : (isAr ? 'استلام' : 'Pickup');
-                const itemsTxt = mappedItems.map((i: any) => `- ${i.quantity}x ${isAr ? i.nameAr : i.nameEn} (${i.finalPrice} ₪) %0A   ${i.addonDetails || ''}`).join('%0A');
-                const scheduledLine = scheduledAt ? `%0A*وقت التجهيز المجددل:* ${scheduledAt}` : '';
-                const msg = `*طلب جديد من UPTOWN*%0A%0A` +
-                    `*العميل:* ${name}%0A` +
-                    `*الهاتف:* ${phone}%0A` +
-                    `*نوع الطلب:* ${orderTypeLabel}%0A` +
-                    `${orderType === 'delivery' ? `*العنوان:* ${finalAddress}` : `*وقت الاستلام:* ${pickupTime}`}${scheduledLine}%0A%0A` +
-                    `*الأصناف:*%0A${itemsTxt}%0A%0A` +
-                    `*المجموع:* ${freshTotal} ₪%0A%0A` +
-                    `_تم إرسال الطب عبر الموقع الإلكتروني_`;
-
-                const waLink = `https://wa.me/${branch.whatsApp.replace(/\+/g, '').replace(/\s/g, '')}?text=${msg}`;
-
-                // Redirect to success but open WhatsApp
-                window.open(waLink, '_blank');
-                window.location.href = `/checkout/success?orderId=${res.orderId}&branchSlug=${branch.slug}&method=cash`;
-            }
+            } // end if (orderType === 'delivery')
         } catch (err: any) {
             alert(isAr ? "عذراً، حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى." : "Critical Error: " + err.message);
         } finally {
@@ -544,19 +591,37 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                                         <span>-{discount.toFixed(2)} {settings.currencySymbol}</span>
                                     </div>
                                 )}
-                                {!!branch.deliveryDiscountPercent && branch.deliveryDiscountPercent > 0 && deliveryFee > 0 && (
+                                {orderType === 'delivery' && smartDeliveryDiscount > 0 && (
                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#059669', fontWeight: 700, marginBottom: '8px' }}>
-                                        <span>{isAr ? 'خصم التوصيل' : 'Delivery Discount'} ({branch.deliveryDiscountPercent}%)</span>
-                                        <span>-{(deliveryFee * (branch.deliveryDiscountPercent || 0) / 100).toFixed(2)} {settings.currencySymbol}</span>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                            <Sparkles size={14} />
+                                            <span>{isAr ? 'خصم التوصيل الذكي' : 'Smart Delivery Discount'}</span>
+                                        </div>
+                                        <span>-{smartDeliveryDiscount.toFixed(2)} {settings.currencySymbol}</span>
                                     </div>
                                 )}
-                                {orderType === 'delivery' && (
+
+                                {/* عرض رسوم التوصيل النهائية */}
+                                {orderType === 'delivery' && selectedZone && effectiveDeliveryFee !== null && (
                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#666', marginBottom: '8px' }}>
                                         <span>{isAr ? 'رسوم التوصيل' : 'Delivery Fee'}</span>
-                                        {branch.freeDelivery ? (
-                                            <span style={{ color: '#059669', fontWeight: 800 }}>{isAr ? '🎉 مجاني' : '🎉 Free'}</span>
+
+                                        {(effectiveDeliveryFee ?? 0) <= 0 ? (
+                                            <span style={{ color: '#059669', fontWeight: 800 }}>
+                                                {isAr ? '🎉 مجاني' : '🎉 Free'}
+                                            </span>
                                         ) : (
-                                            <span>{(deliveryFee || settings.deliveryFee || 0).toFixed(2)} ₪</span>
+                                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                {smartDeliveryDiscount > 0 && (
+                                                    <span style={{ textDecoration: 'line-through', opacity: 0.5, fontSize: '12px' }}>
+                                                        {deliveryFee.toFixed(2)}
+                                                    </span>
+                                                )}
+
+                                                <span style={{ fontWeight: 800 }}>
+                                                    {effectiveDeliveryFee.toFixed(2)} ₪
+                                                </span>
+                                            </div>
                                         )}
                                     </div>
                                 )}

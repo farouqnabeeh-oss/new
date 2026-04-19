@@ -3,29 +3,15 @@
 import { useState, useEffect } from "react";
 import { useAdminTranslation } from "@/lib/useAdminTranslation";
 
-type TabKey = "intelligence" | "branches" | "categories" | "products" | "addons" | "customers" | "settings" | "profile";
-
-type TabConfig = {
-  key: TabKey;
-  label: string;
-};
-
-const TABS: TabConfig[] = [
-  { key: "intelligence", label: "Intelligence" },
-  { key: "branches", label: "Branches" },
-  { key: "categories", label: "Categories" },
-  { key: "products", label: "Products" },
-  { key: "addons", label: "Addon Groups" },
-  { key: "customers", label: "Customers" },
-  { key: "settings", label: "Settings" },
-  { key: "profile", label: "Account" }
-];
 
 type Props = {
   children: Partial<Record<TabKey, React.ReactNode>>;
   role?: string;
 };
 
+type TabKey = "intelligence" | "branches" | "categories" | "products" | "addons" | "customers" | "settings" | "profile" | "discounts";
+
+// داخل مكون AdminTabsWrapper
 export function AdminTabsWrapper({ children, role }: Props) {
   const { t } = useAdminTranslation();
   const [activeTab, setActiveTab] = useState<TabKey>("intelligence");
@@ -33,6 +19,7 @@ export function AdminTabsWrapper({ children, role }: Props) {
   let translatedTabs = [
     { key: "intelligence", label: t('intelligence') },
     { key: "branches", label: t('branches') },
+    { key: "discounts", label: t('discounts') || 'خصومات الفواتير' }, // التاب الجديدة
     { key: "categories", label: t('categories') },
     { key: "products", label: t('products') },
     { key: "addons", label: t('addons') },
@@ -41,9 +28,9 @@ export function AdminTabsWrapper({ children, role }: Props) {
     { key: "profile", label: t('profile') }
   ];
 
+  // تأكد من منع الكاشير من رؤيتها إذا أردت
   if (role?.toLowerCase() === "cashier") {
     translatedTabs = translatedTabs.filter(t => ["intelligence"].includes(t.key));
-    // For cashier, "Intelligence" is primarily the order list; let's rename it to Orders
     const ordersTab = translatedTabs.find(t => t.key === "intelligence");
     if (ordersTab) ordersTab.label = t('orders') || 'الطلبات';
   }
