@@ -1,5 +1,3 @@
-
-
 "use server";
 
 import { getSupabaseAdmin } from "@/lib/supabase";
@@ -127,9 +125,12 @@ export async function finalizeOrder(orderId: string | number) {
         // 1. تحديث حالة الطلب أولاً
         await supabase
             .from("orders")
-            .update({ status: "paid", updated_at: new Date().toISOString() })
+            .update({
+                status: "Confirmed",
+                payment_status: "Paid",
+                updated_at: new Date().toISOString()
+            })
             .eq("id", orderId);
-
         // 2. جلب البيانات كاملة (الطلب + الفرع + المنتجات)
         // ملاحظة: تأكد أن الأسماء (branches, order_items) تطابق أسماء الجداول عندك
         const { data: orderData, error: fetchErr } = await supabase
@@ -180,6 +181,33 @@ export async function finalizeOrder(orderId: string | number) {
 
     } catch (err: any) {
         console.error(`❌ [Finalize Error] خطأ عام:`, err.message);
+        return { success: false, error: err.message };
+    }
+}
+
+export async function markOrderFailed(
+    orderId: string | number,
+    reason: string = "failed"
+) {
+    console.log(`\n--- ❌ تسجيل فشل الدفع للطلب: #${orderId} | السبب: ${reason} ---`);
+
+    try {
+        const supabase = getSupabaseAdmin();
+
+        await supabase
+            .from("orders")
+            .update({
+                payment_status: "Failed",
+                status: "Cancelled",
+                updated_at: new Date().toISOString()
+            })
+            .eq("id", orderId);
+
+        console.log(`✅ تم تسجيل فشل الطلب #${orderId} في DB`);
+        return { success: true };
+
+    } catch (err: any) {
+        console.error(`❌ [markOrderFailed] خطأ:`, err.message);
         return { success: false, error: err.message };
     }
 }
@@ -266,6 +294,7 @@ export async function saveOrderAction(orderData: any, items: any[], captchaToken
             product_name_en: item.nameEn || "",
             quantity: item.quantity,
             price: item.finalPrice ?? item.price ?? 0,
+            original_price: item.originalPrice ?? item.finalPrice ?? item.price ?? 0,
             addon_details: item.addonDetails || null
         }));
 
@@ -349,4 +378,3 @@ export async function updateOrderStatus(orderId: number | string, newStatus: str
         return { success: false, error: err.message };
     }
 }
-

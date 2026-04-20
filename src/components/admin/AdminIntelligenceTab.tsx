@@ -1,19 +1,22 @@
 "use client";
 
 import { type Order, type Branch } from "@/lib/types";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { updateOrderStatus, getOrderSummary } from "@/lib/order-actions";
 import { Search, Filter, Calendar, CreditCard, LayoutGrid, RefreshCw, X } from "lucide-react";
 
 type Props = {
-  orders: Order[];
+  orders?: Order[]; // optional — now fetched internally
   branches: Branch[];
   role?: string;
 };
 
-export function AdminIntelligenceTab({ orders, branches, role }: Props) {
-  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+export function AdminIntelligenceTab({ orders: initialOrders = [], branches, role }: Props) {
+  const [orders, setOrders] = useState<Order[]>(initialOrders);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [statusModal, setStatusModal] = useState<{ orderId: any, currentStatus: string } | null>(null);
   const [confirmModal, setConfirmModal] = useState<{ orderId: any, newStatus: string } | null>(null);
   const [estimatedTime, setEstimatedTime] = useState("");
@@ -27,27 +30,68 @@ export function AdminIntelligenceTab({ orders, branches, role }: Props) {
   const [paymentFilter, setPaymentFilter] = useState("All");
   const [periodFilter, setPeriodFilter] = useState("Today");
 
+  const fetchOrders = useCallback(async (showSpinner = false) => {
+    if (showSpinner) setIsRefreshing(true);
+    try {
+      const res = await fetch("/api/admin/orders", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json();
+
+      // map snake_case from DB to camelCase Order type
+      const mapped: Order[] = (data.orders || []).map((o: any) => ({
+        id: o.id,
+        branchId: o.branch_id,
+        customerId: o.customer_id,
+        customerName: o.customer_name,
+        customerPhone: o.customer_phone,
+        customerEmail: o.customer_email || "",
+        orderType: o.order_type,
+        address: o.address,
+        tableNumber: o.table_number,
+        totalAmount: o.total_amount,
+        status: o.status,
+        paymentMethod: o.payment_method,
+        paymentStatus: o.payment_status,
+        createdAt: o.created_at,
+        branch: o.branch ? { ...o.branch, nameAr: o.branch.name_ar, nameEn: o.branch.name_en } : undefined,
+        items: o.order_items ?? undefined,
+      }));
+
+      setOrders(mapped);
+      setLastUpdated(new Date());
+    } catch (e) {
+      // silent fail — keep showing previous data
+    } finally {
+      if (showSpinner) setIsRefreshing(false);
+    }
+  }, []);
+
+  // auto-refresh every 6 seconds
+  useEffect(() => {
+    fetchOrders();
+    const interval = setInterval(() => fetchOrders(), 6000);
+    return () => clearInterval(interval);
+  }, [fetchOrders]);
+
+  // after status update — refresh immediately instead of window.location.reload()
+  const handleStatusUpdated = useCallback(() => {
+    fetchOrders(true);
+  }, [fetchOrders]);
+
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
-      // 1. Search Query (ID, Name, Phone, Email)
       const matchesSearch =
         searchQuery === "" ||
         order.id.toString().includes(searchQuery) ||
         order.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.customerPhone.includes(searchQuery) ||
-        order.customerEmail.toLowerCase().includes(searchQuery.toLowerCase());
+        (order.customerEmail || "").toLowerCase().includes(searchQuery.toLowerCase());
 
-      // 2. Status Filter
       const matchesStatus = statusFilter === "All" || order.status === statusFilter;
-
-      // 3. Branch Filter
       const matchesBranch = branchFilter === "All" || order.branchId.toString() === branchFilter;
-
-      // 4. Payment Method Filter
       const matchesPayment = paymentFilter === "All" ||
         (paymentFilter === "Card" ? (order.paymentMethod === "Card" || order.paymentMethod === "palpay") : order.paymentMethod === "Cash");
 
-      // 5. Period Filter
       const orderDate = new Date(order.createdAt);
       const now = new Date();
       let matchesPeriod = true;
@@ -74,7 +118,7 @@ export function AdminIntelligenceTab({ orders, branches, role }: Props) {
   const totalOrders = filteredOrders.length;
   const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
 
-  const isAr = true; // Defaulting to Arabic for this portal
+  const isAr = true;
 
   return (
     <div className="admin-intelligence-tab">
@@ -167,12 +211,23 @@ export function AdminIntelligenceTab({ orders, branches, role }: Props) {
         <h2 style={{ fontWeight: 900, fontSize: '1.8rem', margin: 0 }}>
           {isAr ? "بوابة الكاشير" : "Cashier Portal"}
         </h2>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button className="btn btn-outline btn-sm" style={{ borderRadius: '15px' }} onClick={() => window.location.reload()}>
-            <RefreshCw size={16} />
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          {/* آخر تحديث */}
+          <span style={{ fontSize: '12px', color: '#aaa', fontWeight: 600 }}>
+            آخر تحديث: {lastUpdated.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+          </span>
+          <button
+            className="btn btn-outline btn-sm"
+            style={{ borderRadius: '15px' }}
+            onClick={() => fetchOrders(true)}
+            disabled={isRefreshing}
+          >
+            <RefreshCw size={16} style={{ animation: isRefreshing ? 'spin 1s linear infinite' : 'none' }} />
           </button>
         </div>
       </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }` }} />
 
       <div className="stats-banner">
         <div className="mini-stat">
@@ -471,7 +526,7 @@ export function AdminIntelligenceTab({ orders, branches, role }: Props) {
               }}>رجوع</button>
               <button onClick={async () => {
                 const res = await updateOrderStatus(confirmModal.orderId, confirmModal.newStatus, estimatedTime);
-                if (res.success) { setConfirmModal(null); window.location.reload(); }
+                if (res.success) { setConfirmModal(null); handleStatusUpdated(); }
                 else alert('فشل التحديث: ' + res.error);
               }} style={{
                 flex: 2, padding: '14px', borderRadius: '16px', border: 'none',
@@ -530,7 +585,7 @@ export function AdminIntelligenceTab({ orders, branches, role }: Props) {
                       setStatusModal(null);
                     } else {
                       const res = await updateOrderStatus(statusModal.orderId, status);
-                      if (res.success) { setStatusModal(null); window.location.reload(); }
+                      if (res.success) { setStatusModal(null); handleStatusUpdated(); }
                       else alert('فشل التحديث: ' + res.error);
                     }
                   }} style={{
@@ -552,7 +607,7 @@ export function AdminIntelligenceTab({ orders, branches, role }: Props) {
 
               <button onClick={async () => {
                 const res = await updateOrderStatus(statusModal.orderId, 'Cancelled');
-                if (res.success) { setStatusModal(null); window.location.reload(); }
+                if (res.success) { setStatusModal(null); handleStatusUpdated(); }
                 else alert('فشل التحديث: ' + res.error);
               }} style={{
                 padding: '16px 12px', borderRadius: '16px', border: '1px solid #F09595',
@@ -576,10 +631,6 @@ export function AdminIntelligenceTab({ orders, branches, role }: Props) {
           </div>
         </div>
       )}
-
-
-
-
     </div>
   );
 }

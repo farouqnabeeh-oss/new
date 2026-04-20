@@ -14,11 +14,7 @@ type Props = {
 };
 
 export default function CheckoutForm({ branch, settings, lang: initialLang }: Props) {
-    console.log("initialLang received:", initialLang); // ← هاد
-
     const [lang, setLang] = useState(initialLang);
-    console.log("lang state:", lang); // ← وهاد
-
     const [orderType, setOrderType] = useState<"inRestaurant" | "delivery">("inRestaurant");
     const [subType, setSubType] = useState<"table" | "pickup">("table");
     const [paymentMethod, setPaymentMethod] = useState<"cash" | "palpay">("cash");
@@ -65,6 +61,24 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
         }
         fetchRules();
     }, []);
+
+    // ✅ كشف رجوع المستخدم من Lahza بدون دفع
+    useEffect(() => {
+        const pendingOrderId = sessionStorage.getItem("pending_order_id");
+        const pendingOrderSlug = sessionStorage.getItem("pending_order_slug");
+
+        if (pendingOrderId && pendingOrderSlug === branch.slug) {
+            fetch("/api/payments/lahza/cancel", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ orderId: pendingOrderId })
+            }).catch(() => { });
+
+            sessionStorage.removeItem("pending_order_id");
+            sessionStorage.removeItem("pending_order_slug");
+        }
+    }, [branch.slug]);
+
     useEffect(() => {
         const syncData = () => {
             if (typeof window === "undefined" || !(window as any).Cart) return;
@@ -76,13 +90,8 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
             setCartItems(items);
 
             const itemsTotal = cart.getTotal(slug);
-
-            // 💰 مبدئياً المجموع هو نفسه (لأنه أصلاً بعد خصم المنتجات)
             const subtotal = itemsTotal;
 
-            // ========================
-            // 🚚 DELIVERY LOGIC
-            // ========================
             let smartDiscountAmount = 0;
             let baseFee = 0;
 
@@ -99,15 +108,12 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                         case "free":
                             smartDiscountAmount = baseFee;
                             break;
-
                         case "fixed":
                             smartDiscountAmount = rule.value;
                             break;
-
                         case "percentage":
                             smartDiscountAmount = (baseFee * rule.value) / 100;
                             break;
-
                         default:
                             smartDiscountAmount = 0;
                     }
@@ -118,7 +124,6 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
 
             setSmartDeliveryDiscount(smartDiscountAmount);
 
-            // 🚚 final delivery fee (إذا ما في توصيل = null)
             const finalDeliveryFee =
                 orderType === "delivery"
                     ? Math.max(baseFee - smartDiscountAmount, 0)
@@ -126,12 +131,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
 
             setEffectiveDeliveryFee(finalDeliveryFee);
 
-            // ========================
-            // 💰 TOTAL CALCULATION
-            // ========================
-            const deliveryPart =
-                orderType === "delivery" ? (finalDeliveryFee ?? 0) : 0;
-
+            const deliveryPart = orderType === "delivery" ? (finalDeliveryFee ?? 0) : 0;
             const finalTotal = subtotal + deliveryPart;
 
             setSubtotal(subtotal);
@@ -149,6 +149,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
         discountRules,
         settings.deliveryFee
     ]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (cartItems.length === 0) return alert(isAr ? "السلة فارغة" : "Cart is empty");
@@ -162,7 +163,6 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
         const addressNotes = (document.getElementById('customer-address-notes') as HTMLInputElement)?.value.trim() || "";
         const address = street ? `${street}, ${building}${addressNotes ? ` (${addressNotes})` : ""}` : "";
 
-        const pickupTime = (document.getElementById('customer-pickup-time') as HTMLInputElement)?.value.trim();
         const notes = (document.getElementById('customer-notes') as HTMLTextAreaElement)?.value.trim();
         const scheduledDate = (document.getElementById('scheduled-date') as HTMLInputElement)?.value;
         const scheduledTime = (document.getElementById('scheduled-time') as HTMLInputElement)?.value;
@@ -181,25 +181,20 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
             return alert(isAr ? 'يجب أن يتكون رقم الهاتف من 10 أرقام (مثلاً: 059xxxxxxx)' : 'Phone number must be exactly 10 digits (e.g., 059xxxxxxx)');
         }
 
-        // --- إضافة التحقق من الإيميل عند اختيار الفيزا ---
         if (paymentMethod === 'palpay') {
-            // 1. التأكد أن الحقل ليس فارغاً
             if (!email) {
-                setIsSubmitting(false); // لإعادة تفعيل الزر إذا كان هناك خطأ
                 return alert(isAr ? 'يرجى إدخال البريد الإلكتروني لإتمام عملية الدفع' : 'Please enter your email to complete the payment');
             }
-
-            // 2. التأكد من صحة صيغة الإيميل (التحقق العادي)
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
-                setIsSubmitting(false);
                 return alert(isAr ? 'يرجى إدخال بريد إلكتروني صحيح (مثال: name@example.com)' : 'Please enter a valid email address');
             }
         }
-        // ------------------------------------------
 
-        if (orderType === 'delivery' && (!selectedZone || !street || !building)) return alert(isAr ? 'يرجى اختيار منطقة التوصيل وإدخال بيانات الشارع والبناية بالتفصيل' : 'Please select a delivery zone and enter street and building details');
-        if (orderType === 'inRestaurant' && !pickupTime) return alert(isAr ? 'يرجى اختيار وقت الاستلام' : 'Please select pickup time');
+        if (orderType === 'delivery' && (!selectedZone || !street || !building)) {
+            return alert(isAr ? 'يرجى اختيار منطقة التوصيل وإدخال بيانات الشارع والبناية بالتفصيل' : 'Please select a delivery zone and enter street and building details');
+        }
+
         if (!policyAccepted) return alert(isAr ? 'يجب الموافقة على الشروط والسياسات للمتابعة' : 'You must accept the terms and policies to continue');
 
         const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
@@ -211,155 +206,148 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
         setIsSubmitting(true);
 
         try {
-            // Recalculate fresh values to avoid stale state
             const items = (window as any).Cart.getItems(branch.slug);
             setCartItems(items);
             const freshItemsTotal = (window as any).Cart.getTotal(branch.slug);
-            const dPercent = branch.discountPercent || 0;
 
+            const baseFee = orderType === 'delivery' ? (deliveryFee ?? settings.deliveryFee ?? 0) : 0;
+            const freshEffectiveFee = orderType === 'delivery' ? Math.max(baseFee - smartDeliveryDiscount, 0) : 0;
+            const freshTotal = Number((freshItemsTotal + freshEffectiveFee).toFixed(2));
 
-            let freshEffectiveFee = 0;
+            const finalAddress = orderType === 'delivery' ? `${selectedZone} - ${address}` : address;
 
-            if (orderType === 'delivery') {
-                const baseFee = deliveryFee ?? settings.deliveryFee ?? 0;
-                freshEffectiveFee = baseFee - smartDeliveryDiscount;
+            const mappedItems = items.map((i: any) => {
+                const withoutAddons = i.selectedAddOns?.filter((a: any) =>
+                    a.groupType === 'Without' ||
+                    (a.nameAr || '').includes('بدون')
+                );
 
-                const freshTotal = Number((freshItemsTotal + freshEffectiveFee).toFixed(2));
+                const normalAddons = i.selectedAddOns?.filter((a: any) =>
+                    a.groupType !== 'Without' &&
+                    !['MealDrink', 'MealDrinkUpgrade', 'MealFries'].includes(a.groupType)
+                );
 
-                const finalAddress = orderType === 'delivery' ? `${selectedZone} - ${address}` : address;
+                const parts = [];
 
-                const mappedItems = items.map((i: any) => {
-                    const withoutAddons = i.selectedAddOns?.filter((a: any) =>
-                        a.groupType === 'Without' ||
-                        (a.nameAr || '').includes('بدون')
-                    );
+                if (i.selectedSize)
+                    parts.push(`${isAr ? 'الحجم' : 'Size'}: ${isAr ? i.selectedSize.nameAr : i.selectedSize.nameEn}`);
 
-                    const normalAddons = i.selectedAddOns?.filter((a: any) =>
-                        a.groupType !== 'Without' &&
-                        !['MealDrink', 'MealDrinkUpgrade', 'MealFries'].includes(a.groupType)
-                    );
+                if (i.selectedType)
+                    parts.push(`${isAr ? 'النوع' : 'Type'}: ${isAr ? i.selectedType.nameAr : i.selectedType.nameEn}`);
 
-                    const parts = [];
+                if (normalAddons?.length)
+                    parts.push(`${isAr ? 'إضافات' : 'Addons'}: ${normalAddons.map((a: any) => isAr ? a.nameAr : a.nameEn).join(' + ')}`);
 
-                    if (i.selectedSize)
-                        parts.push(`${isAr ? 'الحجم' : 'Size'}: ${isAr ? i.selectedSize.nameAr : i.selectedSize.nameEn}`);
+                if (withoutAddons?.length)
+                    parts.push(`${isAr ? 'بدون' : 'Without'}: ${withoutAddons.map((a: any) => (isAr ? a.nameAr : a.nameEn).replace('🚫', '').trim()).join('، ')}`);
 
-                    if (i.selectedType)
-                        parts.push(`${isAr ? 'النوع' : 'Type'}: ${isAr ? i.selectedType.nameAr : i.selectedType.nameEn}`);
+                if (i.note)
+                    parts.push(`${isAr ? 'ملاحظة' : 'Note'}: ${i.note}`);
 
-                    if (normalAddons?.length)
-                        parts.push(`${isAr ? 'إضافات' : 'Addons'}: ${normalAddons.map((a: any) => isAr ? a.nameAr : a.nameEn).join(' + ')}`);
+                return { ...i, addonDetails: parts.join(' | '), originalPrice: i.originalPrice ?? i.finalPrice };
+            });
 
-                    if (withoutAddons?.length)
-                        parts.push(`${isAr ? 'بدون' : 'Without'}: ${withoutAddons.map((a: any) => (isAr ? a.nameAr : a.nameEn).replace('🚫', '').trim()).join('، ')}`);
+            // ✅ حفظ الطلب — يعمل لكل أنواع الطلبات (delivery + inRestaurant)
+            const res = await saveOrderAction({
+                branchId: branch.id,
+                customerName: name,
+                customerPhone: phone,
+                customerEmail: email,
+                orderType: orderType === 'delivery' ? 'Delivery' : 'Pickup',
+                address: finalAddress,
+                tableNumber: null,
+                totalAmount: freshTotal,
+                paymentMethod: paymentMethod === 'cash' ? 'Cash' : 'Card',
+                scheduledAt: scheduledAt
+            }, mappedItems, captchaToken || undefined);
 
-                    if (i.note)
-                        parts.push(`${isAr ? 'ملاحظة' : 'Note'}: ${i.note}`);
+            console.log("[Checkout] Order Save Result:", res);
 
-                    return { ...i, addonDetails: parts.join(' | ') };
+            if (!res.success || !res.orderId) {
+                alert(isAr
+                    ? `فشل حفظ الطلب: ${res.error || 'خطأ غير متوقع، يرجى المحاولة مرة أخرى'}`
+                    : `Failed to save order: ${res.error || 'Unexpected error, please try again'}`
+                );
+                setIsSubmitting(false);
+                return;
+            }
+
+            if (res.isDemo && typeof window !== "undefined") {
+                const demoStore = {
+                    customer_name: name,
+                    order_type: orderType === 'delivery' ? 'Delivery' : 'Pickup',
+                    total_amount: freshTotal,
+                    order_items: items.map((i: any) => ({
+                        product_name_ar: i.nameAr,
+                        product_name_en: i.nameEn,
+                        quantity: i.quantity,
+                        price: i.finalPrice
+                    })),
+                    branches: { discount_percent: branch.discountPercent },
+                    method: paymentMethod
+                };
+                sessionStorage.setItem(`demo_order_${res.orderId}`, JSON.stringify(demoStore));
+            }
+
+            if (paymentMethod === "palpay") {
+                console.log(`[Checkout] Initiating online payment for ${freshTotal} ${settings.currencySymbol || '₪'}`);
+
+                const payRes = await fetch("/api/payments/lahza/initiate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        orderId: res.orderId,
+                        email: email || "customer@uptownps.com",
+                        amount: freshTotal,
+                        currency: settings.currencySymbol === "₪" ? "ILS" : settings.currencySymbol || "USD",
+                        customerName: name,
+                        customerPhone: phone,
+                        branchSlug: branch.slug
+                    })
                 });
 
-                const res = await saveOrderAction({
-                    branchId: branch.id,
-                    customerName: name,
-                    customerPhone: phone,
-                    customerEmail: email,
-                    orderType: orderType === 'delivery' ? 'Delivery' : 'Pickup',
-                    address: finalAddress,
-                    tableNumber: orderType === 'delivery' ? null : pickupTime,
-                    totalAmount: freshTotal,
-                    paymentMethod: paymentMethod === 'cash' ? 'Cash' : 'Card',
-                    scheduledAt: scheduledAt
-                }, mappedItems, captchaToken || undefined);
+                const payData = await payRes.json();
+                console.log("🚀 Lahza API Response:", payData);
 
-                console.log("[Checkout] Order Save Result:", res);
-
-                // Check if order was saved successfully
-                if (!res.success || !res.orderId) {
-                    alert(isAr
-                        ? `فشل حفظ الطلب: ${res.error || 'خطأ غير متوقع، يرجى المحاولة مرة أخرى'}`
-                        : `Failed to save order: ${res.error || 'Unexpected error, please try again'}`
-                    );
-                    return;
+                if (!payData.success) {
+                    throw new Error(payData.error || "Lahza initiation failed");
                 }
 
-                if (res.isDemo && typeof window !== "undefined") {
-                    console.log("[Checkout] Saving demo data locally for success page fallback");
-                    const demoStore = {
-                        customer_name: name,
-                        order_type: orderType === 'delivery' ? 'Delivery' : 'Pickup',
-                        total_amount: freshTotal,
-                        order_items: items.map((i: any) => ({
-                            product_name_ar: i.nameAr,
-                            product_name_en: i.nameEn,
-                            quantity: i.quantity,
-                            price: i.finalPrice
-                        })),
-                        branches: { discount_percent: branch.discountPercent },
-                        method: paymentMethod
-                    };
-                    sessionStorage.setItem(`demo_order_${res.orderId}`, JSON.stringify(demoStore));
-                }
-
-                if (paymentMethod === "palpay") {
-                    console.log(`[Checkout] Initiating online payment for ${freshTotal} ${settings.currencySymbol || '₪'}`);
-
-                    const payRes = await fetch("/api/payments/lahza/initiate", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            orderId: res.orderId,
-                            email: email || "customer@uptownps.com", // Fallback for optional email
-                            amount: freshTotal,
-                            currency: settings.currencySymbol === "₪" ? "ILS" : settings.currencySymbol || "USD",
-                            customerName: name,
-                            customerPhone: phone,
-                            branchSlug: branch.slug
-                        })
-                    });
-
-                    const payData = await payRes.json();
-
-                    console.log("🚀 Lahza API Response:", payData);
-
-                    if (!payData.success) {
-                        throw new Error(payData.error || "Lahza initiation failed");
-                    }
-
-                    if (payData.authorizationUrl) {
-                        console.log("🔗 Redirecting to:", payData.authorizationUrl);
-                        window.location.href = payData.authorizationUrl;
-                    } else {
-                        alert(isAr ? "عذراً، لم نتمكن من الحصول على رابط الدفع." : "Error: Could not obtain payment URL.");
-                        setIsSubmitting(false);
-                    }
+                if (payData.authorizationUrl) {
+                    console.log("🔗 Redirecting to:", payData.authorizationUrl);
+                    // ✅ احفظ الطلب عشان نكشف الإلغاء لما يرجع
+                    sessionStorage.setItem("pending_order_id", res.orderId.toString());
+                    sessionStorage.setItem("pending_order_slug", branch.slug);
+                    window.location.href = payData.authorizationUrl;
                 } else {
-                    // Success for WhatsApp/Cash
-                    try {
-                        const audio = new Audio('/sounds/success.mp3');
-                        audio.play().catch(e => console.log("Sound play error", e));
-                    } catch (e) { }
-
-                    // Construct WhatsApp Message
-                    const orderTypeLabel = orderType === 'delivery' ? (isAr ? 'توصيل' : 'Delivery') : (isAr ? 'استلام' : 'Pickup');
-                    const itemsTxt = mappedItems.map((i: any) => `- ${i.quantity}x ${isAr ? i.nameAr : i.nameEn} (${i.finalPrice} ₪) %0A   ${i.addonDetails || ''}`).join('%0A');
-                    const scheduledLine = scheduledAt ? `%0A*وقت التجهيز المجددل:* ${scheduledAt}` : '';
-                    const msg = `*طلب جديد من UPTOWN*%0A%0A` +
-                        `*العميل:* ${name}%0A` +
-                        `*الهاتف:* ${phone}%0A` +
-                        `*نوع الطلب:* ${orderTypeLabel}%0A` +
-                        `${orderType === 'delivery' ? `*العنوان:* ${finalAddress}` : `*وقت الاستلام:* ${pickupTime}`}${scheduledLine}%0A%0A` +
-                        `*الأصناف:*%0A${itemsTxt}%0A%0A` +
-                        `*المجموع:* ${freshTotal} ₪%0A%0A` +
-                        `_تم إرسال الطب عبر الموقع الإلكتروني_`;
-
-                    const waLink = `https://wa.me/${branch.whatsApp.replace(/\+/g, '').replace(/\s/g, '')}?text=${msg}`;
-
-                    // Redirect to success but open WhatsApp
-                    window.open(waLink, '_blank');
-                    window.location.href = `/checkout/success?orderId=${res.orderId}&branchSlug=${branch.slug}&method=cash`;
+                    alert(isAr ? "عذراً، لم نتمكن من الحصول على رابط الدفع." : "Error: Could not obtain payment URL.");
+                    setIsSubmitting(false);
                 }
-            } // end if (orderType === 'delivery')
+            } else {
+                // ✅ Cash — يعمل لكل أنواع الطلبات
+                try {
+                    const audio = new Audio('/sounds/success.mp3');
+                    audio.play().catch(e => console.log("Sound play error", e));
+                } catch (e) { }
+
+                const orderTypeLabel = orderType === 'delivery' ? (isAr ? 'توصيل' : 'Delivery') : (isAr ? 'استلام' : 'Pickup');
+                const itemsTxt = mappedItems.map((i: any) => `- ${i.quantity}x ${isAr ? i.nameAr : i.nameEn} (${i.finalPrice} ₪) %0A   ${i.addonDetails || ''}`).join('%0A');
+                const scheduledLine = scheduledAt ? `%0A*وقت التجهيز المجددل:* ${scheduledAt}` : '';
+                const msg = `*طلب جديد من UPTOWN*%0A%0A` +
+                    `*العميل:* ${name}%0A` +
+                    `*الهاتف:* ${phone}%0A` +
+                    `*نوع الطلب:* ${orderTypeLabel}%0A` +
+                    `${orderType === 'delivery' ? `*العنوان:* ${finalAddress}` : ''}${scheduledLine}%0A%0A` +
+                    `*الأصناف:*%0A${itemsTxt}%0A%0A` +
+                    `*المجموع:* ${freshTotal} ₪%0A%0A` +
+                    `_تم إرسال الطلب عبر الموقع الإلكتروني_`;
+
+                const waLink = `https://wa.me/${branch.whatsApp.replace(/\+/g, '').replace(/\s/g, '')}?text=${msg}`;
+
+                window.open(waLink, '_blank');
+                window.location.href = `/checkout/success?orderId=${res.orderId}&branchSlug=${branch.slug}&method=cash`;
+            }
+
         } catch (err: any) {
             alert(isAr ? "عذراً، حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى." : "Critical Error: " + err.message);
         } finally {
@@ -369,15 +357,12 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
 
     return (
         <div className="uptown-checkout-wrapper" style={{ margin: '0 auto', background: '#fff' }}>
-
-
             <div style={{ maxWidth: '900px', margin: '40px auto', padding: '0 1px' }}>
                 <div style={{ textAlign: 'center', marginBottom: '40px' }}>
                     <h1 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '5px' }}>{isAr ? 'إتمام الطلب' : 'Checkout'}</h1>
                     <p style={{ fontWeight: 800, color: '#8b0000', fontSize: '1rem', marginBottom: '15px' }}>{isAr ? branch.nameAr : branch.nameEn}</p>
                     <button onClick={() => window.history.back()} style={{ color: '#666', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px' }}>{isAr ? '← رجوع للقائمة' : '← Back to Menu'}</button>
                 </div>
-
 
                 {!isOpen && (
                     <div style={{
@@ -418,7 +403,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                             </div>
                             <div onClick={() => setOrderType('delivery')} className={`premium-choice-card ${orderType === 'delivery' ? 'active' : ''}`}>
                                 <Truck size={32} />
-                                <span>{isAr ? 'توصيل ' : 'Delivery'}</span>
+                                <span>{isAr ? 'توصيل' : 'Delivery'}</span>
                             </div>
                         </div>
                     </div>
@@ -457,7 +442,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                                     id="customer-email"
                                     className="uptown-input"
                                     required={paymentMethod === 'palpay'}
-                                    placeholder={paymentMethod === 'palpay' ? (isAr ? "example@gmail.com" : "example@gmail.com") : ""}
+                                    placeholder={paymentMethod === 'palpay' ? "example@gmail.com" : ""}
                                     suppressHydrationWarning
                                 />
                                 {paymentMethod === 'palpay' && (
@@ -527,13 +512,6 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                                 </div>
                             )}
 
-                            {orderType === 'inRestaurant' && (
-                                <div className="uptown-input-group" style={{ gridColumn: 'span 2' }}>
-                                    <label>{isAr ? 'وقت الاستلام' : 'Pickup Time'} *</label>
-                                    <input type="time" id="customer-pickup-time" required className="uptown-input" />
-                                </div>
-                            )}
-
                             {/* 🕐 SCHEDULED ORDER TIME */}
                             <div style={{ gridColumn: 'span 2', background: '#FFFBEB', border: '1px solid #FCD34D', borderRadius: '20px', padding: '20px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
@@ -575,7 +553,8 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: '15px', marginBottom: '15px' }}>
                                 <span style={{ fontWeight: 800 }}>
                                     {cartItems.reduce((sum: number, item: any) => sum + item.quantity, 0)} {isAr ? 'أصناف في السلة' : 'Items'}
-                                </span>                                <span style={{ color: '#666', fontSize: '14px' }}>{isAr ? 'المجموع' : 'Subtotal'}: {subtotal.toFixed(2)}</span>
+                                </span>
+                                <span style={{ color: '#666', fontSize: '14px' }}>{isAr ? 'المجموع' : 'Subtotal'}: {subtotal.toFixed(2)}</span>
                             </div>
                             {cartItems.map((item: any, i: number) => (
                                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginBottom: '8px', color: '#666' }}>
@@ -595,17 +574,14 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#059669', fontWeight: 700, marginBottom: '8px' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                                             <Sparkles size={14} />
-                                            <span>{isAr ? 'خصم التوصيل ' : 'Delivery Discount'}</span>
+                                            <span>{isAr ? 'خصم التوصيل' : 'Delivery Discount'}</span>
                                         </div>
                                         <span>-{smartDeliveryDiscount.toFixed(2)} {settings.currencySymbol}</span>
                                     </div>
                                 )}
-
-                                {/* عرض رسوم التوصيل النهائية */}
                                 {orderType === 'delivery' && selectedZone && effectiveDeliveryFee !== null && (
                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#666', marginBottom: '8px' }}>
                                         <span>{isAr ? 'رسوم التوصيل' : 'Delivery Fee'}</span>
-
                                         {(effectiveDeliveryFee ?? 0) <= 0 ? (
                                             <span style={{ color: '#059669', fontWeight: 800 }}>
                                                 {isAr ? '🎉 مجاني' : '🎉 Free'}
@@ -617,7 +593,6 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                                                         {deliveryFee.toFixed(2)}
                                                     </span>
                                                 )}
-
                                                 <span style={{ fontWeight: 800 }}>
                                                     {effectiveDeliveryFee.toFixed(2)} ₪
                                                 </span>
@@ -682,7 +657,6 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                                 />
                             </div>
                         )}
-
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                             <button

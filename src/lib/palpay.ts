@@ -20,6 +20,8 @@ export async function generatePalPayUrl(orderId: number, amount: number, custome
         cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/checkout/cancel?orderId=${orderId}`,
         customer_name: customerInfo.name,
         customer_phone: customerInfo.phone,
+        support_email: process.env.PALPAY_SUPPORT_EMAIL || "mutaz0101@gmail.com", // ← هاد السطر
+
         // hash: generateHash(orderId, amount) // Signature logic
     };
 
@@ -33,6 +35,7 @@ export async function generatePalPayUrl(orderId: number, amount: number, custome
     const data = await response.json();
     return data.redirect_url;
     */
+    console.log("PalPay Payload:", JSON.stringify(payload, null, 2));
 
     // Simulated redirect URL for now
     return `https://checkout.palpay.ps/portal/pay?id=${orderId}&token=demo_token`;

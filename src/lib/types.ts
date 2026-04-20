@@ -86,6 +86,8 @@ export type Product = {
   sizes: ProductSize[];
   types: ProductType[];
   addonGroups?: AddonGroup[];
+  linkedAddonGroupIds?: number[];
+  simpleAddons?: AddonGroupItem[];
 };
 
 export type OrderStatus = "Pending" | "Paid" | "Preparing" | "Dispatched" | "Delivered" | "Cancelled";

@@ -12,18 +12,12 @@ function SuccessContent() {
   const [loading, setLoading] = useState(true);
   const soundPlayed = useRef(false);
 
-  // 🔊 Play success sound (MP3 or fallback tones)
   const playSuccessSound = () => {
     if (soundPlayed.current) return;
     soundPlayed.current = true;
-
-    // Try playing the shared success sound file first
     try {
       const audio = new Audio('/sounds/success.mp3');
-      audio.play().catch(() => {
-        // Fallback to generated tones if file fails or not found
-        playGeneratedTones();
-      });
+      audio.play().catch(() => playGeneratedTones());
     } catch (e) {
       playGeneratedTones();
     }
@@ -45,33 +39,29 @@ function SuccessContent() {
         osc.start(ctx.currentTime + start);
         osc.stop(ctx.currentTime + start + duration);
       };
-
       const playSequence = (offset: number) => {
-        playTone(523.25, offset + 0.0, 0.3, 0.6); // C5
-        playTone(659.25, offset + 0.1, 0.3, 0.5); // E5
-        playTone(783.99, offset + 0.2, 0.3, 0.4); // G5
-        playTone(1046.50, offset + 0.3, 0.6, 0.3); // C6
+        playTone(523.25, offset + 0.0, 0.3, 0.6);
+        playTone(659.25, offset + 0.1, 0.3, 0.5);
+        playTone(783.99, offset + 0.2, 0.3, 0.4);
+        playTone(1046.50, offset + 0.3, 0.6, 0.3);
       };
       playSequence(0);
     } catch (e) { }
   };
+
   useEffect(() => {
-    // 1. تنظيف السلة
+
+    // ✅ امسح sessionStorage عشان ما يأثر على طلبات ثانية
+    sessionStorage.removeItem("pending_order_id");
+    sessionStorage.removeItem("pending_order_slug");
+
     if (typeof window !== "undefined" && (window as any).Cart && branchSlug) {
       (window as any).Cart.clear(branchSlug);
     }
-
-    // 2. تأكيد الطلب وإرسال الإيميل + جلب البيانات
     if (orderId) {
-      // --- الخطوة الأهم: استدعاء دالة التأكيد التي ترسل الإيميل ---
       finalizeOrder(orderId).then(() => {
-        console.log("✅ Order finalized and email trigger attempt finished.");
-
-        // بعد التأكيد، نجلب البيانات لعرض الفاتورة
         getOrderSummary(orderId).then(res => {
-          if (res.success) {
-            setOrderData(res.order);
-          }
+          if (res.success) setOrderData(res.order);
           setLoading(false);
           playSuccessSound();
         });
@@ -81,18 +71,20 @@ function SuccessContent() {
       playSuccessSound();
     }
   }, [orderId, branchSlug]);
-  // Detect language from cookie
+
   const isAr = typeof document !== "undefined"
     ? document.cookie.includes("language=ar") || !document.cookie.includes("language=en")
     : true;
 
-  // Calculate invoice breakdown
-  const dPercent = orderData?.branches?.discount_percent || 0;
-  const itemsSubtotal = (orderData?.order_items || []).reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0);
-  const discountAmount = (itemsSubtotal * dPercent) / 100;
-  const deliveryFee = (orderData?.total_amount || 0) > 0
-    ? Math.max(0, (orderData.total_amount - (itemsSubtotal - discountAmount)))
-    : 0;
+  // ✅ حسابات صح: price = بعد الخصم، original_price = قبل الخصم
+  const itemsSubtotal = (orderData?.order_items || []).reduce(
+    (acc: number, item: any) => acc + ((item.original_price ?? item.price) * item.quantity), 0
+  );
+  const itemsFinalTotal = (orderData?.order_items || []).reduce(
+    (acc: number, item: any) => acc + (item.price * item.quantity), 0
+  );
+  const discountAmount = Math.max(0, itemsSubtotal - itemsFinalTotal);
+  const deliveryFee = Math.max(0, (orderData?.total_amount || 0) - itemsFinalTotal);
 
   if (loading) {
     return (
@@ -122,34 +114,20 @@ function SuccessContent() {
           .success-page { background: #fff !important; padding: 0 !important; } 
           .no-print { display: none !important; } 
           .success-icon { display: none !important; }
-          .invoice-box { 
-            box-shadow: none !important; 
-            border: 1px solid #000 !important; 
-            border-radius: 0 !important; 
-            width: 100% !important; 
-            max-width: 100% !important; 
-            padding: 20px !important;
-          }
+          .invoice-box { box-shadow: none !important; border: 1px solid #000 !important; border-radius: 0 !important; width: 100% !important; max-width: 100% !important; padding: 20px !important; }
           .items-list { max-height: none !important; overflow: visible !important; }
         }
       ` }} />
 
       <div className="invoice-box" style={{
-        maxWidth: '550px',
-        width: '100%',
-        background: '#fff',
-        padding: '40px',
-        borderRadius: '40px',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.06)',
-        border: '1px solid #ECEAE7'
+        maxWidth: '550px', width: '100%', background: '#fff',
+        padding: '40px', borderRadius: '40px',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.06)', border: '1px solid #ECEAE7'
       }}>
-        {/* Success Icon */}
         <div className="success-icon" style={{
-          width: '80px', height: '80px',
-          background: '#cf1f28', borderRadius: '100px',
+          width: '80px', height: '80px', background: '#cf1f28', borderRadius: '100px',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          margin: '0 auto 25px',
-          color: '#fff', fontSize: '32px',
+          margin: '0 auto 25px', color: '#fff', fontSize: '32px',
           boxShadow: '0 10px 30px rgba(207,31,40,0.25)'
         }}>✓</div>
 
@@ -162,18 +140,11 @@ function SuccessContent() {
             : `Order reference: #${orderId}. Your order has been sent successfully, awaiting restaurant confirmation.`}
         </p>
 
-        {/* Invoice Summary */}
         {orderData && (
           <div className="invoice-receipt" style={{
-            background: '#fff',
-            border: '1px solid #eee',
-            borderRadius: '25px',
-            padding: '30px',
-            marginBottom: '30px',
-            textAlign: 'right',
-            boxShadow: '0 5px 15px rgba(0,0,0,0.02)',
-            position: 'relative',
-            overflow: 'hidden'
+            background: '#fff', border: '1px solid #eee', borderRadius: '25px',
+            padding: '30px', marginBottom: '30px', textAlign: 'right',
+            boxShadow: '0 5px 15px rgba(0,0,0,0.02)', position: 'relative', overflow: 'hidden'
           }}>
             <div style={{ textAlign: 'center', marginBottom: '25px', position: 'relative' }}>
               <img src="/logo.jpeg" alt="Uptown" style={{ height: '50px', marginBottom: '10px' }} />
@@ -193,34 +164,45 @@ function SuccessContent() {
             </div>
 
             <div className="items-list" style={{ marginBottom: '20px' }}>
-              {(orderData.order_items || []).map((oi: any, i: number) => (
-                <div key={i} style={{ marginBottom: '15px', paddingBottom: '15px', borderBottom: '1px solid #f5f5f5' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-                    <div style={{ textAlign: isAr ? 'right' : 'left' }}>
-                      <div style={{ fontWeight: 800, color: '#000' }}>{isAr ? oi.product_name_ar : oi.product_name_en}</div>
-                      <div style={{ fontSize: '12px', color: '#999' }}>{oi.quantity} x {oi.price.toFixed(2)}</div>
+              {(orderData.order_items || []).map((oi: any, i: number) => {
+                const hasDiscount = oi.original_price && Number(oi.original_price) > Number(oi.price);
+                return (
+                  <div key={i} style={{ marginBottom: '15px', paddingBottom: '15px', borderBottom: '1px solid #f5f5f5' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                      <div style={{ textAlign: isAr ? 'right' : 'left' }}>
+                        <div style={{ fontWeight: 800, color: '#000' }}>{isAr ? oi.product_name_ar : oi.product_name_en}</div>
+                        <div style={{ fontSize: '12px', color: '#999', display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <span>{oi.quantity} x</span>
+                          {hasDiscount && (
+                            <span style={{ textDecoration: 'line-through', opacity: 0.5 }}>{Number(oi.original_price).toFixed(2)}</span>
+                          )}
+                          <span style={{ color: hasDiscount ? '#059669' : '#999', fontWeight: hasDiscount ? 700 : 400 }}>
+                            {Number(oi.price).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{ fontWeight: 800, color: '#000' }}>{(Number(oi.price) * oi.quantity).toFixed(2)} ₪</div>
                     </div>
-                    <div style={{ fontWeight: 800, color: '#000' }}>{(oi.price * oi.quantity).toFixed(2)} ₪</div>
-                  </div>
 
-                  {oi.addon_details && (
-                    <div style={{ marginTop: '8px', fontSize: '12px', background: '#fafafa', borderRadius: '10px', padding: '10px', lineHeight: '1.8' }}>
-                      {oi.addon_details.split(' | ').map((part: string, pIdx: number) => {
-                        const isWithout = part.startsWith('بدون') || part.startsWith('Without');
-                        const isType = part.startsWith('النوع') || part.startsWith('Type');
-                        return (
-                          <div key={pIdx} style={{
-                            color: isWithout ? '#e63946' : isType ? '#1d3557' : '#555',
-                            fontWeight: isWithout || isType ? 800 : 600
-                          }}>
-                            {isWithout ? '🚫 ' : isType ? '🍽️ ' : '• '}{part}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              ))}
+                    {oi.addon_details && (
+                      <div style={{ marginTop: '8px', fontSize: '12px', background: '#fafafa', borderRadius: '10px', padding: '10px', lineHeight: '1.8' }}>
+                        {oi.addon_details.split(' | ').map((part: string, pIdx: number) => {
+                          const isWithout = part.startsWith('بدون') || part.startsWith('Without');
+                          const isType = part.startsWith('النوع') || part.startsWith('Type');
+                          return (
+                            <div key={pIdx} style={{
+                              color: isWithout ? '#e63946' : isType ? '#1d3557' : '#555',
+                              fontWeight: isWithout || isType ? 800 : 600
+                            }}>
+                              {isWithout ? '🚫 ' : isType ? '🍽️ ' : '• '}{part}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: '15px', marginBottom: '15px' }}>
@@ -230,7 +212,7 @@ function SuccessContent() {
               </div>
               {discountAmount > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#059669', fontWeight: 700, marginBottom: '8px' }}>
-                  <span>{isAr ? `خصم (${dPercent}%)` : `Discount (${dPercent}%)`}</span>
+                  <span>{isAr ? 'الخصم' : 'Discount'}</span>
                   <span>-{discountAmount.toFixed(2)} ₪</span>
                 </div>
               )}
@@ -243,16 +225,12 @@ function SuccessContent() {
             </div>
 
             <div style={{
-              borderTop: '2px solid #000',
-              paddingTop: '15px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              fontWeight: 900,
-              fontSize: '1.5rem',
-              color: '#8B0000'
+              borderTop: '2px solid #000', paddingTop: '15px',
+              display: 'flex', justifyContent: 'space-between',
+              fontWeight: 900, fontSize: '1.5rem', color: '#8B0000'
             }}>
               <span>{isAr ? 'الإجمالي' : 'Total'}</span>
-              <span>{orderData.total_amount || (itemsSubtotal - discountAmount + deliveryFee).toFixed(2)} ₪</span>
+              <span>{Number(orderData.total_amount || 0).toFixed(2)} ₪</span>
             </div>
 
             <div style={{ textAlign: 'center', marginTop: '30px', fontSize: '12px', color: '#aaa', fontStyle: 'italic' }}>
@@ -261,10 +239,7 @@ function SuccessContent() {
           </div>
         )}
 
-        {/* Action Buttons */}
         <div className="no-print" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-
-          {/* 🟢 Track Order Button */}
           {orderId && (
             <a href={`/order-status?orderId=${orderId}`} style={{
               background: 'linear-gradient(135deg, #8B0000 0%, #B91C1C 100%)',
@@ -276,20 +251,15 @@ function SuccessContent() {
               📍 {isAr ? 'تتبع طلبك الآن' : 'Track Your Order'}
             </a>
           )}
-
           <button onClick={() => window.print()} style={{
-            background: '#f4f4f4', color: '#000',
-            width: '100%', borderRadius: '18px', height: '50px',
+            background: '#f4f4f4', color: '#000', width: '100%', borderRadius: '18px', height: '50px',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 700, fontSize: '14px',
-            border: '1px solid #eee', cursor: 'pointer', gap: '8px'
+            fontWeight: 700, fontSize: '14px', border: '1px solid #eee', cursor: 'pointer', gap: '8px'
           }}>
             💾 {isAr ? 'حفظ الفاتورة / طباعة' : 'Save Invoice / Print'}
           </button>
-
           <a href="/" style={{
-            color: '#aaa', marginTop: '10px',
-            fontWeight: 700, textDecoration: 'none',
+            color: '#aaa', marginTop: '10px', fontWeight: 700, textDecoration: 'none',
             fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px'
           }}>
             {isAr ? '← العودة للرئيسية' : '← Back to Home'}

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyLahzaTransaction } from "@/lib/lahza";
-import { finalizeOrder } from "@/lib/order-actions";
+import { finalizeOrder, markOrderFailed } from "@/lib/order-actions";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -14,49 +14,47 @@ export async function GET(req: Request) {
 
   console.log(`[verify] Processing payment verification for reference: ${reference}`);
 
+  // استخرج orderId من الـ reference مبكراً — الصيغة: ORD-{orderId}-{timestamp}
+  const orderId = reference.split("-")[1];
+
   try {
     const verification = await verifyLahzaTransaction(reference);
+
+    console.log("[verify] Full response:", JSON.stringify(verification, null, 2));
+
 
     const paymentStatus = verification?.data?.status;
     const isSuccess = verification.status &&
       (paymentStatus === "success" || paymentStatus === "captured");
 
     if (isSuccess) {
-      // Extract order context from metadata
       const metadata = verification.data.metadata || {};
-      const orderId = metadata.orderId || reference.split("-")[1] || reference;
+      const resolvedOrderId = metadata.orderId || orderId || reference;
       const branchSlug = metadata.branchSlug || "";
 
-      console.log(`[verify] Payment confirmed ✅ for order: ${orderId}`);
+      console.log(`[verify] ✅ Payment confirmed for order: ${resolvedOrderId}`);
 
-      // Finalize the order (update DB status). Will gracefully skip if DB not configured.
-      const finalizeRes = await finalizeOrder(orderId);
+      const finalizeRes = await finalizeOrder(resolvedOrderId);
       if (!finalizeRes.success) {
-        console.error("[verify] Finalization DB error (non-critical):", finalizeRes.error);
-        // Don't block user — redirect to success anyway since payment went through
+        console.error("[verify] Finalization DB error:", finalizeRes.error);
       }
 
       return NextResponse.redirect(
-        `${appUrl}/checkout/success?orderId=${orderId}&branchSlug=${branchSlug}&method=card`
+        `${appUrl}/checkout/success?orderId=${resolvedOrderId}&branchSlug=${branchSlug}&method=card`
       );
 
     } else {
-      console.error("[verify] Payment not successful. Status:", paymentStatus);
+      // ✅ سجّل الفشل في DB
+      console.error("[verify] ❌ Payment not successful. Status:", paymentStatus);
+      if (orderId) await markOrderFailed(orderId, paymentStatus || "failed");
       return NextResponse.redirect(`${appUrl}/?error=payment_failed`);
     }
 
   } catch (error: any) {
     console.error("[verify] ❌ Verification exception:", error?.message || error);
 
-    // If Lahza API itself is unreachable (e.g. wrong key), still try to redirect gracefully
-    const fallbackRef = reference.split("-")[1];
-    if (fallbackRef) {
-      console.warn("[verify] Lahza API failed but attempting graceful redirect...");
-      return NextResponse.redirect(
-        `${appUrl}/checkout/success?orderId=${fallbackRef}&method=card&warn=verify_failed`
-      );
-    }
-
+    // ✅ لا fallback — سجّل الخطأ وأعد توجيه لصفحة الخطأ فقط
+    if (orderId) await markOrderFailed(orderId, "verification_error").catch(() => { });
     return NextResponse.redirect(`${appUrl}/?error=verification_error`);
   }
 }

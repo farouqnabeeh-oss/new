@@ -1,8 +1,18 @@
-import type { Metadata } from "next";
+export const dynamic = "force-dynamic";
+
 import Script from "next/script";
 import { getSiteSettings } from "@/lib/data";
 import { cookies } from "next/headers";
 import "./globals.css";
+
+import HeaderLeftLang from "@/components/header-left-lang";
+import LayoutSwitcher from "@/components/layout-switcher";
+import ModalOverlays from "@/components/modal-overlays";
+import { Phone, Mail, MapPin } from "lucide-react";
+
+import type { Metadata } from "next";
+
+
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings();
@@ -18,11 +28,6 @@ export async function generateMetadata(): Promise<Metadata> {
     },
   };
 }
-
-import HeaderLeftLang from "@/components/header-left-lang";
-import LayoutSwitcher from "@/components/layout-switcher";
-import ModalOverlays from "@/components/modal-overlays";
-import { Phone, Mail, MapPin } from "lucide-react";
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const settings = await getSiteSettings();
@@ -112,59 +117,59 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <div style={{ marginTop: '20px' }}>
             <h5 style={{ fontSize: '14px', fontWeight: 800, color: '#000', marginBottom: '10px' }}>Uptown Ramallah</h5>
             <div className="up-social-hub" style={{ display: 'flex', gap: '15px' }}>
-              <a href={settings?.facebookUptownUrl || "https://www.facebook.com/uptownramallah"} 
-                 target="_blank" 
-                 rel="noopener noreferrer" 
-                 className="social-footer-link"
-                 style={{ 
-                   color: '#8b0000', 
-                   display: 'flex', 
-                   alignItems: 'center', 
-                   justifyContent: 'center',
-                   width: '40px',
-                   height: '40px',
-                   borderRadius: '50%',
-                   background: '#fff5f5',
-                   transition: '0.3s',
-                   border: '1px solid rgba(139, 0, 0, 0.1)'
-                 }}>
-                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+              <a href={settings?.facebookUptownUrl || "https://www.facebook.com/uptownramallah"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="social-footer-link"
+                style={{
+                  color: '#8b0000',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  background: '#fff5f5',
+                  transition: '0.3s',
+                  border: '1px solid rgba(139, 0, 0, 0.1)'
+                }}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
               </a>
-              <a href={settings?.instagramUptownUrl || "https://www.instagram.com/uptownramallah"} 
-                 target="_blank" 
-                 rel="noopener noreferrer" 
-                 className="social-footer-link"
-                 style={{ 
-                   color: '#8b0000', 
-                   display: 'flex', 
-                   alignItems: 'center', 
-                   justifyContent: 'center',
-                   width: '40px',
-                   height: '40px',
-                   borderRadius: '50%',
-                   background: '#fff5f5',
-                   transition: '0.3s',
-                   border: '1px solid rgba(139, 0, 0, 0.1)'
-                 }}>
-                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+              <a href={settings?.instagramUptownUrl || "https://www.instagram.com/uptownramallah"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="social-footer-link"
+                style={{
+                  color: '#8b0000',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  background: '#fff5f5',
+                  transition: '0.3s',
+                  border: '1px solid rgba(139, 0, 0, 0.1)'
+                }}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
               </a>
-              <a href={settings?.tiktokUrl || "https://www.tiktok.com/@uptownps"} 
-                 target="_blank" 
-                 rel="noopener noreferrer" 
-                 className="social-footer-link"
-                 style={{ 
-                   color: '#8b0000', 
-                   display: 'flex', 
-                   alignItems: 'center', 
-                   justifyContent: 'center',
-                   width: '40px',
-                   height: '40px',
-                   borderRadius: '50%',
-                   background: '#fff5f5',
-                   transition: '0.3s',
-                   border: '1px solid rgba(139, 0, 0, 0.1)'
-                 }}>
-                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12a4 4 0 1 0 4 4V2a5 5 0 0 0 5 5"></path></svg>
+              <a href={settings?.tiktokUrl || "https://www.tiktok.com/@uptownps"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="social-footer-link"
+                style={{
+                  color: '#8b0000',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  background: '#fff5f5',
+                  transition: '0.3s',
+                  border: '1px solid rgba(139, 0, 0, 0.1)'
+                }}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12a4 4 0 1 0 4 4V2a5 5 0 0 0 5 5"></path></svg>
               </a>
             </div>
           </div>
@@ -173,42 +178,42 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <h5 style={{ fontSize: '14px', fontWeight: 800, color: '#000', marginBottom: '10px' }}>Pasta Signature</h5>
             <div className="up-social-hub" style={{ display: 'flex', gap: '15px' }}>
               <a href="https://www.facebook.com/pastasignature"
-                 target="_blank"
-                 rel="noopener noreferrer"
-                 className="social-footer-link"
-                 title="Pasta Signature - Facebook"
-                 style={{
-                   color: '#8b0000',
-                   display: 'flex',
-                   alignItems: 'center',
-                   justifyContent: 'center',
-                   width: '40px',
-                   height: '40px',
-                   borderRadius: '50%',
-                   background: '#fff5f5',
-                   transition: '0.3s',
-                   border: '1px solid rgba(139, 0, 0, 0.1)'
-                 }}>
-                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+                target="_blank"
+                rel="noopener noreferrer"
+                className="social-footer-link"
+                title="Pasta Signature - Facebook"
+                style={{
+                  color: '#8b0000',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  background: '#fff5f5',
+                  transition: '0.3s',
+                  border: '1px solid rgba(139, 0, 0, 0.1)'
+                }}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
               </a>
               <a href="https://www.instagram.com/pastasignature"
-                 target="_blank"
-                 rel="noopener noreferrer"
-                 className="social-footer-link"
-                 title="Pasta Signature - Instagram"
-                 style={{
-                   color: '#8b0000',
-                   display: 'flex',
-                   alignItems: 'center',
-                   justifyContent: 'center',
-                   width: '40px',
-                   height: '40px',
-                   borderRadius: '50%',
-                   background: '#fff5f5',
-                   transition: '0.3s',
-                   border: '1px solid rgba(139, 0, 0, 0.1)'
-                 }}>
-                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                target="_blank"
+                rel="noopener noreferrer"
+                className="social-footer-link"
+                title="Pasta Signature - Instagram"
+                style={{
+                  color: '#8b0000',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  background: '#fff5f5',
+                  transition: '0.3s',
+                  border: '1px solid rgba(139, 0, 0, 0.1)'
+                }}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
               </a>
             </div>
           </div>
@@ -239,36 +244,36 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <h4 className="up-footer-title" style={{ fontSize: '18px', fontWeight: 900, marginBottom: '20px', color: '#000' }}>{isAr ? "طرق الدفع والأمان" : "Payment & Security"}</h4>
           <div className="up-footer-payments" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', alignItems: 'center' }}>
             <div style={{ textAlign: 'center' }}>
-                <img src="/images/visa.png" alt="Visa" style={{ height: '30px', width: 'auto' }} />
-                <p style={{ fontSize: '9px', marginTop: '5px', fontWeight: 700, color: '#0033a0' }}>Verified by VISA</p>
+              <img src="/images/visa.png" alt="Visa" style={{ height: '30px', width: 'auto' }} />
+              <p style={{ fontSize: '9px', marginTop: '5px', fontWeight: 700, color: '#0033a0' }}>Verified by VISA</p>
             </div>
             <div style={{ textAlign: 'center' }}>
-                <img src="/images/Mastercard-logo.svg" alt="MasterCard" style={{ height: '35px', width: 'auto' }} />
-                <p style={{ fontSize: '9px', marginTop: '5px', fontWeight: 700, color: '#eb001b' }}>Mastercard. ID Check</p>
+              <img src="/images/Mastercard-logo.svg" alt="MasterCard" style={{ height: '35px', width: 'auto' }} />
+              <p style={{ fontSize: '9px', marginTop: '5px', fontWeight: 700, color: '#eb001b' }}>Mastercard. ID Check</p>
             </div>
           </div>
         </div>
       </div >
 
-    <div className="up-footer-bottom" style={{ textAlign: 'center', marginTop: '50px', paddingTop: '20px', borderTop: '1px solid #f5f5f5' }}>
-      <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center', gap: '25px', fontSize: '14px', fontWeight: 800 }}>
-        <a href="/policies/privacy" style={{ color: '#8b0000', textDecoration: 'none' }}>{isAr ? "سياسة الخصوصية" : "Privacy Policy"}</a>
-        <a href="/policies/return" style={{ color: '#8b0000', textDecoration: 'none' }}>{isAr ? "سياسة الإرجاع" : "Refund Policy"}</a>
-      </div>
+      <div className="up-footer-bottom" style={{ textAlign: 'center', marginTop: '50px', paddingTop: '20px', borderTop: '1px solid #f5f5f5' }}>
+        <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center', gap: '25px', fontSize: '14px', fontWeight: 800 }}>
+          <a href="/policies/privacy" style={{ color: '#8b0000', textDecoration: 'none' }}>{isAr ? "سياسة الخصوصية" : "Privacy Policy"}</a>
+          <a href="/policies/return" style={{ color: '#8b0000', textDecoration: 'none' }}>{isAr ? "سياسة الإرجاع" : "Refund Policy"}</a>
+        </div>
 
-      <p style={{ fontSize: '12px', color: '#999', fontWeight: 600 }}>
-        © {new Date().getFullYear()} {siteName}. {isAr ? "جميع الحقوق محفوظة." : "All Rights Reserved."}
-      </p>
+        <p style={{ fontSize: '12px', color: '#999', fontWeight: 600 }}>
+          © {new Date().getFullYear()} {siteName}. {isAr ? "جميع الحقوق محفوظة." : "All Rights Reserved."}
+        </p>
 
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '15px', gap: '4px' }}>
-        <a href="/Admin" style={{ color: '#000', fontWeight: 900, textDecoration: 'none', fontSize: '16px', letterSpacing: '2px' }}>
-          UPTOWN
-        </a>
-        <span style={{ fontSize: '11px', color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>
-          Developed by <span style={{ color: '#8b0000' }}>Menuna</span>
-        </span>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '15px', gap: '4px' }}>
+          <a href="/Admin" style={{ color: '#000', fontWeight: 900, textDecoration: 'none', fontSize: '16px', letterSpacing: '2px' }}>
+            UPTOWN
+          </a>
+          <span style={{ fontSize: '11px', color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>
+            Developed by <span style={{ color: '#8b0000' }}>Menuna</span>
+          </span>
+        </div>
       </div>
-    </div>
     </footer >
   );
 
@@ -306,23 +311,30 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
         <Script src="/js/language.js?v=15" strategy="beforeInteractive" />
         <Script src="/js/cart.js?v=15" strategy="beforeInteractive" />
-        <Script src="/js/ui.js?v=15" strategy="afterInteractive" />
+        <Script src="/js/ui.js?v=15" strategy="lazyOnload" />
         <Script id="layout-core-logic" strategy="afterInteractive">
           {`
             (() => {
               const header = document.getElementById('site-header');
+
               if (header) {
                 window.addEventListener('scroll', () => {
                   header.classList.toggle('is-scrolled', window.scrollY > 50);
                 });
               }
+
               const toggle = document.getElementById('mobile-menu-toggle');
               const menu = document.getElementById('ultra-mobile-menu');
-              if (toggle && menu) toggle.onclick = () => menu.classList.add('is-active');
-              
-              if (typeof lucide !== 'undefined') lucide.createIcons();
+
+              if (toggle && menu) {
+                toggle.onclick = () => menu.classList.add('is-active');
+              }
+
+              if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+              }
             })();
-          `}
+  `}
         </Script>
         <ModalOverlays />
         <div id="cart-modal" className="modal-panel side-panel"></div>

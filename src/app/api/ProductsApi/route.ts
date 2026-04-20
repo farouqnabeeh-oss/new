@@ -6,8 +6,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const branchSlug = searchParams.get("branchSlug");
   const categoryId = searchParams.get("categoryId");
-  const products = await getProducts(branchSlug, categoryId ? Number(categoryId) : null);
-
+  const products = await getProducts(branchSlug || undefined, categoryId ? Number(categoryId) : undefined);
   return NextResponse.json(
     products.map((product) => ({
       id: product.id,

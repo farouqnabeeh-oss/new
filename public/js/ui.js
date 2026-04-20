@@ -492,6 +492,31 @@ var UI = window.UI || {
                 `;
             }
 
+            // إضافات بسيطة
+            if (product.simpleAddons && product.simpleAddons.length > 0) {
+                html += `
+                     <div class="option-group">
+                         <div class="option-group-title" style="font-size:15px">${Lang.current === 'ar' ? 'الإضافات' : 'Add-ons'}</div>
+                         <div class="option-stack">
+                             ${product.simpleAddons.map(addon => {
+                    const isSelected = state.selectedSimpleAddons.some(a => a.id === addon.id);
+                    const priceText = addon.price > 0 ? `+${addon.price}${currency}` : '';
+                    const name = Lang.localized(addon.nameAr, addon.nameEn);
+                    return `
+                                     <div class="option-item ${isSelected ? 'selected' : ''}" data-action="simple-addon" data-addon-id="${addon.id}" style="padding:10px 15px">
+                                         <span class="option-item-price">${priceText}</span>
+                                         <div class="option-item-label">
+                                             <span class="option-item-name" style="font-size:14px">${name}</span>
+                                             <div class="option-item-check"></div>
+                                         </div>
+                                     </div>
+                                 `;
+                }).join('')}
+                         </div>
+                     </div>
+                 `;
+            }
+
             html += visibleGroups.filter(g => g.items && g.items.length > 0).map(group => {
                 let groupLabel = Lang.localized(group.nameAr, group.nameEn);
                 // Better logic for labeling groups as "Type" (النوع)
@@ -502,59 +527,34 @@ var UI = window.UI || {
                 }
 
                 return `
-                    <div class="option-group">
-                        <div class="option-group-title" style="font-size:15px">${groupLabel}</div>
-                        <div class="option-stack">
-                            ${group.items.map(item => {
+                     <div class="option-group">
+                         <div class="option-group-title" style="font-size:15px">${groupLabel}</div>
+                         <div class="option-stack">
+                             ${group.items.map(item => {
                     const isSelected = selectedIds.has(item.id);
                     const selectorClass = group.allowMultiple ? 'option-item-check' : 'option-item-radio';
                     const priceText = item.price > 0 ? `+${item.price}${currency}` : '';
                     return `
-                                    <div class="option-item ${isSelected ? 'selected' : ''}" data-action="addon" data-group-id="${group.id}" data-id="${item.id}" style="padding:10px 15px">
-                                        <span class="option-item-price">${priceText}</span>
-                                        <div class="option-item-label">
-                                            <span class="option-item-name" style="font-size:14px">${Lang.localized(item.nameAr, item.nameEn)}</span>
-                                            <div class="${selectorClass}"></div>
-                                        </div>
-                                    </div>
-                                `;
+                                     <div class="option-item ${isSelected ? 'selected' : ''}" data-action="addon" data-group-id="${group.id}" data-id="${item.id}" style="padding:10px 15px">
+                                         <span class="option-item-price">${priceText}</span>
+                                         <div class="option-item-label">
+                                             <span class="option-item-name" style="font-size:14px">${Lang.localized(item.nameAr, item.nameEn)}</span>
+                                             <div class="${selectorClass}"></div>
+                                         </div>
+                                     </div>
+                                 `;
                 }).join('')}
-                        </div>
-                    </div>
-                `;
+                         </div>
+                     </div>
+                 `;
             }).join('');
 
             html += `
-                <div class="note-field">
-                    <label style="text-align:right; display:block; margin-bottom:10px; font-weight:900; font-size:14px">${Lang.t('addNote')}</label>
-                    <textarea id="product-note" placeholder="${Lang.t('notes')}..." style="width:100%; border-radius:15px; border:2px solid #eee; padding:15px; text-align:right; font-size:14px">${state.note}</textarea>
-                </div>
-            `;
-
-            // إضافات بسيطة
-            if (product.simpleAddons && product.simpleAddons.length > 0) {
-                html += `
-                    <div class="option-group">
-                        <div class="option-group-title" style="font-size:15px">${Lang.current === 'ar' ? 'الإضافات' : 'Add-ons'}</div>
-                        <div class="option-stack">
-                            ${product.simpleAddons.map(addon => {
-                    const isSelected = state.selectedSimpleAddons.some(a => a.id === addon.id);
-                    const priceText = addon.price > 0 ? `+${addon.price}${currency}` : '';
-                    const name = Lang.localized(addon.nameAr, addon.nameEn);
-                    return `
-                                    <div class="option-item ${isSelected ? 'selected' : ''}" data-action="simple-addon" data-addon-id="${addon.id}" style="padding:10px 15px">
-                                        <span class="option-item-price">${priceText}</span>
-                                        <div class="option-item-label">
-                                            <span class="option-item-name" style="font-size:14px">${name}</span>
-                                            <div class="option-item-check"></div>
-                                        </div>
-                                    </div>
-                                `;
-                }).join('')}
-                        </div>
-                    </div>
-                `;
-            }
+                 <div class="note-field">
+                     <label style="text-align:right; display:block; margin-bottom:10px; font-weight:900; font-size:14px">${Lang.t('addNote')}</label>
+                     <textarea id="product-note" placeholder="${Lang.t('notes')}..." style="width:100%; border-radius:15px; border:2px solid #eee; padding:15px; text-align:right; font-size:14px">${state.note}</textarea>
+                 </div>
+             `;
 
             html += `
                 </div>

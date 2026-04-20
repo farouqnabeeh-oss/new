@@ -106,42 +106,60 @@ function mapProductAddon(row: Record<string, unknown>) {
   };
 }
 
-function mapProduct(row: Record<string, unknown>): Product {
-  const sizes = Array.isArray(row.product_sizes)
-    ? row.product_sizes.map((size) => mapProductSize(size as Record<string, unknown>))
-    : [];
-  const types = Array.isArray(row.product_types)
-    ? row.product_types.map((type) => mapProductType(type as Record<string, unknown>))
-    : [];
-  const addons = Array.isArray(row.product_addons)
-    ? row.product_addons.map((a) => mapProductAddon(a as Record<string, unknown>))
-    : [];
+function mapProduct(row: Record<string, any>): Product {
+  const sizes = (row.product_sizes || row.sizes || []).map((s: any) => ({
+    id: Number(s.id),
+    nameAr: String(s.name_ar || ""),
+    nameEn: String(s.name_en || ""),
+    price: Number(s.price || 0),
+    sortOrder: Number(s.sort_order || 0),
+  }));
 
-  return {
+  const types = (row.product_types || row.types || []).map((t: any) => ({
+    id: Number(t.id),
+    nameAr: String(t.name_ar || ""),
+    nameEn: String(t.name_en || ""),
+    price: Number(t.price || 0),
+    description: String(t.description || ""),
+    sortOrder: Number(t.sort_order || 0),
+  }));
+
+  const addons = (row.simple_addons || row.product_addons || []).map((ad: any) => ({
+    id: Number(ad.id),
+    nameAr: String(ad.name_ar || ""),
+    nameEn: String(ad.name_en || ""),
+    price: Number(ad.price || 0),
+    sortOrder: Number(ad.sort_order || 0),
+    addonGroupId: 0,
+    isActive: true
+  }));
+
+  // إنشاء الكائن الأساسي
+  const productData: any = {
     id: Number(row.id),
-    nameAr: String(row.name_ar ?? ""),
-    nameEn: String(row.name_en ?? ""),
-    descriptionAr: (row.description_ar as string | null) ?? null,
-    descriptionEn: (row.description_en as string | null) ?? null,
-    basePrice: toNumber(row.base_price),
-    discount: toNumber(row.discount),
-    imagePath: (row.image_path as string | null) ?? null,
     categoryId: Number(row.category_id),
-    branchId: row.branch_id === null ? null : Number(row.branch_id),
-    allBranches: Boolean(row.all_branches),
-    hasMealOption: Boolean(row.has_meal_option),
-    hasDonenessOption: Boolean(row.has_doneness_option),
-    sortOrder: Number(row.sort_order ?? 0),
-    isActive: Boolean(row.is_active),
-    createdAt: String(row.created_at ?? ""),
-    updatedAt: String(row.updated_at ?? ""),
-    sizes: sizes.sort((left, right) => left.sortOrder - right.sortOrder),
-    types: types.sort((left, right) => left.sortOrder - right.sortOrder),
-    simpleAddons: addons.sort((left, right) => left.sortOrder - right.sortOrder),
+    nameAr: String(row.name_ar || ""),
+    nameEn: String(row.name_en || ""),
+    descriptionAr: String(row.description_ar || ""),
+    descriptionEn: String(row.description_en || ""),
+    imagePath: String(row.image_path || ""),
+    basePrice: Number(row.base_price || 0),  // ✅ أضف هذا
+    discount: Number(row.discount || 0),
+    isAvailable: Boolean(row.is_available ?? true),
+    sortOrder: Number(row.sort_order || 0),
+    // أضفنا (a: any, b: any) لحل مشكلة النوع الضمني
+    sizes: sizes.sort((a: any, b: any) => a.sortOrder - b.sortOrder),
+    types: types.sort((a: any, b: any) => a.sortOrder - b.sortOrder),
+    simpleAddons: addons.sort((a: any, b: any) => a.sortOrder - b.sortOrder),
     branchDiscounts: (row.branch_discounts as Record<string, number>) ?? {}
   };
-}
 
+  if (row.price !== undefined) {
+    productData.price = Number(row.price || 0);
+  }
+
+  return productData as Product;
+}
 function mapAddonGroupItem(row: Record<string, unknown>): AddonGroupItem {
   return {
     id: Number(row.id),
@@ -380,55 +398,80 @@ export async function getCategories(branchSlug?: string | null) {
   }
 }
 
-export async function getProducts(branchSlug?: string | null, categoryId?: number | null) {
-  // noStore();
-  if (isMockMode) {
-    let mockData = mock.mockProducts;
-    if (categoryId) mockData = mockData.filter(p => p.categoryId === categoryId);
-    return mockData as unknown as Product[];
-  }
+export async function getProducts(branchSlug?: string, categoryId?: number | null): Promise<Product[]> {
+  noStore();
+  if (isMockMode) return mock.mockProducts as unknown as Product[];
+
   try {
     const supabase = getSupabaseAdmin();
 
-    let branchId: number | null = null;
-    if (branchSlug) {
-      const branch = await getBranchBySlug(branchSlug);
-      branchId = branch?.id ?? null;
-    }
-
+    // 1. جلب المنتجات
     let query = supabase
       .from("products")
-      .select("*, product_sizes(*), product_types(*), product_addons(*)")
-      .eq("is_active", true)
-      .order("sort_order")
-      .order("id");
+      .select("*, sizes:product_sizes(*), types:product_types(*)")
+      .order("sort_order", { ascending: true });
 
-    if (branchId !== null) {
-      query = query.or(`all_branches.eq.true,branch_id.eq.${branchId}`);
+    if (branchSlug) {
+      const branch = await getBranchBySlug(branchSlug);
+      if (branch) {
+        query = query.or(`branch_id.eq.${branch.id},all_branches.eq.true`);
+      }
     }
 
     if (categoryId) {
       query = query.eq("category_id", categoryId);
     }
 
-    const { data, error } = await query;
+    const { data: productsData, error: productsError } = await query;
+    if (productsError) throw productsError;
 
-    if (error || !data || data.length === 0) {
-      let mockData = mock.mockProducts;
-      if (categoryId) mockData = mockData.filter(p => p.categoryId === categoryId);
-      return mockData as unknown as Product[];
-    }
+    // 2. جلب الإضافات والروابط
+    const [addonsRes, linksRes] = await Promise.all([
+      supabase.from("product_addons").select("*"),
+      supabase.from("product_addon_groups").select("*")
+    ]);
 
-    return data.map((row) => mapProduct(row));
+    const allProductAddons = addonsRes.data || [];
+    const allLinks = linksRes.data || [];
+
+    // 3. الدمج مع مطابقة الأنواع (Type Compliance)
+    const finalProducts = (productsData || []).map(row => {
+      const p = mapProduct(row);
+
+      // بناء مصفوفة simpleAddons متوافقة تماماً مع AddonGroupItem
+      const simpleAddons = allProductAddons
+        .filter((ad: any) => ad.product_id === row.id)
+        .map((ad: any) => ({
+          id: Number(ad.id),
+          nameAr: String(ad.name_ar || ""),
+          nameEn: String(ad.name_en || ""),
+          price: Number(ad.price || 0),
+          sortOrder: Number(ad.sort_order || 0),
+          addonGroupId: 0,
+          isActive: true
+        }));
+
+      // بناء مصفوفة linkedAddonGroupIds
+      const linkedIds = allLinks
+        .filter((link: any) => link.product_id === row.id)
+        .map((link: any) => Number(link.addon_group_id));
+
+      // دمج كل شيء في كائن واحد متوافق
+      return {
+        ...p,
+        simpleAddons: simpleAddons as any, // Cast مؤقت لضمان مرور الـ Build
+        linkedAddonGroupIds: linkedIds
+      };
+    });
+
+    return finalProducts as Product[];
+
   } catch (e) {
-    let mockData = mock.mockProducts;
-    if (categoryId) mockData = mockData.filter(p => p.categoryId === categoryId);
-    return mockData as unknown as Product[];
+    console.error("Error in getProducts:", e);
+    return [];
   }
 }
-
 export async function getProductById(id: number) {
-  // noStore();
   if (isMockMode) {
     const product = mock.mockProducts.find(p => p.id === id);
     if (!product) return null;
@@ -442,22 +485,21 @@ export async function getProductById(id: number) {
       )
     } as any;
   }
+
   try {
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("products")
-      .select("*, categories(name_ar, name_en), product_sizes(*), product_types(*)")
+      .select("*, categories(name_ar, name_en), product_sizes(*), product_types(*), product_addons(*)")
       .eq("id", id)
       .maybeSingle();
 
-    if (error || !data) {
-      return null;
-    }
+    if (error || !data) return null;
 
     const product = mapProduct(data);
     const category = data.categories as { name_ar?: string; name_en?: string } | null;
 
-    // Fetch Addon Groups for this product/category
+    // 1. جيب المجموعات العادية (category_id أو product_id مباشرة)
     const { data: addonGroupsData } = await supabase
       .from("addon_groups")
       .select("*, addon_group_items(*)")
@@ -465,22 +507,29 @@ export async function getProductById(id: number) {
       .eq("is_active", true)
       .order("sort_order");
 
-    // Deduplicate by Name (Ar) to prevent issues like "النوع" appearing twice
-    const deduplicatedGroupsMap = new Map<string, any>();
-    (addonGroupsData ?? []).forEach(row => {
-      // 1. If this group is assigned to a DIFFERENT product, skip it
-      if (row.product_id !== null && row.product_id !== product.id) {
-        return;
-      }
+    // 2. جيب المجموعات المربوطة عبر product_addon_groups (many-to-many)
+    const { data: linkedGroupsData } = await supabase
+      .from("product_addon_groups")
+      .select("addon_group_id, addon_groups(*, addon_group_items(*))")
+      .eq("product_id", product.id);
 
-      // 2. Identify if this is a product-specific group or category fallback
-      // Normalize key by trimming to prevent variations like "بدون " and "بدون"
+    const linkedGroups = (linkedGroupsData || [])
+      .map((r: any) => r.addon_groups)
+      .filter(Boolean);
+
+    const linkedGroupIds = new Set(linkedGroups.map((g: any) => g.id));
+
+    // 3. Deduplicate
+    const deduplicatedGroupsMap = new Map<string, any>();
+
+    // أضيف المجموعات العادية أول
+    (addonGroupsData ?? []).forEach(row => {
+      if (row.product_id !== null && row.product_id !== product.id) return;
+
       const rowKey = (row.name_ar ? row.name_ar.trim() : (row.name_en ? row.name_en.trim() : row.id.toString()));
       const existing = deduplicatedGroupsMap.get(rowKey);
 
-      // Priority: Product-specific group > Category group
       if (!existing || (row.product_id !== null && existing.product_id === null)) {
-        // Check if this category group is explicitly overridden by another group of the same type/name
         if (row.product_id === null && row.category_id !== null) {
           const hasSpecificOverride = addonGroupsData?.some(
             other => other.product_id === product.id &&
@@ -492,14 +541,31 @@ export async function getProductById(id: number) {
       }
     });
 
+    // أضيف المجموعات المربوطة عبر الجدول الوسيط (many-to-many)
+    linkedGroups.forEach((row: any) => {
+      const rowKey = (row.name_ar ? row.name_ar.trim() : (row.name_en ? row.name_en.trim() : row.id.toString()));
+      // المجموعات المربوطة يدوياً لها أولوية دايماً
+      deduplicatedGroupsMap.set(rowKey, row);
+    });
+
     const addonGroups = Array.from(deduplicatedGroupsMap.values())
       .map(row => mapAddonGroup(row));
+
+    // 4. جيب الـ linkedAddonGroupIds عشان نعرف أيها محدد في الأدمن
+    const linkedAddonGroupIds = Array.from(linkedGroupIds) as number[];
 
     return {
       ...product,
       categoryNameAr: category?.name_ar ?? "",
       categoryNameEn: category?.name_en ?? "",
-      addonGroups
+      addonGroups,
+      linkedAddonGroupIds, // ← هاد بيستخدمه الأدمن عشان يعرف أيها محدد
+      simpleAddons: (data.product_addons || []).map((a: any) => ({
+        id: a.id,
+        nameAr: a.name_ar,
+        nameEn: a.name_en,
+        price: a.price
+      }))
     };
   } catch (e) {
     return null;

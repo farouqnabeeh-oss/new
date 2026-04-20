@@ -35,6 +35,8 @@ export function AdminProductsTab({ products, categories, branches, settings, add
   const [simpleAddons, setSimpleAddons] = useState<SimpleAddonEntry[]>([]);
   const [branchDiscounts, setBranchDiscounts] = useState<Record<number, number>>({});
   const [selectedAddonGroupIds, setSelectedAddonGroupIds] = useState<number[]>([]);
+  const selectedAddonGroupIdsRef = useRef<number[]>([]);
+
   const [loading, setLoading] = useState(false);
   const [formCategoryId, setFormCategoryId] = useState<number | null>(null);
   const editingProduct = useMemo(() => products.find(p => p.id === editId), [products, editId]);
@@ -65,6 +67,7 @@ export function AdminProductsTab({ products, categories, branches, settings, add
     setTypes([]);
     setSimpleAddons([]);
     setSelectedAddonGroupIds([]);
+    selectedAddonGroupIdsRef.current = []; // ← هاد
     setShowExtrasModal(false);
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
   }, []);
@@ -76,7 +79,7 @@ export function AdminProductsTab({ products, categories, branches, settings, add
     data.set("sizesJson", JSON.stringify(sizes));
     data.set("typesJson", JSON.stringify(types));
     data.set("simpleAddonsJson", JSON.stringify(simpleAddons));
-    data.set("linkedAddonGroupsJson", JSON.stringify(selectedAddonGroupIds));
+    data.set("linkedAddonGroupsJson", JSON.stringify(selectedAddonGroupIdsRef.current));
     data.set("branchDiscountsJson", JSON.stringify(branchDiscounts));
 
     // Check if we have minimal data before auto-saving
@@ -124,7 +127,11 @@ export function AdminProductsTab({ products, categories, branches, settings, add
     if (!skipAutoSaveRef.current) handleFormChange();
   };
   const updateAddons = (val: number[] | ((prev: number[]) => number[])) => {
-    setSelectedAddonGroupIds(val);
+    setSelectedAddonGroupIds(prev => {
+      const next = typeof val === 'function' ? val(prev) : val;
+      selectedAddonGroupIdsRef.current = next; // ← هاد الإضافة
+      return next;
+    });
     if (!skipAutoSaveRef.current) handleFormChange();
   };
 
@@ -176,8 +183,10 @@ export function AdminProductsTab({ products, categories, branches, settings, add
       setSimpleAddons((data.simpleAddons || []).map((a: { nameAr?: string; nameEn?: string; price?: number }) => ({
         NameAr: a.nameAr || "", NameEn: a.nameEn || "", Price: Number(a.price || 0)
       })));
+      
+      setSelectedAddonGroupIds(data.linkedAddonGroupIds || []);
+      selectedAddonGroupIdsRef.current = data.linkedAddonGroupIds || [];
 
-      setSelectedAddonGroupIds((data.addonGroups || []).map((g: any) => g.id));
       const existingDiscounts = data.branchDiscounts || {};
       const initialDiscounts: Record<number, number> = {};
       branches.forEach((branch) => {

@@ -7,7 +7,7 @@ export async function POST(req: Request) {
     const { orderId, email, amount, currency, customerName, customerPhone } = body;
 
     console.log(`[Lahza] Initiation request for Order #${orderId}, Amount: ${amount} ${currency}`);
-    
+
     // Guard: orderId must be present (order save must have succeeded)
     if (!orderId) {
       return NextResponse.json({ success: false, error: "Order was not saved correctly. Please try again." }, { status: 400 });
@@ -32,7 +32,8 @@ export async function POST(req: Request) {
       currency,
       mobile: customerPhone,
       reference: paymentReference,
-      callback_url: `${appUrl}/checkout/success?orderId=${orderId}&branchSlug=${body.branchSlug}&method=card`,
+      // ✅ الصح — يمر على verify أولاً
+      callback_url: `${appUrl}/api/payments/lahza/verify?reference=${paymentReference}`,
       metadata: {
         orderId,
         customerName,
@@ -48,32 +49,37 @@ export async function POST(req: Request) {
             display_name: "Customer Phone",
             variable_name: "customer_phone",
             value: customerPhone
+          },
+          {
+            display_name: "Support Email",
+            variable_name: "support_email",
+            value: process.env.SUPPORT_EMAIL || "mutaz0101@gmail.com"
           }
         ]
       }
     });
 
     if (result.status && result.data.authorization_url) {
-        console.log("Lahza Authorization URL generated:", result.data.authorization_url);
-        return NextResponse.json({
-            success: true,
-            authorizationUrl: result.data.authorization_url,
-            reference: result.data.reference || paymentReference
-        });
+      console.log("Lahza Authorization URL generated:", result.data.authorization_url);
+      return NextResponse.json({
+        success: true,
+        authorizationUrl: result.data.authorization_url,
+        reference: result.data.reference || paymentReference
+      });
     } else {
-        const msg = result.message || "Failed to get authorization URL from Lahza";
-        if (msg.includes("Invalid Key") || msg.includes("Key")) {
-            throw new Error("Invalid LAHZA_SECRET_KEY. Please verify your .env configuration.");
-        }
-        throw new Error(msg);
+      const msg = result.message || "Failed to get authorization URL from Lahza";
+      if (msg.includes("Invalid Key") || msg.includes("Key")) {
+        throw new Error("Invalid LAHZA_SECRET_KEY. Please verify your .env configuration.");
+      }
+      throw new Error(msg);
     }
 
   } catch (error: any) {
     console.error("Lahza Initiation Error Detail:", error);
-    return NextResponse.json({ 
-        success: false, 
-        error: error.message || "Unknown initiation error",
-        detail: error.cause ? error.cause.message : undefined 
+    return NextResponse.json({
+      success: false,
+      error: error.message || "Unknown initiation error",
+      detail: error.cause ? error.cause.message : undefined
     }, { status: 500 });
   }
 }

@@ -87,74 +87,31 @@ export default function MenuClient({ categories = [], allProducts = [], allAddon
 
       const renderArea = document.getElementById("uptown-render-area");
       if (renderArea) renderArea.innerHTML = content;
+      window.viewP = (id: string | number) => {
+        // 1. الوصول للبيانات المحملة مسبقاً فوراً
+        const p = allProducts.find(x => String(x.id) === String(id));
+        if (!p) return;
 
-      window.viewP = async (id: string | number) => {
-        console.log("[MenuDebug] Clicking product ID:", id);
-        try {
-          const card = document.querySelector(`[data-pid="${id}"]`);
-          const btn = card?.querySelector('.up-add-pill');
-          const originalText = btn ? btn.textContent : '';
+        // 2. فلترة المجموعات المربوطة (مباشرة + يدوية + قسم)
+        const productAddonGroups = allAddonGroups.filter((group) => {
+          const isDirect = String(group.productId) === String(p.id);
+          const isCategory = String(group.categoryId) === String(p.categoryId) && !group.productId;
+          // هنا نستخدم البيانات التي جلبناها من data.ts
+          const isLinked = p.linkedAddonGroupIds?.includes(Number(group.id));
 
-          try {
-            const p = allProducts.find(x => String(x.id) === String(id));
-            if (!p) throw new Error("Product data fetch failed");
+          return isDirect || isCategory || isLinked;
+        });
 
-            // Filter addons based on category and product, mimicking API rules
-            const deduplicatedGroupsMap = new Map();
-            const productAddonGroups = allAddonGroups
-              .map((dbRow: any) => {
-                // Normalize data access to support different mappings
-                const cid = dbRow.categoryId || dbRow.category_id;
-                const pid = dbRow.productId || dbRow.product_id;
-
-                return {
-                  id: dbRow.id,
-                  nameAr: dbRow.nameAr || dbRow.name_ar,
-                  nameEn: dbRow.nameEn || dbRow.name_en,
-                  groupType: dbRow.groupType || dbRow.group_type,
-                  categoryId: cid,
-                  productId: pid,
-                  isRequired: dbRow.isRequired || dbRow.is_required,
-                  allowMultiple: dbRow.allowMultiple || dbRow.allow_multiple,
-                  items: (dbRow.items || dbRow.addon_group_items || []).map((it: any) => ({
-                    id: it.id,
-                    nameAr: it.name_ar || it.nameAr,
-                    nameEn: it.name_en || it.nameEn,
-                    price: it.price || 0,
-                    isAvailable: it.is_active !== false && it.isActive !== false
-                  }))
-                };
-              })
-              .filter(row => {
-                // 1. If assigned to a SPECIFIC product, it must match
-                if (row.productId && String(row.productId) !== "0" && String(row.productId) !== "null") {
-                  return String(row.productId) === String(id);
-                }
-                // 2. Otherwise, check category-level match
-                if (row.categoryId && String(row.categoryId) !== "0" && String(row.categoryId) !== "null") {
-                  return String(row.categoryId) === String(p.categoryId);
-                }
-                return true;
-              });
-            console.log("[MenuDebug] Addons found for " + id + ":", productAddonGroups.length, productAddonGroups);
-
-            // Always show the product modal so the user can see the description (product details)
-            // since it's cached, this is instantaneous!
-            if (window.UI && window.UI.renderProductModal) {
-              window.UI.renderProductModal(p, productAddonGroups, branch.slug, currency, branch.discountPercent || 0, branch.id);
-            } else {
-              console.warn("[MenuDebug] UI.renderProductModal is not available yet");
-            }
-
-          } catch (e: any) {
-            console.error("[Product Modal] Error for Product #" + id + ":", e);
-            const p = allProducts.find(x => String(x.id) === String(id));
-            if (p) window.UI.renderProductModal(p, [], branch.slug, currency, branch.discountPercent || 0, branch.id);
-          } finally {
-            if (btn) btn.textContent = originalText;
-          }
-        } catch (fatal: any) {
-          alert("Fatal click error: " + fatal.message + " | Stack: " + fatal.stack);
+        // 3. فتح النافذة فوراً بدون أي Fetch أو Loading
+        if (window.UI && window.UI.renderProductModal) {
+          window.UI.renderProductModal(
+            p,
+            productAddonGroups,
+            branch.slug,
+            currency,
+            branch.discountPercent || 0,
+            branch.id
+          );
         }
       };
 

@@ -256,33 +256,39 @@ export async function deleteCategoryAction(formData: FormData): Promise<ActionRe
     return { success: false, error: err instanceof Error ? err.message : "Failed to delete category." };
   }
 }
-
 export async function saveProductAction(formData: FormData): Promise<ActionResult> {
   try {
     await requireSession();
     const supabase = getSupabaseAdmin();
-    const id = toNumber(formData.get("Id"));
-    console.log("branchDiscountsJson:", formData.get("branchDiscountsJson"));
-    console.log("branch:", formData.get("1_branchDiscountsJson"));
-    console.log("all keys:", [...formData.keys()]);
 
-    
-    const productImage = formData.get("productImage");
+    // ← هاد بيشيل الـ prefix تلقائياً (مثل "1_")
+    const get = (key: string) => {
+      const direct = formData.get(key);
+      if (direct !== null) return direct;
+      for (const [k, v] of formData.entries()) {
+        if (k.endsWith(`_${key}`)) return v;
+      }
+      return null;
+    };
+
+    const id = toNumber(formData.get("Id")); // Id بدون prefix دايماً
+    const productImage = get("productImage");
+
     const baseValues: Record<string, unknown> = {
-      name_ar: String(formData.get("NameAr") ?? ""),
-      name_en: String(formData.get("NameEn") ?? ""),
-      description_ar: String(formData.get("DescriptionAr") ?? "") || null,
-      description_en: String(formData.get("DescriptionEn") ?? "") || null,
-      base_price: toNumber(formData.get("BasePrice")),
-      discount: toNumber(formData.get("Discount")),
-      category_id: toNumber(formData.get("CategoryId")),
-      branch_id: toNullableNumber(formData.get("BranchId")),
-      all_branches: toBoolean(formData.get("AllBranches")),
-      has_meal_option: toBoolean(formData.get("HasMealOption")),
-      has_doneness_option: toBoolean(formData.get("HasDonenessOption")),
-      sort_order: toNumber(formData.get("SortOrder")),
-      is_active: toBoolean(formData.get("IsActive")),
-      branch_discounts: parseJson<Record<string, number>>(formData.get("branchDiscountsJson")) ?? {},
+      name_ar: String(get("NameAr") ?? ""),
+      name_en: String(get("NameEn") ?? ""),
+      description_ar: String(get("DescriptionAr") ?? "") || null,
+      description_en: String(get("DescriptionEn") ?? "") || null,
+      base_price: toNumber(get("BasePrice")),
+      discount: toNumber(get("Discount")),
+      category_id: toNumber(get("CategoryId")),
+      branch_id: toNullableNumber(get("BranchId")),
+      all_branches: toBoolean(get("AllBranches")),
+      has_meal_option: toBoolean(get("HasMealOption")),
+      has_doneness_option: toBoolean(get("HasDonenessOption")),
+      sort_order: toNumber(get("SortOrder")),
+      is_active: toBoolean(get("IsActive")),
+      branch_discounts: parseJson<Record<string, number>>(get("branchDiscountsJson")) ?? {},
       updated_at: new Date().toISOString()
     };
 
@@ -295,10 +301,7 @@ export async function saveProductAction(formData: FormData): Promise<ActionResul
     if (id === 0) {
       const { data, error } = await supabase
         .from("products")
-        .insert({
-          ...baseValues,
-          created_at: new Date().toISOString()
-        })
+        .insert({ ...baseValues, created_at: new Date().toISOString() })
         .select("id")
         .single();
       if (error) return { success: false, error: error.message };
@@ -317,9 +320,9 @@ export async function saveProductAction(formData: FormData): Promise<ActionResul
       if (addonsDelete.error) return { success: false, error: addonsDelete.error.message };
     }
 
-    const sizes = parseJson<ProductSizeInput[]>(formData.get("sizesJson")) ?? [];
-    const types = parseJson<ProductTypeInput[]>(formData.get("typesJson")) ?? [];
-    const simpleAddons = parseJson<{ NameAr: string; NameEn: string; Price: number }[]>(formData.get("simpleAddonsJson")) ?? [];
+    const sizes = parseJson<ProductSizeInput[]>(get("sizesJson")) ?? [];
+    const types = parseJson<ProductTypeInput[]>(get("typesJson")) ?? [];
+    const simpleAddons = parseJson<{ NameAr: string; NameEn: string; Price: number }[]>(get("simpleAddonsJson")) ?? [];
 
     if (sizes.length) {
       const { error } = await supabase.from("product_sizes").insert(
@@ -356,8 +359,8 @@ export async function saveProductAction(formData: FormData): Promise<ActionResul
       if (error) return { success: false, error: error.message };
     }
 
-    // --- Link Addon Groups (Many-to-many) ---
-    const linkedAddonGroups = parseJson<number[]>(formData.get("linkedAddonGroupsJson")) ?? [];
+    // --- Link Addon Groups ---
+    const linkedAddonGroups = parseJson<number[]>(get("linkedAddonGroupsJson")) ?? [];
 
     const { error: deleteLinksError } = await supabase
       .from("product_addon_groups")
@@ -374,7 +377,6 @@ export async function saveProductAction(formData: FormData): Promise<ActionResul
       );
       if (insertLinksError) return { success: false, error: insertLinksError.message };
     }
-    // -------------------------
 
     revalidatePath("/Admin");
     return { success: true };
