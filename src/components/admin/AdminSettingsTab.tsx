@@ -154,12 +154,8 @@ export function AdminSettingsTab({ settings, menuBanners }: Props) {
           </div>
           <div className="form-row">
             <div className="form-group">
-              <label>Delivery Fee (0 = Free)</label>
-              <input type="number" name="DeliveryFee" step="0.5" defaultValue={settings?.deliveryFee ?? 0} />
-            </div>
-            <div className="form-group">
-                <label>Footer Credit</label>
-                <input value="By Menuna (fixed link to WhatsApp)" readOnly disabled />
+              <label>Footer Credit</label>
+              <input value="By Menuna (fixed link to WhatsApp)" readOnly disabled />
             </div>
           </div>
           <AdminSubmitButton label={t('save')} pendingLabel={t('saving')} />

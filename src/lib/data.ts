@@ -151,7 +151,11 @@ function mapProduct(row: Record<string, any>): Product {
     sizes: sizes.sort((a: any, b: any) => a.sortOrder - b.sortOrder),
     types: types.sort((a: any, b: any) => a.sortOrder - b.sortOrder),
     simpleAddons: addons.sort((a: any, b: any) => a.sortOrder - b.sortOrder),
-    branchDiscounts: (row.branch_discounts as Record<string, number>) ?? {}
+    branchDiscounts: (row.branch_discounts as Record<string, number>) ?? {},
+    allBranches: Boolean(row.all_branches ?? true),
+    isActive: Boolean(row.is_active ?? true),
+    hasMealOption: Boolean(row.has_meal_option ?? false),
+    hasDonenessOption: Boolean(row.has_doneness_option ?? false),
   };
 
   if (row.price !== undefined) {

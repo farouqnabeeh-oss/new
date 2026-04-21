@@ -415,7 +415,6 @@ export async function saveAddonGroupAction(formData: FormData): Promise<ActionRe
       allow_multiple: toBoolean(formData.get("AllowMultiple")),
       sort_order: toNumber(formData.get("SortOrder")),
       is_active: toBoolean(formData.get("IsActive")),
-      branch_discounts: parseJson<Record<string, number>>(formData.get("branchDiscountsJson")) ?? {},
       updated_at: new Date().toISOString()
     };
 
@@ -516,7 +515,6 @@ export async function saveSettingsAction(formData: FormData): Promise<ActionResu
       site_email: String(formData.get("SiteEmail") ?? "") || null,
       site_phone: String(formData.get("SitePhone") ?? "") || null,
       site_address: String(formData.get("SiteAddress") ?? "") || null,
-      delivery_fee: toNumber(formData.get("DeliveryFee")),
       updated_at: new Date().toISOString()
     };
 

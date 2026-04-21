@@ -37,6 +37,11 @@ export function AdminProductsTab({ products, categories, branches, settings, add
   const [selectedAddonGroupIds, setSelectedAddonGroupIds] = useState<number[]>([]);
   const selectedAddonGroupIdsRef = useRef<number[]>([]);
 
+  const [isAllBranches, setIsAllBranches] = useState(true);
+  const [isActive, setIsActive] = useState(true);
+  const [hasMealOption, setHasMealOption] = useState(false);
+  const [hasDonenessOption, setHasDonenessOption] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [formCategoryId, setFormCategoryId] = useState<number | null>(null);
   const editingProduct = useMemo(() => products.find(p => p.id === editId), [products, editId]);
@@ -67,7 +72,11 @@ export function AdminProductsTab({ products, categories, branches, settings, add
     setTypes([]);
     setSimpleAddons([]);
     setSelectedAddonGroupIds([]);
-    selectedAddonGroupIdsRef.current = []; // ← هاد
+    selectedAddonGroupIdsRef.current = [];
+    setIsAllBranches(true);
+    setIsActive(true);
+    setHasMealOption(false);
+    setHasDonenessOption(false);
     setShowExtrasModal(false);
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
   }, []);
@@ -154,6 +163,8 @@ export function AdminProductsTab({ products, categories, branches, settings, add
       if (!res.ok) throw new Error("Failed to load product");
       const data = await res.json();
 
+      console.log("API data:", data);
+
       // Prevent auto-save while we're populating the form
       skipAutoSaveRef.current = true;
 
@@ -164,15 +175,14 @@ export function AdminProductsTab({ products, categories, branches, settings, add
       (form.elements.namedItem("DescriptionAr") as HTMLTextAreaElement).value = data.descriptionAr || "";
       (form.elements.namedItem("DescriptionEn") as HTMLTextAreaElement).value = data.descriptionEn || "";
       (form.elements.namedItem("BasePrice") as HTMLInputElement).value = String(data.basePrice ?? 0);
-      (form.elements.namedItem("Discount") as HTMLInputElement).value = String(data.discount ?? 0);
       (form.elements.namedItem("SortOrder") as HTMLInputElement).value = String(data.sortOrder ?? 0);
       (form.elements.namedItem("CategoryId") as HTMLSelectElement).value = String(data.categoryId || "");
       setFormCategoryId(data.categoryId || null);
       (form.elements.namedItem("BranchId") as HTMLSelectElement).value = data.branchId != null ? String(data.branchId) : "";
-      (form.elements.namedItem("AllBranches") as HTMLInputElement).checked = !!data.allBranches;
-      (form.elements.namedItem("HasMealOption") as HTMLInputElement).checked = !!data.hasMealOption;
-      (form.elements.namedItem("HasDonenessOption") as HTMLInputElement).checked = !!data.hasDonenessOption;
-      (form.elements.namedItem("IsActive") as HTMLInputElement).checked = !!data.isActive;
+      setIsAllBranches(!!data.allBranches);
+      setIsActive(!!data.isActive);
+      setHasMealOption(!!data.hasMealOption);
+      setHasDonenessOption(!!data.hasDonenessOption);
 
       setSizes((data.sizes || []).map((s: { nameAr?: string; nameEn?: string; price?: number }) => ({
         NameAr: s.nameAr || "", NameEn: s.nameEn || "", Price: Number(s.price || 0)
@@ -183,7 +193,7 @@ export function AdminProductsTab({ products, categories, branches, settings, add
       setSimpleAddons((data.simpleAddons || []).map((a: { nameAr?: string; nameEn?: string; price?: number }) => ({
         NameAr: a.nameAr || "", NameEn: a.nameEn || "", Price: Number(a.price || 0)
       })));
-      
+
       setSelectedAddonGroupIds(data.linkedAddonGroupIds || []);
       selectedAddonGroupIdsRef.current = data.linkedAddonGroupIds || [];
 
@@ -222,13 +232,10 @@ export function AdminProductsTab({ products, categories, branches, settings, add
       setTypes([]);
       setSimpleAddons([]);
       setSelectedAddonGroupIds([]);
-      const form = formRef.current;
-      if (form) {
-        (form.elements.namedItem("AllBranches") as HTMLInputElement).checked = true;
-        (form.elements.namedItem("IsActive") as HTMLInputElement).checked = true;
-        (form.elements.namedItem("HasMealOption") as HTMLInputElement).checked = false;
-        (form.elements.namedItem("HasDonenessOption") as HTMLInputElement).checked = false;
-      }
+      setIsAllBranches(true);
+      setIsActive(true);
+      setHasMealOption(false);
+      setHasDonenessOption(false);
       containerRef.current.style.display = "block";
       containerRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     } else {
@@ -322,14 +329,10 @@ export function AdminProductsTab({ products, categories, branches, settings, add
             {/* Section 2: Pricing & Sorting */}
             <div className="form-section">
               <div className="form-section-title">💰 {t('pricingAndOrganization') || 'Pricing & Sorting'}</div>
-              <div className="form-row-3">
+              <div className="form-row">
                 <div className="premium-input-group">
                   <label>Base Price</label>
                   <input type="number" name="BasePrice" className="premium-input" step="0.01" min="0" defaultValue="0" required onChange={handleFormChange} />
-                </div>
-                <div className="premium-input-group">
-                  <label>Discount %</label>
-                  <input type="number" name="Discount" className="premium-input" step="0.01" min="0" max="100" defaultValue="0" onChange={handleFormChange} />
                 </div>
                 <div className="premium-input-group">
                   <label>Sort Order</label>
@@ -525,19 +528,39 @@ export function AdminProductsTab({ products, categories, branches, settings, add
 
               <div className="logic-toggles">
                 <label className="logic-chip">
-                  <input type="checkbox" name="AllBranches" defaultChecked onChange={handleFormChange} />
+                  <input
+                    type="checkbox"
+                    name="AllBranches"
+                    checked={isAllBranches}
+                    onChange={(e) => { setIsAllBranches(e.target.checked); handleFormChange(); }}
+                  />
                   <span>Global Product</span>
                 </label>
                 <label className="logic-chip">
-                  <input type="checkbox" name="IsActive" defaultChecked onChange={handleFormChange} />
+                  <input
+                    type="checkbox"
+                    name="IsActive"
+                    checked={isActive}
+                    onChange={(e) => { setIsActive(e.target.checked); handleFormChange(); }}
+                  />
                   <span>Active In Store</span>
                 </label>
                 <label className="logic-chip">
-                  <input type="checkbox" name="HasMealOption" onChange={handleFormChange} />
+                  <input
+                    type="checkbox"
+                    name="HasMealOption"
+                    checked={hasMealOption}
+                    onChange={(e) => { setHasMealOption(e.target.checked); handleFormChange(); }}
+                  />
                   <span>Supports Meals</span>
                 </label>
                 <label className="logic-chip">
-                  <input type="checkbox" name="HasDonenessOption" onChange={handleFormChange} />
+                  <input
+                    type="checkbox"
+                    name="HasDonenessOption"
+                    checked={hasDonenessOption}
+                    onChange={(e) => { setHasDonenessOption(e.target.checked); handleFormChange(); }}
+                  />
                   <span>Doneness (Meat)</span>
                 </label>
               </div>

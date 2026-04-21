@@ -50,11 +50,11 @@ export async function POST(req: Request) {
             variable_name: "customer_phone",
             value: customerPhone
           },
-          {
-            display_name: "Support Email",
-            variable_name: "support_email",
-            value: process.env.SUPPORT_EMAIL || "mutaz0101@gmail.com"
-          }
+          // {
+          //   display_name: "Support Email",
+          //   variable_name: "support_email",
+          //   value: process.env.SUPPORT_EMAIL || "mutaz0101@gmail.com"
+          // }
         ]
       }
     });

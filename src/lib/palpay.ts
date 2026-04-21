@@ -20,7 +20,7 @@ export async function generatePalPayUrl(orderId: number, amount: number, custome
         cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/checkout/cancel?orderId=${orderId}`,
         customer_name: customerInfo.name,
         customer_phone: customerInfo.phone,
-        support_email: process.env.PALPAY_SUPPORT_EMAIL || "mutaz0101@gmail.com", // ← هاد السطر
+        // support_email: process.env.PALPAY_SUPPORT_EMAIL || "mutaz0101@gmail.com", // ← هاد السطر
 
         // hash: generateHash(orderId, amount) // Signature logic
     };
