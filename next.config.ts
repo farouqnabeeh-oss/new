@@ -18,11 +18,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // 4. خيار إضافي لتقليل استهلاك الـ Memory إذا كان جهازك بيعلق
-  experimental: {
-    // ميزة بتساعد في تقليل حجم الـ Build وتخطي بعض مشاكل الـ Static Generation
-    cpus: 1,
-  }
 };
 
 export default nextConfig;

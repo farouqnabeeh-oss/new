@@ -362,7 +362,8 @@ var UI = window.UI || {
                             return;
                         }
                     }
-                    state.selectedAddOns.push({ ...item, groupType: group.groupType });
+                    state.selectedAddOns.push({ ...item, groupType: group.groupType, groupNameAr: group.nameAr, groupNameEn: group.nameEn });
+
                 }
             } else {
                 if (currentlySelected) {
@@ -374,7 +375,8 @@ var UI = window.UI || {
                         const g = findGroupByItemId(a.id);
                         return !g || g.id !== group.id;
                     });
-                    state.selectedAddOns.push({ ...item, groupType: group.groupType });
+                    state.selectedAddOns.push({ ...item, groupType: group.groupType, groupNameAr: group.nameAr, groupNameEn: group.nameEn });
+
                 }
             }
         };

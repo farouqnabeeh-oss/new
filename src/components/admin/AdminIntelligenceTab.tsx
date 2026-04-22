@@ -30,6 +30,14 @@ export function AdminIntelligenceTab({ orders: initialOrders = [], branches, rol
   const [paymentFilter, setPaymentFilter] = useState("All");
   const [periodFilter, setPeriodFilter] = useState("Today");
 
+
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+
   const fetchOrders = useCallback(async (showSpinner = false) => {
     if (showSpinner) setIsRefreshing(true);
     try {
@@ -77,6 +85,29 @@ export function AdminIntelligenceTab({ orders: initialOrders = [], branches, rol
   const handleStatusUpdated = useCallback(() => {
     fetchOrders(true);
   }, [fetchOrders]);
+
+
+
+  const handleDeleteOrder = async (orderId: any) => {
+    if (!window.confirm("هل أنت متأكد من حذف هذا الطلب نهائياً؟ لا يمكن التراجع عن هذه الخطوة.")) return;
+
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}`, {
+        method: 'DELETE'
+      });
+
+      if (res.ok) {
+        // تحديث قائمة الطلبات بعد الحذف بنجاح
+        setOrders(prev => prev.filter(o => o.id !== orderId));
+      } else {
+        alert("حدث خطأ أثناء حذف الطلب.");
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert("فشل الاتصال بالسيرفر لحذف الطلب.");
+    }
+  };
+
 
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
@@ -214,7 +245,7 @@ export function AdminIntelligenceTab({ orders: initialOrders = [], branches, rol
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           {/* آخر تحديث */}
           <span style={{ fontSize: '12px', color: '#aaa', fontWeight: 600 }}>
-            آخر تحديث: {lastUpdated.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            آخر تحديث: {isClient ? lastUpdated.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ""}
           </span>
           <button
             className="btn btn-outline btn-sm"
@@ -273,10 +304,9 @@ export function AdminIntelligenceTab({ orders: initialOrders = [], branches, rol
               <option value="All">{isAr ? "كل الحالات" : "All Statuses"}</option>
               <option value="Pending">Pending</option>
               <option value="Confirmed">Confirmed</option>
-              <option value="Paid">Paid</option>
               <option value="Preparing">Preparing</option>
               <option value="Ready">Ready</option>
-              <option value="Out for Delivery">Out for Delivery</option>
+              <option value="Dispatched">Dispatched</option>
               <option value="Delivered">Delivered</option>
               <option value="Cancelled">Cancelled</option>
             </select>
@@ -336,7 +366,7 @@ export function AdminIntelligenceTab({ orders: initialOrders = [], branches, rol
                   </td>
                   <td>
                     <span className={`ultra-branch-badge-fire ${order.status.toLowerCase()}`} style={{
-                      background: order.status === 'Paid' || order.status === 'Delivered' ? '#11a85f' : order.status === 'Cancelled' ? '#e63946' : '#8B0000',
+                      background: order.status === 'Delivered' || order.status === 'Confirmed' ? '#11a85f' : order.status === 'Cancelled' ? '#e63946' : '#8B0000',
                       color: '#fff', fontSize: '11px', fontWeight: 900, padding: '4px 10px'
                     }}>
                       {order.status}
@@ -346,26 +376,40 @@ export function AdminIntelligenceTab({ orders: initialOrders = [], branches, rol
                     {new Date(order.createdAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
                   </td>
                   <td>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                       <button
                         onClick={() => setStatusModal({ orderId: order.id, currentStatus: order.status })}
                         style={{
-                          padding: '6px 14px', borderRadius: '10px', border: '1px solid #eee',
-                          background: '#f5f5f5', fontWeight: 700, fontSize: '12px', cursor: 'pointer',
-                          color: '#1a1a1a', whiteSpace: 'nowrap', flex: 1
+                          height: '32px', padding: '0 12px', borderRadius: '8px',
+                          border: '1px solid #e5e7eb', background: '#f9fafb',
+                          fontWeight: 700, fontSize: '12px', cursor: 'pointer',
+                          color: '#1a1a1a', whiteSpace: 'nowrap'
                         }}
                       >
                         {order.status} ▼
                       </button>
+
                       <button
-                        className="btn btn-primary btn-sm"
-                        style={{ fontSize: '11px', padding: '6px 12px', background: '#000', color: '#fff', borderRadius: '8px', flex: 1 }}
+                        style={{ height: '32px', padding: '0 12px', background: '#000', color: '#fff', borderRadius: '8px', border: 'none', fontSize: '12px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
                         onClick={async () => {
                           const res = await getOrderSummary(order.id);
                           if (res.success) setSelectedOrder(res.order);
                         }}
                       >
                         تفاصيل
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteOrder(order.id)}
+                        style={{
+                          width: '32px', height: '32px', borderRadius: '8px', border: 'none',
+                          background: '#fee2e2', color: '#b91c1c', cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.background = '#fecaca'}
+                        onMouseOut={(e) => e.currentTarget.style.background = '#fee2e2'}
+                      >
+                        <X size={14} />
                       </button>
                     </div>
                   </td>
@@ -422,9 +466,21 @@ export function AdminIntelligenceTab({ orders: initialOrders = [], branches, rol
                 <label style={{ fontSize: '11px', color: '#999', fontWeight: 800, display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>طريقة الدفع</label>
                 <div style={{ fontWeight: 900, color: '#8B0000' }}>{selectedOrder.payment_method === 'Cash' ? 'نقدي' : 'فيزا / بطاقة'}</div>
               </div>
+
+              {/* عرض رسوم التوصيل */}
               <div>
-                <label style={{ fontSize: '11px', color: '#999', fontWeight: 800, display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>الإجمالي</label>
-                <div style={{ fontWeight: 900, color: '#8B0000', fontSize: '1.3rem' }}>{selectedOrder.total_amount} ₪</div>
+                <label style={{ fontSize: '11px', color: '#999', fontWeight: 800, display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>رسوم التوصيل</label>
+                <div style={{ fontWeight: 900, color: '#1a1a1a' }}>
+                  {/* هنا نستخدم الاسم الصحيح للحقل من قاعدة البيانات */}
+                  {selectedOrder.delivery_fee && Number(selectedOrder.delivery_fee) > 0
+                    ? `${selectedOrder.delivery_fee} ₪`
+                    : '0 ₪ (استلام)'}
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '11px', color: '#999', fontWeight: 800, display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>الإجمالي النهائي</label>
+                <div style={{ fontWeight: 900, color: '#8B0000', fontSize: '1.3rem' }}>{Math.round(selectedOrder.total_amount)} ₪</div>
               </div>
             </div>
 
@@ -572,8 +628,7 @@ export function AdminIntelligenceTab({ orders: initialOrders = [], branches, rol
                 { status: 'Pending', label: 'قيد الانتظار', sub: 'Pending', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg> },
                 { status: 'Confirmed', label: 'تم التأكيد', sub: 'Confirmed', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><polyline points="20 6 9 17 4 12" /></svg> },
                 { status: 'Preparing', label: 'قيد التحضير', sub: 'Preparing', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="3" /><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" /></svg> },
-                { status: 'Ready', label: 'جاهز', sub: 'Ready', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><polyline points="9 11 12 14 22 4" /><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" /></svg> },
-                { status: 'Out for Delivery', label: 'في الطريق', sub: 'Out for Delivery', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="5.5" cy="17.5" r="2.5" /><circle cx="17.5" cy="17.5" r="2.5" /><path d="M8 17.5h7M1 2h2l2.5 12h11l2-7H6" /></svg> },
+                { status: 'Dispatched', label: 'في الطريق', sub: 'Dispatched', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="5.5" cy="17.5" r="2.5" /><circle cx="17.5" cy="17.5" r="2.5" /><path d="M8 17.5h7M1 2h2l2.5 12h11l2-7H6" /></svg> },
                 { status: 'Delivered', label: 'تم التسليم', sub: 'Delivered', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg> },
               ].map(({ status, label, sub, icon }) => {
                 const isCurrent = statusModal.currentStatus === status;

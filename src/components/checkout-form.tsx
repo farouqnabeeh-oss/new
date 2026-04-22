@@ -212,7 +212,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
 
             const baseFee = orderType === 'delivery' ? (deliveryFee ?? settings.deliveryFee ?? 0) : 0;
             const freshEffectiveFee = orderType === 'delivery' ? Math.max(baseFee - smartDeliveryDiscount, 0) : 0;
-            const freshTotal = Number((freshItemsTotal + freshEffectiveFee).toFixed(2));
+            const freshTotal = Math.round(freshItemsTotal + freshEffectiveFee); // بدون كسور
 
             const finalAddress = orderType === 'delivery' ? `${selectedZone} - ${address}` : address;
 
@@ -222,12 +222,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                     (a.nameAr || '').includes('بدون')
                 );
 
-                const normalAddons = i.selectedAddOns?.filter((a: any) =>
-                    a.groupType !== 'Without' &&
-                    !['MealDrink', 'MealDrinkUpgrade', 'MealFries'].includes(a.groupType)
-                );
-
-                const parts = [];
+                const parts: string[] = [];
 
                 if (i.selectedSize)
                     parts.push(`${isAr ? 'الحجم' : 'Size'}: ${isAr ? i.selectedSize.nameAr : i.selectedSize.nameEn}`);
@@ -235,8 +230,27 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                 if (i.selectedType)
                     parts.push(`${isAr ? 'النوع' : 'Type'}: ${isAr ? i.selectedType.nameAr : i.selectedType.nameEn}`);
 
-                if (normalAddons?.length)
-                    parts.push(`${isAr ? 'إضافات' : 'Addons'}: ${normalAddons.map((a: any) => isAr ? a.nameAr : a.nameEn).join(' + ')}`);
+                // تجميع الـ addons حسب اسم القائمة
+                const addonsByGroup: Record<string, { nameAr: string; nameEn: string; items: string[] }> = {};
+                i.selectedAddOns?.forEach((a: any) => {
+                    const isWithout = a.groupType === 'Without' || (a.nameAr || '').includes('بدون');
+                    if (isWithout) return;
+
+                    const groupKey = a.groupNameAr || a.groupType || 'إضافات';
+                    if (!addonsByGroup[groupKey]) {
+                        addonsByGroup[groupKey] = {
+                            nameAr: a.groupNameAr || groupKey,
+                            nameEn: a.groupNameEn || a.groupType || 'Addons',
+                            items: []
+                        };
+                    }
+                    addonsByGroup[groupKey].items.push(isAr ? (a.nameAr || '') : (a.nameEn || ''));
+                });
+
+                Object.values(addonsByGroup).forEach(group => {
+                    if (group.items.length)
+                        parts.push(`${isAr ? group.nameAr : group.nameEn}: ${group.items.join(' + ')}`);
+                });
 
                 if (withoutAddons?.length)
                     parts.push(`${isAr ? 'بدون' : 'Without'}: ${withoutAddons.map((a: any) => (isAr ? a.nameAr : a.nameEn).replace('🚫', '').trim()).join('، ')}`);
@@ -257,6 +271,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                 address: finalAddress,
                 tableNumber: null,
                 totalAmount: freshTotal,
+                deliveryFee: freshEffectiveFee, // ← أضف هاد
                 paymentMethod: paymentMethod === 'cash' ? 'Cash' : 'Card',
                 scheduledAt: scheduledAt
             }, mappedItems, captchaToken || undefined);

@@ -90,7 +90,7 @@ export type Product = {
   simpleAddons?: AddonGroupItem[];
 };
 
-export type OrderStatus = "Pending" | "Paid" | "Preparing" | "Dispatched" | "Delivered" | "Cancelled";
+export type OrderStatus = "Pending" | "Confirmed" | "Preparing" | "Dispatched" | "Cancelled" | "Delivered";
 
 export type OrderItem = {
   id: number;

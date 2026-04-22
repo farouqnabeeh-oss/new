@@ -265,6 +265,7 @@ export async function saveOrderAction(orderData: any, items: any[], captchaToken
                 address: orderData.address || null,
                 table_number: orderData.tableNumber || null,
                 total_amount: totalAmount,
+                delivery_fee: orderData.deliveryFee ?? 0,
                 status: "Pending",
                 payment_method: orderData.paymentMethod,
                 payment_status: "Pending",
