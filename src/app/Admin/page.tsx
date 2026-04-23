@@ -16,6 +16,7 @@ import { AdminIntelligenceTab } from "@/components/admin/AdminIntelligenceTab";
 import { AdminCustomersTab } from "@/components/admin/AdminCustomersTab";
 import { AdminLangSwitcher } from "@/components/admin/AdminLangSwitcher";
 import { AdminOrderNotifier } from "@/components/admin/AdminOrderNotifier";
+import DeliveryDiscountsManager from "@/components/admin/DeliveryDiscountsManager";
 import InvoiceDiscountsManager from "@/components/admin/InvoiceDiscountsManager";
 
 export default async function AdminPage() {
@@ -67,7 +68,8 @@ export default async function AdminPage() {
             categories: <AdminCategoriesTab categories={categories} branches={branches} />,
             products: <AdminProductsTab products={products as any} categories={categories} branches={branches} settings={settings as any} addonGroups={addonGroups as any} />,
             addons: <AdminAddonsTab addonGroups={addonGroups as any} categories={categories} products={products as any} />,
-            discounts: <InvoiceDiscountsManager />,
+            deliveryDiscounts: <DeliveryDiscountsManager />,
+            invoiceDescounts: <InvoiceDiscountsManager />,
             customers: <AdminCustomersTab customers={customers} />,
             settings: <AdminSettingsTab settings={settings as any} menuBanners={menuBanners} />,
             profile: <AdminProfileTab user={{ email: session.email, displayName: session.displayName }} />

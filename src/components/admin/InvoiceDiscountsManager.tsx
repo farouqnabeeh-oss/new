@@ -1,213 +1,239 @@
 "use client";
-import { useState, useEffect } from "react"; // أضفنا useEffect
-import { useAdminTranslation } from "@/lib/useAdminTranslation";
-import { useToast } from "@/components/admin/AdminToast";
-import { AdminSubmitButton } from "@/components/admin/AdminSubmitButton";
-import { Truck, Info, Sparkles } from "lucide-react";
+
+import { useState, useEffect } from "react";
+import { Save, Percent, DollarSign } from "lucide-react";
+
+const CATEGORIES = [
+    { label: "0 — 50 ₪", min: 0, max: 50 },
+    { label: "50 — 100 ₪", min: 50, max: 100 },
+    { label: "100 — 250 ₪", min: 100, max: 250 },
+    { label: "250+ ₪", min: 250, max: null },
+];
 
 type Rule = {
-    id: string;
-    range: string;
-    type: "none" | "fixed" | "percentage" | "free";
+    min: number;
+    max: number | null;
+    type: "fixed" | "percentage";
     value: number;
 };
 
+const defaultRules = (): Rule[] =>
+    CATEGORIES.map((c) => ({ min: c.min, max: c.max, type: "fixed", value: 0 }));
+
 export default function InvoiceDiscountsManager() {
-    const { t, isAr } = useAdminTranslation();
-    const { showToast } = useToast();
+    const [rules, setRules] = useState<Rule[]>(defaultRules());
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [saved, setSaved] = useState(false);
 
-    // إضافة حالات التحميل
-    const [isLoading, setIsLoading] = useState(true);
-    const [isSaving, setIsSaving] = useState(false);
-
-    const [rules, setRules] = useState<Rule[]>([
-        { id: "tier1", range: t("invoiceDiscounts.ranges.tier1"), type: "none", value: 0 },
-        { id: "tier2", range: t("invoiceDiscounts.ranges.tier2"), type: "fixed", value: 5 },
-        { id: "tier3", range: t("invoiceDiscounts.ranges.tier3"), type: "fixed", value: 10 },
-        { id: "tier4", range: t("invoiceDiscounts.ranges.tier4"), type: "free", value: 0 },
-    ]);
-
-    // 1. جلب البيانات من الداتابيز عند تحميل الصفحة
     useEffect(() => {
-        async function fetchSettings() {
-            try {
-                const res = await fetch("/api/admin/invoice-discounts");
-                const data = await res.json();
-                if (data.rules && data.rules.length > 0) {
-                    // حول من شكل الداتابيز لشكل الـ UI
-                    const mapped = data.rules.map((r: any, i: number) => ({
-                        id: `tier${i + 1}`,
-                        range: t(`invoiceDiscounts.ranges.tier${i + 1}`),
-                        type: r.type === "fixed" && r.value === 0 ? "none" : r.type,
-                        value: r.value,
-                    }));
-                    setRules(mapped);
+        fetch("/api/admin/invoice-item-discounts")
+            .then((r) => r.json())
+            .then((data) => {
+                if (data.rules && data.rules.length === 4) {
+                    setRules(data.rules);
+                } else {
+                    setRules(defaultRules());
                 }
-            } catch (error) {
-                console.error("Failed to load settings:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        }
-        fetchSettings();
+            })
+            .catch(() => setRules(defaultRules()))
+            .finally(() => setLoading(false));
     }, []);
 
-    const handleUpdate = (id: string, field: keyof Rule, value: any) => {
-        setRules((prev) =>
-            prev.map((r) =>
-                r.id === id ? { ...r, [field]: field === "value" ? Number(value) : value } : r
-            )
-        );
+    const updateRule = (index: number, field: keyof Rule, value: any) => {
+        setRules((prev) => {
+            const updated = [...prev];
+            updated[index] = { ...updated[index], [field]: value };
+            return updated;
+        });
+        setSaved(false);
     };
 
-    const TIER_RANGES = [
-        { id: "tier1", min: 0, max: 50 },
-        { id: "tier2", min: 50, max: 100 },
-        { id: "tier3", min: 100, max: 250 },
-        { id: "tier4", min: 250, max: null },
-    ];
-
-    const handleSave = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsSaving(true);
-
+    const handleSave = async () => {
+        setSaving(true);
         try {
-            // حول الـ rules لنفس شكل الداتابيز
-            const formattedRules = rules.map((rule) => {
-                const range = TIER_RANGES.find(r => r.id === rule.id);
-                return {
-                    min: range?.min ?? 0,
-                    max: range?.max ?? null,
-                    type: rule.type === "none" ? "fixed" : rule.type,
-                    value: rule.type === "none" ? 0 : rule.value,
-                };
-            });
-
-            const res = await fetch("/api/admin/invoice-discounts", {
+            const res = await fetch("/api/admin/invoice-item-discounts", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ rules: formattedRules }),
+                body: JSON.stringify({ rules }),
             });
-
-            const result = await res.json();
-
-            if (result.success) {
-                showToast(isAr ? "تم حفظ التعديلات في قاعدة البيانات" : "Changes saved to database!");
+            const data = await res.json();
+            if (data.success) {
+                setSaved(true);
+                setTimeout(() => setSaved(false), 3000);
             } else {
-                throw new Error(result.error);
+                alert("فشل الحفظ: " + (data.error || "خطأ غير معروف"));
             }
-        } catch (error: any) {
-            showToast(isAr ? "فشل الحفظ: " + error.message : "Save failed", "error");
+        } catch (err) {
+            alert("خطأ في الاتصال بالسيرفر");
         } finally {
-            setIsSaving(false);
+            setSaving(false);
         }
     };
 
-    if (isLoading) {
-        return <div className="p-10 text-center font-bold text-gray-400 animate-pulse">{isAr ? "جاري جلب البيانات..." : "Loading Settings..."}</div>;
+    if (loading) {
+        return (
+            <div style={{ padding: "40px", textAlign: "center", color: "#888" }}>
+                جاري التحميل...
+            </div>
+        );
     }
 
     return (
-        <form onSubmit={handleSave} className="admin-profile-container flex flex-col gap-6" dir={isAr ? "rtl" : "ltr"}>
-
+        <div style={{ maxWidth: "680px", margin: "0 auto", padding: "30px 20px", direction: "rtl" }}>
             {/* Header */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-5 sm:p-7 rounded-[30px] border border-gray-100 shadow-sm overflow-hidden relative group">
-                <div className="flex items-center gap-4 w-full sm:w-auto">
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-[#8B0000] text-white flex items-center justify-center rounded-[20px] shadow-lg shadow-red-50">
-                        <Truck size={28} />
-                    </div>
-                    <div>
-                        <h2 className="text-lg sm:text-xl font-[900] text-gray-800 m-0 leading-tight">
-                            {t("invoiceDiscounts.title")}
-                        </h2>
-                        <p className="text-[11px] text-gray-500 font-bold m-0 uppercase tracking-wider opacity-70">
-                            {isAr ? "إدارة نظام التوصيل الذكي" : "Smart Delivery System"}
-                        </p>
-                    </div>
-                </div>
-
-                <div className="w-full sm:w-48">
-                    <AdminSubmitButton
-                        label={isAr ? "حفظ الإعدادات" : "Save Settings"}
-                        pendingLabel={isAr ? "جاري الحفظ..." : "Saving..."}
-                    />
-                </div>
+            <div style={{ marginBottom: "30px" }}>
+                <h2 style={{ fontSize: "22px", fontWeight: 900, color: "#1a1a1a", margin: 0 }}>
+                    خصومات الفاتورة
+                </h2>
+                <p style={{ color: "#666", fontSize: "14px", marginTop: "8px" }}>
+                    خصم يُطبَّق على مجموع الأصناف (subtotal) حسب قيمة الفاتورة — مستقل عن خصم الفرع وخصم التوصيل
+                </p>
             </div>
 
-            {/* Grid الكروت */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Rules */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginBottom: "32px" }}>
                 {rules.map((rule, index) => (
-                    <div key={rule.id} className="admin-card !m-0 flex flex-col justify-between hover:border-red-200 transition-colors group">
-                        <div className="flex items-center justify-between mb-6">
-                            <div className="flex items-center gap-3">
-                                <span className="text-[14px] font-black text-red-600 bg-red-50 w-8 h-8 flex items-center justify-center rounded-lg">
-                                    {index + 1}
-                                </span>
-                                <h3 className="admin-card-title !m-0 text-gray-800">{rule.range}</h3>
-                            </div>
-                            {rule.type === 'free' && (
-                                <div className="flex items-center gap-1 bg-amber-50 text-amber-600 px-3 py-1 rounded-full text-[10px] font-black animate-pulse">
-                                    <Sparkles size={12} />
-                                    {isAr ? "مجاني" : "FREE"}
-                                </div>
-                            )}
+                    <div
+                        key={index}
+                        style={{
+                            background: "#fff",
+                            border: "1.5px solid #ECEAE7",
+                            borderRadius: "20px",
+                            padding: "20px 24px",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "20px",
+                            flexWrap: "wrap",
+                        }}
+                    >
+                        {/* Category Label */}
+                        <div style={{ minWidth: "110px" }}>
+                            <span style={{
+                                fontSize: "13px",
+                                fontWeight: 800,
+                                color: "#8B0000",
+                                background: "#FDF4F4",
+                                padding: "6px 14px",
+                                borderRadius: "30px",
+                                display: "inline-block",
+                            }}>
+                                {CATEGORIES[index].label}
+                            </span>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="form-group !m-0">
-                                <label className="text-[11px] font-black mb-1.5 block text-gray-400 uppercase tracking-wider">
-                                    {isAr ? "نوع الخصم" : "Type"}
-                                </label>
-                                <select
-                                    value={rule.type}
-                                    onChange={(e) => handleUpdate(rule.id, "type", e.target.value)}
-                                    className="w-full p-3.5 rounded-2xl border border-gray-100 bg-gray-50 font-bold text-sm outline-none focus:ring-2 focus:ring-red-500/10 transition-all cursor-pointer"
-                                >
-                                    <option value="none">{isAr ? "بدون خصم" : "No Discount"}</option>
-                                    <option value="fixed">{isAr ? "مبلغ ثابت" : "Fixed Amount"}</option>
-                                    <option value="percentage">{isAr ? "نسبة مئوية" : "Percentage"}</option>
-                                    <option value="free">{isAr ? "توصيل مجاني" : "Free Delivery"}</option>
-                                </select>
-                            </div>
+                        {/* Type Toggle */}
+                        <div style={{ display: "flex", gap: "8px" }}>
+                            <button
+                                onClick={() => updateRule(index, "type", "fixed")}
+                                style={{
+                                    padding: "8px 16px",
+                                    borderRadius: "12px",
+                                    border: "1.5px solid",
+                                    borderColor: rule.type === "fixed" ? "#8B0000" : "#ECEAE7",
+                                    background: rule.type === "fixed" ? "#FDF4F4" : "#fff",
+                                    color: rule.type === "fixed" ? "#8B0000" : "#888",
+                                    fontWeight: 800,
+                                    fontSize: "13px",
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "5px",
+                                    transition: "all 0.2s",
+                                }}
+                            >
+                                <DollarSign size={14} />
+                                قيمة ثابتة
+                            </button>
+                            <button
+                                onClick={() => updateRule(index, "type", "percentage")}
+                                style={{
+                                    padding: "8px 16px",
+                                    borderRadius: "12px",
+                                    border: "1.5px solid",
+                                    borderColor: rule.type === "percentage" ? "#8B0000" : "#ECEAE7",
+                                    background: rule.type === "percentage" ? "#FDF4F4" : "#fff",
+                                    color: rule.type === "percentage" ? "#8B0000" : "#888",
+                                    fontWeight: 800,
+                                    fontSize: "13px",
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "5px",
+                                    transition: "all 0.2s",
+                                }}
+                            >
+                                <Percent size={14} />
+                                نسبة مئوية
+                            </button>
+                        </div>
 
-                            <div className="form-group !m-0">
-                                <label className="text-[11px] font-black mb-1.5 block text-gray-400 uppercase tracking-wider">
-                                    {isAr ? "قيمة الخصم" : "Value"}
-                                </label>
-                                {rule.type === "none" || rule.type === "free" ? (
-                                    <div className="h-[48px] flex items-center justify-center bg-gray-50 rounded-2xl text-gray-300 font-bold text-sm border-2 border-dashed border-gray-100 italic">
-                                        {rule.type === "free" ? "0.00" : "—"}
-                                    </div>
-                                ) : (
-                                    <div className="relative group/input">
-                                        <input
-                                            type="number"
-                                            value={rule.value}
-                                            onChange={(e) => handleUpdate(rule.id, "value", e.target.value)}
-                                            className="w-full p-3.5 rounded-2xl border border-gray-200 bg-white font-black text-sm outline-none focus:border-red-600 transition-all shadow-sm"
-                                        />
-                                        <span className={`absolute ${isAr ? 'left-4' : 'right-4'} top-1/2 -translate-y-1/2 text-xs font-black text-red-700 bg-red-50 px-2 py-1 rounded-md`}>
-                                            {rule.type === "percentage" ? "%" : "₪"}
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
+                        {/* Value Input */}
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginRight: "auto" }}>
+                            <input
+                                type="number"
+                                min={0}
+                                max={rule.type === "percentage" ? 100 : undefined}
+                                value={rule.value}
+                                onChange={(e) => updateRule(index, "value", parseFloat(e.target.value) || 0)}
+                                style={{
+                                    width: "90px",
+                                    padding: "10px 14px",
+                                    borderRadius: "12px",
+                                    border: "1.5px solid #ECEAE7",
+                                    fontSize: "16px",
+                                    fontWeight: 800,
+                                    textAlign: "center",
+                                    outline: "none",
+                                    color: "#1a1a1a",
+                                }}
+                            />
+                            <span style={{ fontWeight: 800, color: "#666", fontSize: "14px", minWidth: "24px" }}>
+                                {rule.type === "percentage" ? "%" : "₪"}
+                            </span>
+                        </div>
+
+                        {/* Preview */}
+                        <div style={{ fontSize: "12px", color: "#aaa", width: "100%", marginTop: "4px" }}>
+                            {rule.value === 0 ? (
+                                <span>لا يوجد خصم لهذه الفئة</span>
+                            ) : rule.type === "fixed" ? (
+                                <span>فاتورة بين {CATEGORIES[index].label} → خصم ثابت <strong style={{ color: "#059669" }}>{rule.value} ₪</strong></span>
+                            ) : (
+                                <span>فاتورة بين {CATEGORIES[index].label} → خصم <strong style={{ color: "#059669" }}>{rule.value}%</strong> من مجموع الأصناف</span>
+                            )}
                         </div>
                     </div>
                 ))}
             </div>
 
-            {/* ملاحظة التعليمات */}
-            <div className="bg-amber-50/50 border border-amber-100 p-5 rounded-[25px] flex gap-4 items-center max-w-3xl mx-auto shadow-sm">
-                <div className="w-10 h-10 bg-amber-100 text-amber-600 flex items-center justify-center rounded-full shrink-0">
-                    <Info size={20} />
-                </div>
-                <p className="text-[12px] text-amber-900 font-[700] leading-relaxed m-0">
-                    {isAr
-                        ? "توضيح: النظام يقوم بخصم القيمة المحددة من سعر التوصيل لكل منطقة بناءً على إجمالي الفاتورة."
-                        : "Note: The system deducts the specified value from the delivery fee based on the invoice total."}
-                </p>
-            </div>
-        </form>
+            {/* Save Button */}
+            <button
+                onClick={handleSave}
+                disabled={saving}
+                style={{
+                    width: "100%",
+                    padding: "18px",
+                    borderRadius: "18px",
+                    border: "none",
+                    background: saved
+                        ? "linear-gradient(135deg, #059669, #10b981)"
+                        : "linear-gradient(135deg, #8B0000, #B91C1C)",
+                    color: "#fff",
+                    fontSize: "16px",
+                    fontWeight: 900,
+                    cursor: saving ? "not-allowed" : "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "10px",
+                    opacity: saving ? 0.7 : 1,
+                    transition: "all 0.3s",
+                }}
+            >
+                <Save size={20} />
+                {saving ? "جاري الحفظ..." : saved ? "✓ تم الحفظ بنجاح" : "حفظ الإعدادات"}
+            </button>
+        </div>
     );
 }

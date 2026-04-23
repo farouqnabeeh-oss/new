@@ -9,7 +9,7 @@ type Props = {
   role?: string;
 };
 
-type TabKey = "intelligence" | "branches" | "categories" | "products" | "addons" | "customers" | "settings" | "profile" | "discounts";
+type TabKey = "intelligence" | "branches" | "categories" | "products" | "addons" | "customers" | "settings" | "profile" | "deliveryDiscounts" | "invoiceDescounts";
 
 // داخل مكون AdminTabsWrapper
 export function AdminTabsWrapper({ children, role }: Props) {
@@ -19,7 +19,8 @@ export function AdminTabsWrapper({ children, role }: Props) {
   let translatedTabs = [
     { key: "intelligence", label: t('intelligence') },
     { key: "branches", label: t('branches') },
-    { key: "discounts", label: t('discounts') || 'خصومات الفواتير' }, // التاب الجديدة
+    { key: "deliveryDiscounts", label: t('deliveryDiscounts') || 'خصومات التوصيل' }, // التاب الجديدة
+    { key: "invoiceDescounts", label: t('invoiceDescounts') || 'خصومات الفواتير' }, 
     { key: "categories", label: t('categories') },
     { key: "products", label: t('products') },
     { key: "addons", label: t('addons') },

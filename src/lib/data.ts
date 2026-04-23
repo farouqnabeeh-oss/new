@@ -747,8 +747,20 @@ export async function getAdminData() {
         addonDetails: item.addon_details
       }))
     })) as Order[];
-    const customers = (customersResult.data ?? []) as Customer[];
 
+
+    const customers = (customersResult.data ?? []).map((row: any): Customer => ({
+      id: String(row.id),
+      name: String(row.name ?? ""),
+      phone: String(row.phone ?? ""),
+      email: String(row.email ?? ""),
+      totalOrders: Number(row.total_orders ?? 0),
+      totalSpent: Number(row.total_spent ?? 0),
+      lastOrderAt: String(row.last_order_at ?? ""),
+      createdAt: String(row.created_at ?? ""),
+    }));
+
+    
     return {
       branches,
       categories: categories.map((category) => ({

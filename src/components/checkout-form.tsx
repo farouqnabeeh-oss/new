@@ -6,6 +6,7 @@ import { saveOrderAction } from "@/lib/order-actions";
 import Script from "next/script";
 import { ShoppingBag, Truck, Utensils, Clock, CreditCard, Banknote, CheckCircle2, Info, Sparkles } from "lucide-react";
 import ReCAPTCHA from "react-google-recaptcha";
+import { loadCustomer, saveCustomer } from "@/lib/customer-storage";
 
 type Props = {
     branch: Branch;
@@ -28,10 +29,44 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
     const [isOpen, setIsOpen] = useState(true);
     const [captchaToken, setCaptchaToken] = useState<string | null>(null);
     const [discountRules, setDiscountRules] = useState<any[]>([]);
+    const [invoiceRules, setInvoiceRules] = useState<any[]>([]);
     const [smartDeliveryDiscount, setSmartDeliveryDiscount] = useState(0);
     const [effectiveDeliveryFee, setEffectiveDeliveryFee] = useState<number | null>(null);
 
     const isAr = lang === "ar";
+
+
+
+    // ✅ Autofill من localStorage
+    useEffect(() => {
+        const saved = loadCustomer();
+        if (!saved) return;
+
+        const set = (id: string, val: string) => {
+            const el = document.getElementById(id) as HTMLInputElement | null;
+            if (el && val) el.value = val;
+        };
+
+        set("customer-name", saved.name);
+        set("customer-phone", saved.phone);
+        set("customer-email", saved.email);
+        set("customer-street", saved.street);
+        set("customer-building", saved.building);
+        set("customer-address-notes", saved.addressNotes);
+
+        // Zone — لو محفوظة نفوت عليها
+        if (saved.lastZone) {
+            const zone = branch.deliveryZones?.find(z =>
+                z.nameAr === saved.lastZone || z.nameEn === saved.lastZone
+            );
+            if (zone) {
+                setSelectedZone(saved.lastZone);
+                setDeliveryFee(zone.fee);
+            }
+        }
+    }, []); // مرة واحدة عند mount
+
+
 
     useEffect(() => {
         const now = new Date();
@@ -60,6 +95,13 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
             }
         }
         fetchRules();
+    }, []);
+
+    // جلب القواعد عند تحميل الصفحة
+    useEffect(() => {
+        fetch('/api/admin/invoice-discounts')
+            .then(res => res.json())
+            .then(data => setInvoiceRules(data.rules || []));
     }, []);
 
     // ✅ كشف رجوع المستخدم من Lahza بدون دفع
@@ -216,6 +258,18 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
 
             const finalAddress = orderType === 'delivery' ? `${selectedZone} - ${address}` : address;
 
+            saveCustomer({
+                name,
+                phone,
+                email,
+                street,
+                building,
+                addressNotes,
+                lastZone: selectedZone,
+            });
+
+
+
             const mappedItems = items.map((i: any) => {
                 const withoutAddons = i.selectedAddOns?.filter((a: any) =>
                     a.groupType === 'Without' ||
@@ -356,6 +410,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                     `*الأصناف:*%0A${itemsTxt}%0A%0A` +
                     `*المجموع:* ${freshTotal} ₪%0A%0A` +
                     `_تم إرسال الطلب عبر الموقع الإلكتروني_`;
+
 
                 const waLink = `https://wa.me/${branch.whatsApp.replace(/\+/g, '').replace(/\s/g, '')}?text=${msg}`;
 

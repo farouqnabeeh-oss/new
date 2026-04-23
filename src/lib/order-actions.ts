@@ -235,22 +235,52 @@ export async function saveOrderAction(orderData: any, items: any[], captchaToken
     try {
         const supabase = getSupabaseAdmin();
 
-        // 1. Upsert Customer
-        const { data: customer, error: customerError } = await supabase
+        // 1. Upsert Customer — مع increment للإحصائيات
+        const totalAmount = orderData.totalAmount ?? orderData.total_amount ?? 0;
+
+        const { data: existingCustomer } = await supabase
             .from("customers")
-            .upsert({
-                phone: orderData.customerPhone,
-                name: orderData.customerName,
-                email: orderData.customerEmail,
-                last_order_at: new Date().toISOString()
-            }, { onConflict: 'phone' })
-            .select("id")
+            .select("id, total_orders, total_spent, email")
+            .eq("phone", orderData.customerPhone)
             .single();
 
-        if (customerError) throw customerError;
+        let customer;
+        if (existingCustomer) {
+            const { data, error } = await supabase
+                .from("customers")
+                .update({
+                    name: orderData.customerName,
+                    email: orderData.customerEmail || existingCustomer.email,
+                    total_orders: (existingCustomer.total_orders ?? 0) + 1,
+                    total_spent: Number(existingCustomer.total_spent ?? 0) + totalAmount,
+                    last_order_at: new Date().toISOString(),
+                })
+                .eq("id", existingCustomer.id)
+                .select("id")
+                .single();
+            if (error) throw error;
+            customer = data;
+        } else {
+            const { data, error } = await supabase
+                .from("customers")
+                .insert({
+                    phone: orderData.customerPhone,
+                    name: orderData.customerName,
+                    email: orderData.customerEmail || null,
+                    total_orders: 1,
+                    total_spent: totalAmount,
+                    last_order_at: new Date().toISOString(),
+                })
+                .select("id")
+                .single();
+            if (error) throw error;
+            customer = data;
+        }
 
         // 2. Insert Order
-        const totalAmount = orderData.totalAmount ?? orderData.total_amount ?? 0;
+        // ← هون بكمل الكود الموجود بدون تغيير، بس احذف السطر اللي بعرّف totalAmount لأنك عرّفته فوق
+
+        // 2. Insert Order
         console.log(`[saveOrderAction] 📦 Inserting order for customer ${customer.id}, amount ${totalAmount}...`);
 
         const { data: orderResponse, error: orderError } = await supabase
@@ -266,6 +296,8 @@ export async function saveOrderAction(orderData: any, items: any[], captchaToken
                 table_number: orderData.tableNumber || null,
                 total_amount: totalAmount,
                 delivery_fee: orderData.deliveryFee ?? 0,
+                // أضف هذا السطر هنا بالضبط لزيادة الخصم في الداتابيز
+                invoice_discount: orderData.invoiceDiscountAmount ?? 0,
                 status: "Pending",
                 payment_method: orderData.paymentMethod,
                 payment_status: "Pending",
