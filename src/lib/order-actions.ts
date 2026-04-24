@@ -155,13 +155,16 @@ export async function finalizeOrder(orderId: string | number) {
         // 4. حل مشكلة الـ undefined والـ Types
         // ندمج بيانات القاعدة مع مسميات الـ Type التي تتوقعها الدالة
         const mappedOrder: any = {
-            ...orderData, // مسميات snake_case مثل customer_name (للإيميل)
-            branchId: orderData.branch_id, // مسميات camelCase (للـ TypeScript)
+            ...orderData,
+            branchId: orderData.branch_id,
             customerName: orderData.customer_name,
             customerPhone: orderData.customer_phone,
             customerEmail: orderData.customer_email,
             totalAmount: orderData.total_amount,
             orderType: orderData.order_type,
+            deliveryFee: orderData.delivery_fee,
+            invoiceDiscountAmount: orderData.invoice_discount_amount,
+            invoiceDiscountType: orderData.invoice_discount_type,
         };
 
         // 5. إرسال الإيميل
@@ -296,8 +299,8 @@ export async function saveOrderAction(orderData: any, items: any[], captchaToken
                 table_number: orderData.tableNumber || null,
                 total_amount: totalAmount,
                 delivery_fee: orderData.deliveryFee ?? 0,
-                // أضف هذا السطر هنا بالضبط لزيادة الخصم في الداتابيز
-                invoice_discount: orderData.invoiceDiscountAmount ?? 0,
+                invoice_discount_amount: orderData.invoiceDiscountAmount ?? 0,
+                invoice_discount_type: orderData.invoiceDiscountType ?? null,
                 status: "Pending",
                 payment_method: orderData.paymentMethod,
                 payment_status: "Pending",

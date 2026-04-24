@@ -15,6 +15,9 @@ export async function sendOrderInvoiceEmail(order: any, items: any[], branch: an
         totalAmount: order.totalAmount || order.total_amount,
         paymentMethod: order.paymentMethod || order.payment_method,
         createdAt: order.createdAt || order.created_at,
+        deliveryFee: order.deliveryFee ?? order.delivery_fee ?? 0,
+        invoiceDiscountAmount: order.invoiceDiscountAmount ?? order.invoice_discount_amount ?? 0,
+        invoiceDiscountType: order.invoiceDiscountType || order.invoice_discount_type || "fixed",
     };
 
     const b = {
@@ -68,6 +71,24 @@ export async function sendOrderInvoiceEmail(order: any, items: any[], branch: an
                     </thead>
                     <tbody>${itemsHtml}</tbody>
                     <tfoot>
+                        ${o.invoiceDiscountAmount > 0 ? `
+                        <tr>
+                            <td style="padding: 15px 10px 5px; font-size: 14px; color: #059669; font-weight: 700;">
+                                🎁 خصم الفاتورة${o.invoiceDiscountType === 'percentage' ? '' : ' (مبلغ ثابت)'}
+                            </td>
+                            <td style="padding: 15px 10px 5px; font-size: 14px; color: #059669; font-weight: 700; text-align: left;">
+                                -${Number(o.invoiceDiscountAmount).toFixed(2)} ₪
+                            </td>
+                        </tr>` : ''}
+                        ${o.deliveryFee > 0 ? `
+                        <tr>
+                            <td style="padding: 5px 10px; font-size: 14px; color: #666; font-weight: 600;">رسوم التوصيل</td>
+                            <td style="padding: 5px 10px; font-size: 14px; color: #666; font-weight: 600; text-align: left;">+${Number(o.deliveryFee).toFixed(2)} ₪</td>
+                        </tr>` : o.deliveryFee === 0 && order.order_type === 'Delivery' ? `
+                        <tr>
+                            <td style="padding: 5px 10px; font-size: 14px; color: #059669; font-weight: 700;">🎉 التوصيل مجاني</td>
+                            <td style="padding: 5px 10px; font-size: 14px; color: #059669; font-weight: 700; text-align: left;">0.00 ₪</td>
+                        </tr>` : ''}
                         <tr>
                             <td style="padding: 25px 10px 10px; font-weight: 900; font-size: 20px;">المجموع الإجمالي</td>
                             <td style="padding: 25px 10px 10px; font-weight: 900; font-size: 20px; text-align: left; color: #8B0000;">${o.totalAmount} ₪</td>
@@ -92,12 +113,12 @@ export async function sendOrderInvoiceEmail(order: any, items: any[], branch: an
 
     try {
         if (!o.customerEmail || o.customerEmail.includes('customer@uptownps.com')) {
-             console.warn("[Email] ⚠️ No valid customer email found.");
-             return { success: false };
+            console.warn("[Email] ⚠️ No valid customer email found.");
+            return { success: false };
         }
 
         const { data, error } = await resend.emails.send({
-            from: 'أبتاون - UPTOWN <orders@uptownps.com>', 
+            from: 'أبتاون - UPTOWN <orders@uptownps.com>',
             to: [o.customerEmail],
             subject: `فاتورة طلبك من ${b.nameAr} (#${o.id})`,
             html: emailHtml,

@@ -288,11 +288,40 @@ function OrderStatusContent() {
               </div>
             ))}
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #f0f0f0", paddingTop: "12px", marginTop: '12px' }}>
-            <span style={{ fontWeight: 900 }}>{isAr ? "الإجمالي" : "Total"}</span>
-            <span style={{ fontWeight: 900, color: "#8B0000", fontSize: "1.2rem" }}>
-              {Number(order.total_amount).toFixed(2)} ₪
-            </span>
+          <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #f0f0f0", paddingTop: "12px", marginTop: '12px', flexDirection: 'column', gap: '8px' }}>
+            {/* خصم الفرع */}
+            {(() => {
+              const itemsSubtotal = (order.order_items || []).reduce((acc: number, item: any) => acc + ((item.original_price ?? item.price) * item.quantity), 0);
+              const itemsFinal = (order.order_items || []).reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0);
+              const branchDiscount = Math.max(0, itemsSubtotal - itemsFinal);
+              return branchDiscount > 0 ? (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#059669', fontWeight: 700 }}>
+                  <span>{isAr ? 'خصم الفرع' : 'Branch Discount'}</span>
+                  <span>-{branchDiscount.toFixed(2)} ₪</span>
+                </div>
+              ) : null;
+            })()}
+            {/* خصم الفاتورة */}
+            {Number(order.invoice_discount_amount) > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#059669', fontWeight: 700 }}>
+                <span>🎁 {isAr ? 'خصم الفاتورة' : 'Invoice Discount'}</span>
+                <span>-{Number(order.invoice_discount_amount).toFixed(2)} ₪</span>
+              </div>
+            )}
+            {/* رسوم التوصيل */}
+            {order.order_type === 'Delivery' && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: Number(order.delivery_fee) > 0 ? '#666' : '#059669', fontWeight: 700 }}>
+                <span>{isAr ? 'رسوم التوصيل' : 'Delivery Fee'}</span>
+                <span>{Number(order.delivery_fee) > 0 ? `+${Number(order.delivery_fee).toFixed(2)} ₪` : (isAr ? '🎉 مجاني' : '🎉 Free')}</span>
+              </div>
+            )}
+            {/* الإجمالي */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f0f0f0', paddingTop: '10px', marginTop: '4px' }}>
+              <span style={{ fontWeight: 900 }}>{isAr ? "الإجمالي" : "Total"}</span>
+              <span style={{ fontWeight: 900, color: "#8B0000", fontSize: "1.2rem" }}>
+                {Number(order.total_amount).toFixed(2)} ₪
+              </span>
+            </div>
           </div>
         </div>
 

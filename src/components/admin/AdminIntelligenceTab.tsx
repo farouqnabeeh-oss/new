@@ -61,6 +61,9 @@ export function AdminIntelligenceTab({ orders: initialOrders = [], branches, rol
         paymentMethod: o.payment_method,
         paymentStatus: o.payment_status,
         createdAt: o.created_at,
+        deliveryFee: o.delivery_fee,
+        invoiceDiscountAmount: o.invoice_discount_amount,
+        invoiceDiscountType: o.invoice_discount_type,
         branch: o.branch ? { ...o.branch, nameAr: o.branch.name_ar, nameEn: o.branch.name_en } : undefined,
         items: o.order_items ?? undefined,
       }));
@@ -471,12 +474,22 @@ export function AdminIntelligenceTab({ orders: initialOrders = [], branches, rol
               <div>
                 <label style={{ fontSize: '11px', color: '#999', fontWeight: 800, display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>رسوم التوصيل</label>
                 <div style={{ fontWeight: 900, color: '#1a1a1a' }}>
-                  {/* هنا نستخدم الاسم الصحيح للحقل من قاعدة البيانات */}
                   {selectedOrder.delivery_fee && Number(selectedOrder.delivery_fee) > 0
                     ? `${selectedOrder.delivery_fee} ₪`
-                    : '0 ₪ (استلام)'}
+                    : selectedOrder.order_type === 'Delivery' ? '🎉 مجاني' : '— (استلام)'}
                 </div>
               </div>
+
+              {/* خصم الفاتورة */}
+              {selectedOrder.invoice_discount_amount > 0 && (
+                <div>
+                  <label style={{ fontSize: '11px', color: '#999', fontWeight: 800, display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>خصم الفاتورة</label>
+                  <div style={{ fontWeight: 900, color: '#059669' }}>
+                    -{Number(selectedOrder.invoice_discount_amount).toFixed(2)} ₪
+                    {selectedOrder.invoice_discount_type === 'percentage' ? ' (نسبة مئوية)' : ' (مبلغ ثابت)'}
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label style={{ fontSize: '11px', color: '#999', fontWeight: 800, display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>الإجمالي النهائي</label>

@@ -14,15 +14,20 @@ export async function GET(req: NextRequest) {
     const { data: order, error } = await supabase
       .from("orders")
       .select(`
-        id, 
-        customer_name, 
-        status, 
-        order_type, 
-        total_amount, 
-        created_at, 
-        updated_at, 
+        id,
+        customer_name,
+        status,
+        order_type,
+        total_amount,
+        delivery_fee,
+        invoice_discount_amount,
+        invoice_discount_type,
+        created_at,
+        updated_at,
         table_number,
         estimated_time,
+        scheduled_at,
+        address,
         order_items (*),
         branches (*)
       `)

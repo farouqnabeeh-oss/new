@@ -29,9 +29,11 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
     const [isOpen, setIsOpen] = useState(true);
     const [captchaToken, setCaptchaToken] = useState<string | null>(null);
     const [discountRules, setDiscountRules] = useState<any[]>([]);
-    const [invoiceRules, setInvoiceRules] = useState<any[]>([]);
     const [smartDeliveryDiscount, setSmartDeliveryDiscount] = useState(0);
     const [effectiveDeliveryFee, setEffectiveDeliveryFee] = useState<number | null>(null);
+    const [invoiceItemRules, setInvoiceItemRules] = useState<any[]>([]);
+    const [invoiceDiscount, setInvoiceDiscount] = useState(0);
+    const [invoiceDiscountType, setInvoiceDiscountType] = useState<"fixed" | "percentage">("fixed");
 
     const isAr = lang === "ar";
 
@@ -87,21 +89,19 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
     useEffect(() => {
         async function fetchRules() {
             try {
-                const res = await fetch("/api/admin/invoice-discounts");
-                const data = await res.json();
-                if (data.rules) setDiscountRules(data.rules);
+                const [deliveryRes, invoiceRes] = await Promise.all([
+                    fetch("/api/admin/invoice-discounts"),
+                    fetch("/api/admin/invoice-item-discounts"),
+                ]);
+                const deliveryData = await deliveryRes.json();
+                const invoiceData = await invoiceRes.json();
+                if (deliveryData.rules) setDiscountRules(deliveryData.rules);
+                if (invoiceData.rules) setInvoiceItemRules(invoiceData.rules);
             } catch (error) {
                 console.error("Error fetching discount rules:", error);
             }
         }
         fetchRules();
-    }, []);
-
-    // جلب القواعد عند تحميل الصفحة
-    useEffect(() => {
-        fetch('/api/admin/invoice-discounts')
-            .then(res => res.json())
-            .then(data => setInvoiceRules(data.rules || []));
     }, []);
 
     // ✅ كشف رجوع المستخدم من Lahza بدون دفع
@@ -173,8 +173,29 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
 
             setEffectiveDeliveryFee(finalDeliveryFee);
 
+            // ── خصم الفاتورة على الـ subtotal ──
+            let invoiceDiscountAmount = 0;
+            let invoiceDiscountTypeVal: "fixed" | "percentage" = "fixed";
+
+            const invoiceRule = invoiceItemRules.find((r: any) =>
+                itemsTotal >= r.min && (r.max === null || itemsTotal <= r.max)
+            );
+
+            if (invoiceRule && invoiceRule.value > 0) {
+                invoiceDiscountTypeVal = invoiceRule.type;
+                if (invoiceRule.type === "percentage") {
+                    invoiceDiscountAmount = (subtotal * invoiceRule.value) / 100;
+                } else {
+                    invoiceDiscountAmount = invoiceRule.value;
+                }
+                invoiceDiscountAmount = Math.min(invoiceDiscountAmount, subtotal);
+            }
+
+            setInvoiceDiscount(invoiceDiscountAmount);
+            setInvoiceDiscountType(invoiceDiscountTypeVal);
+
             const deliveryPart = orderType === "delivery" ? (finalDeliveryFee ?? 0) : 0;
-            const finalTotal = subtotal + deliveryPart;
+            const finalTotal = subtotal - invoiceDiscountAmount + deliveryPart;
 
             setSubtotal(subtotal);
             setTotal(finalTotal);
@@ -189,6 +210,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
         deliveryFee,
         orderType,
         discountRules,
+        invoiceItemRules,
         settings.deliveryFee
     ]);
 
@@ -254,7 +276,22 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
 
             const baseFee = orderType === 'delivery' ? (deliveryFee ?? settings.deliveryFee ?? 0) : 0;
             const freshEffectiveFee = orderType === 'delivery' ? Math.max(baseFee - smartDeliveryDiscount, 0) : 0;
-            const freshTotal = Math.round(freshItemsTotal + freshEffectiveFee); // بدون كسور
+
+            // إعادة حساب خصم الفاتورة لحظة الإرسال
+            let freshInvoiceDiscount = 0;
+            let freshInvoiceDiscountType: "fixed" | "percentage" = "fixed";
+            const freshInvoiceRule = invoiceItemRules.find((r: any) =>
+                freshItemsTotal >= r.min && (r.max === null || freshItemsTotal <= r.max)
+            );
+            if (freshInvoiceRule && freshInvoiceRule.value > 0) {
+                freshInvoiceDiscountType = freshInvoiceRule.type;
+                freshInvoiceDiscount = freshInvoiceRule.type === "percentage"
+                    ? (freshItemsTotal * freshInvoiceRule.value) / 100
+                    : freshInvoiceRule.value;
+                freshInvoiceDiscount = Math.min(freshInvoiceDiscount, freshItemsTotal);
+            }
+
+            const freshTotal = Math.round(freshItemsTotal - freshInvoiceDiscount + freshEffectiveFee);
 
             const finalAddress = orderType === 'delivery' ? `${selectedZone} - ${address}` : address;
 
@@ -325,7 +362,9 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                 address: finalAddress,
                 tableNumber: null,
                 totalAmount: freshTotal,
-                deliveryFee: freshEffectiveFee, // ← أضف هاد
+                deliveryFee: freshEffectiveFee,
+                invoiceDiscountAmount: freshInvoiceDiscount,
+                invoiceDiscountType: freshInvoiceDiscountType,
                 paymentMethod: paymentMethod === 'cash' ? 'Cash' : 'Card',
                 scheduledAt: scheduledAt
             }, mappedItems, captchaToken || undefined);
@@ -638,6 +677,20 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#059669', fontWeight: 700, marginBottom: '8px' }}>
                                         <span>{isAr ? 'خصم العرض' : 'Discount'} ({branch.discountPercent}%)</span>
                                         <span>-{discount.toFixed(2)} {settings.currencySymbol}</span>
+                                    </div>
+                                )}
+                                {invoiceDiscount > 0 && (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#059669', fontWeight: 700, marginBottom: '8px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                            <Sparkles size={14} />
+                                            <span>
+                                                {isAr ? 'خصم الفاتورة' : 'Invoice Discount'}
+                                                {invoiceDiscountType === 'percentage'
+                                                    ? ` (${invoiceItemRules.find((r: any) => subtotal >= r.min && (r.max === null || subtotal <= r.max))?.value ?? ''}%)`
+                                                    : ''}
+                                            </span>
+                                        </div>
+                                        <span>-{invoiceDiscount.toFixed(2)} {settings.currencySymbol}</span>
                                     </div>
                                 )}
                                 {orderType === 'delivery' && smartDeliveryDiscount > 0 && (

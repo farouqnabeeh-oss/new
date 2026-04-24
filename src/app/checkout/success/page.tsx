@@ -84,7 +84,9 @@ function SuccessContent() {
     (acc: number, item: any) => acc + (item.price * item.quantity), 0
   );
   const discountAmount = Math.max(0, itemsSubtotal - itemsFinalTotal);
-  const deliveryFee = Math.max(0, (orderData?.total_amount || 0) - itemsFinalTotal);
+  const invoiceDiscountAmount = Number(orderData?.invoice_discount_amount ?? 0);
+  const invoiceDiscountType = orderData?.invoice_discount_type ?? "fixed";
+  const deliveryFee = Number(orderData?.delivery_fee ?? 0);
 
   if (loading) {
     return (
@@ -212,14 +214,28 @@ function SuccessContent() {
               </div>
               {discountAmount > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#059669', fontWeight: 700, marginBottom: '8px' }}>
-                  <span>{isAr ? 'الخصم' : 'Discount'}</span>
+                  <span>{isAr ? 'خصم الفرع' : 'Branch Discount'}</span>
                   <span>-{discountAmount.toFixed(2)} ₪</span>
                 </div>
               )}
-              {deliveryFee > 0.1 && (
+              {invoiceDiscountAmount > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#059669', fontWeight: 700, marginBottom: '8px' }}>
+                  <span>
+                    🎁 {isAr ? 'خصم الفاتورة' : 'Invoice Discount'}
+                    {invoiceDiscountType === 'percentage' ? '' : ''}
+                  </span>
+                  <span>-{invoiceDiscountAmount.toFixed(2)} ₪</span>
+                </div>
+              )}
+              {deliveryFee > 0 ? (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#666', marginBottom: '8px' }}>
                   <span>{isAr ? 'رسوم التوصيل' : 'Delivery'}</span>
                   <span>+{deliveryFee.toFixed(2)} ₪</span>
+                </div>
+              ) : orderData?.order_type === 'Delivery' && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#059669', fontWeight: 700, marginBottom: '8px' }}>
+                  <span>{isAr ? '🎉 التوصيل مجاني' : '🎉 Free Delivery'}</span>
+                  <span>0.00 ₪</span>
                 </div>
               )}
             </div>
