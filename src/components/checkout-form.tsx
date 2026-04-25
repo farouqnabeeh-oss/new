@@ -39,7 +39,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
 
 
 
-    // ✅ Autofill من localStorage
+    // ✅ Autofill من localStorage — الحقول العامة عند mount
     useEffect(() => {
         const saved = loadCustomer();
         if (!saved) return;
@@ -52,9 +52,6 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
         set("customer-name", saved.name);
         set("customer-phone", saved.phone);
         set("customer-email", saved.email);
-        set("customer-street", saved.street);
-        set("customer-building", saved.building);
-        set("customer-address-notes", saved.addressNotes);
 
         // Zone — لو محفوظة نفوت عليها
         if (saved.lastZone) {
@@ -67,6 +64,25 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
             }
         }
     }, []); // مرة واحدة عند mount
+
+    // ✅ Autofill حقول الديليفري — بس لما تظهر في الـ DOM
+    useEffect(() => {
+        if (orderType !== "delivery") return;
+        const saved = loadCustomer();
+        if (!saved) return;
+
+        const set = (id: string, val: string) => {
+            const el = document.getElementById(id) as HTMLInputElement | null;
+            if (el && val) el.value = val;
+        };
+
+        // setTimeout عشان نضمن إن الـ DOM اتبنى
+        setTimeout(() => {
+            set("customer-street", saved.street);
+            set("customer-building", saved.building);
+            set("customer-address-notes", saved.addressNotes);
+        }, 0);
+    }, [orderType]);
 
 
 
