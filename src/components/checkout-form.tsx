@@ -195,7 +195,8 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
             setInvoiceDiscountType(invoiceDiscountTypeVal);
 
             const deliveryPart = orderType === "delivery" ? (finalDeliveryFee ?? 0) : 0;
-            const finalTotal = subtotal - invoiceDiscountAmount + deliveryPart;
+            const finalTotal = Math.floor(subtotal - invoiceDiscountAmount + deliveryPart);
+
 
             setSubtotal(subtotal);
             setTotal(finalTotal);
@@ -291,7 +292,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                 freshInvoiceDiscount = Math.min(freshInvoiceDiscount, freshItemsTotal);
             }
 
-            const freshTotal = Math.round(freshItemsTotal - freshInvoiceDiscount + freshEffectiveFee);
+            const freshTotal = Math.floor(freshItemsTotal - freshInvoiceDiscount + freshEffectiveFee);
 
             const finalAddress = orderType === 'delivery' ? `${selectedZone} - ${address}` : address;
 
@@ -305,9 +306,26 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                 lastZone: selectedZone,
             });
 
-
-
+            // ✅ حفظ الداتا بيز (بدون تغيير لضمان عمل page.tsx بشكل صحيح)
             const mappedItems = items.map((i: any) => {
+                // كشف الوجبة العائلية — الـ note بتحتوي JSON من نوع family_meal
+                let familyData: any = null;
+                try {
+                    if (i.note) {
+                        const parsed = JSON.parse(i.note);
+                        if (parsed?.type === 'family_meal') familyData = parsed;
+                    }
+                } catch (_) { }
+
+                if (familyData) {
+                    return {
+                        ...i,
+                        addonDetails: i.note, // نخزن الـ JSON كما هو في addon_details
+                        originalPrice: i.originalPrice ?? i.finalPrice
+                    };
+                }
+
+                // المنتجات العادية — المنطق الحالي
                 const withoutAddons = i.selectedAddOns?.filter((a: any) =>
                     a.groupType === 'Without' ||
                     (a.nameAr || '').includes('بدون')
@@ -321,12 +339,10 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                 if (i.selectedType)
                     parts.push(`${isAr ? 'النوع' : 'Type'}: ${isAr ? i.selectedType.nameAr : i.selectedType.nameEn}`);
 
-                // تجميع الـ addons حسب اسم القائمة
                 const addonsByGroup: Record<string, { nameAr: string; nameEn: string; items: string[] }> = {};
                 i.selectedAddOns?.forEach((a: any) => {
                     const isWithout = a.groupType === 'Without' || (a.nameAr || '').includes('بدون');
                     if (isWithout) return;
-
                     const groupKey = a.groupNameAr || a.groupType || 'إضافات';
                     if (!addonsByGroup[groupKey]) {
                         addonsByGroup[groupKey] = {
@@ -353,6 +369,8 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
             });
 
             // ✅ حفظ الطلب — يعمل لكل أنواع الطلبات (delivery + inRestaurant)
+            console.log("mappedItems sample:", JSON.stringify(mappedItems[0], null, 2));
+
             const res = await saveOrderAction({
                 branchId: branch.id,
                 customerName: name,
@@ -439,7 +457,42 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                 } catch (e) { }
 
                 const orderTypeLabel = orderType === 'delivery' ? (isAr ? 'توصيل' : 'Delivery') : (isAr ? 'استلام' : 'Pickup');
-                const itemsTxt = mappedItems.map((i: any) => `- ${i.quantity}x ${isAr ? i.nameAr : i.nameEn} (${i.finalPrice} ₪) %0A   ${i.addonDetails || ''}`).join('%0A');
+
+                // 🚀 تعديل التنسيق حصرياً لرسالة الواتساب 🚀
+                const itemsTxt = mappedItems.map((i: any) => {
+                    let formattedDetails = '';
+
+                    if (i.addonDetails) {
+                        // كشف الوجبة العائلية — JSON
+                        let familyData: any = null;
+                        try {
+                            const parsed = JSON.parse(i.addonDetails);
+                            if (parsed?.type === 'family_meal') familyData = parsed;
+                        } catch (_) { }
+
+                        if (familyData) {
+                            formattedDetails = familyData.burgers.map((burger: any) => {
+                                const typeName = isAr ? burger.typeAr : burger.typeEn;
+                                const addons = burger.addons.map((a: any) => `➕ ${isAr ? a.nameAr : a.nameEn}`).join(' ');
+                                const without = burger.without.length
+                                    ? `🚫 ${isAr ? 'بدون' : 'Without'}: ${burger.without.map((w: any) => isAr ? w.nameAr : w.nameEn).join('، ')}`
+                                    : '';
+                                const parts = [typeName, addons, without].filter(Boolean).join(' | ');
+                                return `   🍔 *${isAr ? `برغر ${burger.index}` : `Burger ${burger.index}`}:* ${parts || (isAr ? 'بدون تخصيص' : 'No customization')}`;
+                            }).join('%0A');
+                            if (familyData.note) formattedDetails += `%0A   📝 ${familyData.note}`;
+                        } else {
+                            // الأصناف العادية
+                            formattedDetails = i.addonDetails.split(' | ').map((part: string) => {
+                                const isWithout = part.startsWith('بدون') || part.startsWith('Without') || part.startsWith('🚫');
+                                return `   ${isWithout ? '🚫' : '•'} ${part.replace('🚫', '').trim()}`;
+                            }).join('%0A');
+                        }
+                    }
+
+                    return `* ${i.quantity}x ${isAr ? i.nameAr : i.nameEn} (${i.finalPrice} ₪)*${formattedDetails ? `%0A${formattedDetails}` : ''}`;
+                }).join('%0A%0A');
+
                 const scheduledLine = scheduledAt ? `%0A*وقت التجهيز المجددل:* ${scheduledAt}` : '';
                 const msg = `*طلب جديد من UPTOWN*%0A%0A` +
                     `*العميل:* ${name}%0A` +
@@ -449,7 +502,6 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                     `*الأصناف:*%0A${itemsTxt}%0A%0A` +
                     `*المجموع:* ${freshTotal} ₪%0A%0A` +
                     `_تم إرسال الطلب عبر الموقع الإلكتروني_`;
-
 
                 const waLink = `https://wa.me/${branch.whatsApp.replace(/\+/g, '').replace(/\s/g, '')}?text=${msg}`;
 
@@ -725,7 +777,7 @@ export default function CheckoutForm({ branch, settings, lang: initialLang }: Pr
                                 )}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.2rem', color: '#8B0000', fontWeight: 900, marginTop: '10px' }}>
                                     <span>{isAr ? 'المجموع النهائي' : 'Grand Total'}</span>
-                                    <span>{(total || 0).toFixed(2)} {settings.currencySymbol}</span>
+                                    <span>{(total || 0).toFixed(0)} {settings.currencySymbol}</span>
                                 </div>
                             </div>
                         </div>

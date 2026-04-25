@@ -41,6 +41,7 @@ export function AdminProductsTab({ products, categories, branches, settings, add
   const [isActive, setIsActive] = useState(true);
   const [hasMealOption, setHasMealOption] = useState(false);
   const [hasDonenessOption, setHasDonenessOption] = useState(false);
+  const [familySize, setFamilySize] = useState<number | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [formCategoryId, setFormCategoryId] = useState<number | null>(null);
@@ -77,6 +78,7 @@ export function AdminProductsTab({ products, categories, branches, settings, add
     setIsActive(true);
     setHasMealOption(false);
     setHasDonenessOption(false);
+    setFamilySize(null);
     setShowExtrasModal(false);
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
   }, []);
@@ -162,7 +164,8 @@ export function AdminProductsTab({ products, categories, branches, settings, add
       const res = await fetch(`/api/ProductsApi/${product.id}`, { headers: { Accept: "application/json" } });
       if (!res.ok) throw new Error("Failed to load product");
       const data = await res.json();
-
+      console.log("familySize from API:", data.familySize);
+      console.log("categoryId from API:", data.categoryId);
       console.log("API data:", data);
 
       // Prevent auto-save while we're populating the form
@@ -183,6 +186,7 @@ export function AdminProductsTab({ products, categories, branches, settings, add
       setIsActive(!!data.isActive);
       setHasMealOption(!!data.hasMealOption);
       setHasDonenessOption(!!data.hasDonenessOption);
+      setFamilySize(data.familySize ?? null);
 
       setSizes((data.sizes || []).map((s: { nameAr?: string; nameEn?: string; price?: number }) => ({
         NameAr: s.nameAr || "", NameEn: s.nameEn || "", Price: Number(s.price || 0)
@@ -236,6 +240,7 @@ export function AdminProductsTab({ products, categories, branches, settings, add
       setIsActive(true);
       setHasMealOption(false);
       setHasDonenessOption(false);
+      setFamilySize(null);
       containerRef.current.style.display = "block";
       containerRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     } else {
@@ -386,10 +391,14 @@ export function AdminProductsTab({ products, categories, branches, settings, add
               <div className="form-row">
                 <div className="premium-input-group">
                   <label>{t('category')}</label>
-                  <select name="CategoryId" className="premium-select" required defaultValue="" onChange={(e) => {
-                    setFormCategoryId(Number(e.target.value) || null);
-                    handleFormChange();
-                  }}>
+                  <select
+                    name="CategoryId"
+                    value={formCategoryId ?? ""}
+                    onChange={(e) => {
+                      setFormCategoryId(Number(e.target.value) || null);
+                      handleFormChange();
+                    }}
+                  >
                     <option value="">{t('selectCategory')}</option>
                     {categories.map((cat) => (
                       <option value={cat.id} key={cat.id}>{cat.nameEn} ({cat.branch?.nameEn || 'Global'})</option>
@@ -407,6 +416,35 @@ export function AdminProductsTab({ products, categories, branches, settings, add
                 </div>
               </div>
             </div>
+
+            {/* Section 3b: Family Size — يظهر بس لو الفئة = وجبات عائلية */}
+            {formCategoryId === 16 && (
+              <div className="form-section">
+                <div className="form-section-title">👨‍👩‍👧‍👦 إعدادات الوجبة العائلية</div>
+                <div className="form-row">
+                  <div className="premium-input-group">
+                    <label>عدد الأفراد في الوجبة <span style={{ color: '#999', fontSize: '12px' }}>(Family Size)</span></label>
+                    <input
+                      type="number"
+                      name="FamilySize"
+                      className="premium-input"
+                      min="2"
+                      max="20"
+                      placeholder="مثال: 4 أو 6"
+                      value={familySize ?? ""}
+                      onChange={(e) => {
+                        const val = e.target.value === "" ? null : Number(e.target.value);
+                        setFamilySize(val);
+                        handleFormChange();
+                      }}
+                    />
+                    <span style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
+                      💡 هاد الرقم بيحدد كم برغر بتعرض في modal الوجبة العائلية
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Section 4: Advanced Extras */}
             <div className="form-section">

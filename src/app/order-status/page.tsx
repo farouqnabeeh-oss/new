@@ -275,14 +275,67 @@ function OrderStatusContent() {
                 </div>
                 {item.addon_details && (
                   <div style={{ fontSize: '12px', color: '#888', marginTop: '4px', paddingRight: isAr ? '10px' : '0', paddingLeft: isAr ? '0' : '10px', borderRight: isAr ? '2px solid #eee' : 'none', borderLeft: isAr ? 'none' : '2px solid #eee' }}>
-                    {item.addon_details.split('|').map((part: string, pIdx: number) => {
-                      const isExclusion = part.includes('بدون') || part.toLowerCase().includes('exclusion') || part.toLowerCase().includes('without');
-                      return (
-                        <div key={pIdx} style={{ color: isExclusion ? '#dc2626' : '#666', fontWeight: isExclusion ? 700 : 500 }}>
-                          {isExclusion ? '🚫 ' : '• '}{part.trim()}
-                        </div>
-                      );
-                    })}
+                    {(() => {
+                      let familyData: any = null;
+                      try {
+                        const parsed = JSON.parse(item.addon_details);
+                        if (parsed?.type === 'family_meal') familyData = parsed;
+                      } catch (_) { }
+
+                      if (familyData) {
+                        return (
+                          <div>
+                            {familyData.burgers.map((burger: any, bIdx: number) => (
+                              <div key={bIdx} style={{
+                                borderBottom: bIdx < familyData.burgers.length - 1 ? '1px dashed #eee' : 'none',
+                                paddingBottom: '8px', marginBottom: '8px'
+                              }}>
+                                <div>
+                                  <span style={{ fontWeight: 900, color: '#8B0000' }}>
+                                    🍔 {isAr ? `برغر ${burger.index}` : `Burger ${burger.index}`}:
+                                  </span>
+                                  {(isAr ? burger.typeAr : burger.typeEn) && (
+                                    <span style={{ fontWeight: 700, color: '#333', marginRight: '6px', marginLeft: '6px' }}>
+                                      {isAr ? burger.typeAr : burger.typeEn}
+                                    </span>
+                                  )}
+                                </div>
+                                {burger.addons?.length > 0 && (
+                                  <div style={{ marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                                    {burger.addons.map((addon: any, aIdx: number) => (
+                                      <span key={aIdx} style={{ background: '#dcfce7', color: '#166534', padding: '2px 8px', borderRadius: '6px', fontWeight: 700, fontSize: '11px' }}>
+                                        ➕ {isAr ? addon.nameAr : addon.nameEn}{addon.price > 0 ? ` (+${addon.price}₪)` : ''}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                                {burger.without?.length > 0 && (
+                                  <div style={{ marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                                    {burger.without.map((w: any, wIdx: number) => (
+                                      <span key={wIdx} style={{ background: '#fee2e2', color: '#b91c1c', padding: '2px 8px', borderRadius: '6px', fontWeight: 700, fontSize: '11px' }}>
+                                        🚫 {isAr ? w.nameAr : w.nameEn}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                            {familyData.note && (
+                              <div style={{ color: '#888', fontStyle: 'italic', fontSize: '11px', marginTop: '4px' }}>📝 {familyData.note}</div>
+                            )}
+                          </div>
+                        );
+                      }
+
+                      return item.addon_details.split('|').map((part: string, pIdx: number) => {
+                        const isExclusion = part.includes('بدون') || part.toLowerCase().includes('without');
+                        return (
+                          <div key={pIdx} style={{ color: isExclusion ? '#dc2626' : '#666', fontWeight: isExclusion ? 700 : 500 }}>
+                            {isExclusion ? '🚫 ' : '• '}{part.trim()}
+                          </div>
+                        );
+                      });
+                    })()}
                   </div>
                 )}
               </div>

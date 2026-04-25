@@ -34,6 +34,7 @@ export async function GET(_: Request, { params }: RouteContext) {
     allBranches: product.allBranches,
     hasMealOption: product.hasMealOption,
     hasDonenessOption: product.hasDonenessOption,
+    familySize: (product as any).familySize ?? null,  // ← أضف هاد
     sortOrder: product.sortOrder,
     isActive: product.isActive,
 

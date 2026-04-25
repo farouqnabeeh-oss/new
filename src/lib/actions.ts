@@ -286,6 +286,7 @@ export async function saveProductAction(formData: FormData): Promise<ActionResul
       all_branches: toBoolean(get("AllBranches")),
       has_meal_option: toBoolean(get("HasMealOption")),
       has_doneness_option: toBoolean(get("HasDonenessOption")),
+      family_size: toNullableNumber(get("FamilySize")),
       sort_order: toNumber(get("SortOrder")),
       is_active: toBoolean(get("IsActive")),
       branch_discounts: parseJson<Record<string, number>>(get("branchDiscountsJson")) ?? {},

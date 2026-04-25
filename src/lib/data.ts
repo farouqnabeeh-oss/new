@@ -156,6 +156,7 @@ function mapProduct(row: Record<string, any>): Product {
     isActive: Boolean(row.is_active ?? true),
     hasMealOption: Boolean(row.has_meal_option ?? false),
     hasDonenessOption: Boolean(row.has_doneness_option ?? false),
+    familySize: row.family_size ? Number(row.family_size) : null,
   };
 
   if (row.price !== undefined) {
@@ -415,6 +416,7 @@ export async function getProducts(branchSlug?: string, categoryId?: number | nul
       .select("*, sizes:product_sizes(*), types:product_types(*)")
       .order("sort_order", { ascending: true });
 
+
     if (branchSlug) {
       const branch = await getBranchBySlug(branchSlug);
       if (branch) {
@@ -427,6 +429,8 @@ export async function getProducts(branchSlug?: string, categoryId?: number | nul
     }
 
     const { data: productsData, error: productsError } = await query;
+    console.log("raw first product family_size:", productsData?.[0]?.family_size);
+
     if (productsError) throw productsError;
 
     // 2. جلب الإضافات والروابط
@@ -760,7 +764,7 @@ export async function getAdminData() {
       createdAt: String(row.created_at ?? ""),
     }));
 
-    
+
     return {
       branches,
       categories: categories.map((category) => ({

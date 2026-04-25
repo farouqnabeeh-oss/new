@@ -244,9 +244,21 @@ var UI = window.UI || {
 
                     if (t === 'type') return 1;                                          // النوع
                     if (t === 'addon' || name.includes('إضاف')) return 2;               // الإضافات
-                    if (t === 'mealdrinupgrade' || t === 'mealdrink') return 3;         // مشروب الوجبة
-                    if (t === 'mealfries') return 4;                                     // بطاطا الوجبة
-                    if (t === 'without' || name.includes('بدون')) return 5;             // بدون
+
+                    // لما يكون المستخدم اختار وجبة: بدون قبل المشروب
+                    const selectedTypeName = (state.selectedType?.nameAr || state.selectedType?.nameEn || '').toLowerCase();
+                    const isMealSelected = selectedTypeName.includes('وجبة') || selectedTypeName.includes('meal');
+
+                    if (isMealSelected) {
+                        if (t === 'without' || name.includes('بدون')) return 3;         // بدون
+                        if (t === 'mealdrink') return 4;                                // اختيار المشروب
+                        if (t === 'mealdrinupgrade' || t === 'mealdrinkupgrade') return 5; // تبديل المشروب
+                        if (t === 'mealfries') return 6;                               // تبديل البطاطا
+                    } else {
+                        if (t === 'mealdrinupgrade' || t === 'mealdrink') return 3;
+                        if (t === 'mealfries') return 4;
+                        if (t === 'without' || name.includes('بدون')) return 5;
+                    }
                     return 10;
                 };
 
@@ -529,26 +541,26 @@ var UI = window.UI || {
                 }
 
                 return `
-                     <div class="option-group">
-                         <div class="option-group-title" style="font-size:15px">${groupLabel}</div>
-                         <div class="option-stack">
-                             ${group.items.map(item => {
+                    <div class="option-group">
+                        <div class="option-group-title" style="font-size:15px">${groupLabel}</div>
+                        <div class="option-stack">
+                            ${group.items.map(item => {
                     const isSelected = selectedIds.has(item.id);
                     const selectorClass = group.allowMultiple ? 'option-item-check' : 'option-item-radio';
                     const priceText = item.price > 0 ? `+${item.price}${currency}` : '';
                     return `
-                                     <div class="option-item ${isSelected ? 'selected' : ''}" data-action="addon" data-group-id="${group.id}" data-id="${item.id}" style="padding:10px 15px">
-                                         <span class="option-item-price">${priceText}</span>
-                                         <div class="option-item-label">
-                                             <span class="option-item-name" style="font-size:14px">${Lang.localized(item.nameAr, item.nameEn)}</span>
-                                             <div class="${selectorClass}"></div>
-                                         </div>
-                                     </div>
-                                 `;
+                                    <div class="option-item ${isSelected ? 'selected' : ''}" data-action="addon" data-group-id="${group.id}" data-id="${item.id}" style="padding:10px 15px">
+                                        <span class="option-item-price">${priceText}</span>
+                                        <div class="option-item-label">
+                                            <span class="option-item-name" style="font-size:14px">${Lang.localized(item.nameAr, item.nameEn)}</span>
+                                            <div class="${selectorClass}"></div>
+                                        </div>
+                                    </div>
+                                `;
                 }).join('')}
-                         </div>
-                     </div>
-                 `;
+                        </div>
+                    </div>
+                `;
             }).join('');
 
             html += `
@@ -629,6 +641,10 @@ var UI = window.UI || {
                         if (!validateRequiredGroups()) return;
 
                         const allAddons = [...state.selectedAddOns, ...state.selectedSimpleAddons];
+                        const bDisc = product.branchDiscounts || product.branch_discounts || {};
+                        const effectiveDiscount = (branchId !== undefined && bDisc[branchId] !== undefined)
+                            ? Number(bDisc[branchId])
+                            : branchDiscount;
                         Cart.addItem(
                             branchSlug,
                             product,
@@ -637,7 +653,7 @@ var UI = window.UI || {
                             state.selectedType,
                             allAddons,
                             state.note,
-                            branchDiscount
+                            effectiveDiscount
                         );
                         UI.hideModal('product-modal-overlay', 'product-modal');
                         UI.updateCartBadge(branchSlug);
@@ -660,6 +676,332 @@ var UI = window.UI || {
         } catch (e) {
             console.error("Failed to render product modal:", e);
             alert("Sorry, an error occurred while displaying the product. Error: " + e.message);
+        }
+    },
+
+    renderFamilyMealModal(product, addonGroups, branchSlug, currency, branchDiscount, branchId) {
+        const panel = document.getElementById('product-modal');
+        const familySize = product.familySize || 4;
+        const isAr = Lang.current === 'ar';
+
+        // بناء state لكل برغر
+        const buildDefaultBurgerState = (index) => {
+            const types = product.types || [];
+            // توزيع نص/نص بالتناوب
+            const defaultType = types.length > 1
+                ? types[index % types.length]
+                : (types[0] || null);
+            return {
+                selectedType: defaultType,
+                selectedAddOns: [],
+                note: ''
+            };
+        };
+
+        let burgersState = Array.from({ length: familySize }, (_, i) => buildDefaultBurgerState(i));
+        let openBurgerIndex = 0;
+        let quantity = 1;
+
+        const findGroupByItemId = (itemId) => addonGroups.find(g => g.items.some(it => it.id === itemId));
+
+        const getVisibleGroups = () => addonGroups.filter(g => {
+            const type = g.groupType || '';
+            const name = (g.nameAr || '') + ' ' + (g.nameEn || '');
+            // اخفي مجموعة النوع لأنها بتتعرض كـ pills
+            if (type === 'type' || type === 'types' || name.includes('النوع')) return false;
+            return true;
+        });
+
+        const toggleAddon = (burgerIdx, group, item) => {
+            const state = burgersState[burgerIdx];
+            const currentlySelected = state.selectedAddOns.find(a => a.id === item.id);
+            if (group.allowMultiple) {
+                if (currentlySelected) {
+                    state.selectedAddOns = state.selectedAddOns.filter(a => a.id !== item.id);
+                } else {
+                    state.selectedAddOns.push({ ...item, groupType: group.groupType, groupNameAr: group.nameAr, groupNameEn: group.nameEn });
+                }
+            } else {
+                if (currentlySelected) {
+                    state.selectedAddOns = state.selectedAddOns.filter(a => a.id !== item.id);
+                } else {
+                    state.selectedAddOns = state.selectedAddOns.filter(a => {
+                        const g = findGroupByItemId(a.id);
+                        return !g || g.id !== group.id;
+                    });
+                    state.selectedAddOns.push({ ...item, groupType: group.groupType, groupNameAr: group.nameAr, groupNameEn: group.nameEn });
+                }
+            }
+        };
+
+        const renderBurgerPanel = (burgerIdx) => {
+            const state = burgersState[burgerIdx];
+            const selectedIds = new Set(state.selectedAddOns.map(a => a.id));
+            const visibleGroups = getVisibleGroups();
+            const types = product.types || [];
+
+            let html = '';
+
+            // النوع
+            if (types.length > 0) {
+                html += `<div class="option-group">
+                    <div class="option-group-title" style="font-size:14px">${isAr ? 'النوع' : 'Type'}</div>
+                    <div class="option-stack">
+                        ${types.map(type => {
+                    const isSelected = state.selectedType?.id === type.id;
+                    return `<div class="option-item ${isSelected ? 'selected' : ''}" 
+                                data-action="family-type" 
+                                data-burger-idx="${burgerIdx}" 
+                                data-type-id="${type.id}"
+                                style="padding:10px 15px">
+                                <span class="option-item-price">${type.price > 0 ? `+${type.price}${currency}` : ''}</span>
+                                <div class="option-item-label">
+                                    <span class="option-item-name" style="font-size:14px">${Lang.localized(type.nameAr, type.nameEn)}</span>
+                                    <div class="option-item-radio"></div>
+                                </div>
+                            </div>`;
+                }).join('')}
+                    </div>
+                </div>`;
+            }
+
+            // مجموعات الإضافات والبدون
+            visibleGroups.forEach(group => {
+                if (!group.items || group.items.length === 0) return;
+                const isNote = (group.nameAr || '').includes('بدون') || (group.groupType || '').toLowerCase().includes('without');
+                html += `<div class="option-group">
+                    <div class="option-group-title" style="font-size:14px">${Lang.localized(group.nameAr, group.nameEn)}</div>
+                    <div class="option-stack">
+                        ${group.items.map(item => {
+                    const isSelected = selectedIds.has(item.id);
+                    const isNoteItem = (item.nameAr || '').includes('بدون') || (item.nameEn || '').toLowerCase().includes('without');
+                    return `<div class="option-item ${isSelected ? 'selected' : ''} ${isNoteItem ? 'is-note-option' : ''}"
+                                data-action="family-addon"
+                                data-burger-idx="${burgerIdx}"
+                                data-group-id="${group.id}"
+                                data-item-id="${item.id}"
+                                style="${isNoteItem ? 'border-color:#fca5a5;background:#fff5f5;' : ''}padding:10px 15px">
+                                <span class="option-item-price">${item.price > 0 ? `+${item.price}${currency}` : ''}</span>
+                                <div class="option-item-label">
+                                    <span class="option-item-name" style="${isNoteItem ? 'color:#dc2626;font-weight:800;' : ''}font-size:14px">${isNoteItem ? '❌ ' : ''}${Lang.localized(item.nameAr, item.nameEn)}</span>
+                                    <div class="${group.allowMultiple ? 'option-item-check' : 'option-item-radio'}"></div>
+                                </div>
+                            </div>`;
+                }).join('')}
+                    </div>
+                </div>`;
+            });
+
+            return html;
+        };
+
+        const calculateTotal = () => {
+            let base = product.basePrice || 0;
+            // أضيف سعر الأنواع المختارة لكل برغر
+            burgersState.forEach(state => {
+                if (state.selectedType?.price) base += state.selectedType.price;
+                state.selectedAddOns.forEach(a => { base += (a.price || 0); });
+            });
+            let unitPrice = base;
+            if (product.discount > 0) unitPrice = unitPrice - (unitPrice * product.discount / 100);
+            if (branchDiscount > 0) unitPrice = unitPrice - (unitPrice * branchDiscount / 100);
+            return unitPrice * quantity;
+        };
+
+        const render = () => {
+            const body = panel.querySelector('.modal-body');
+            const scrollPos = body ? body.scrollTop : 0;
+
+            const totalPrice = calculateTotal();
+            const desc = Lang.localized(product.descriptionAr, product.descriptionEn);
+
+            let html = `
+                <div class="modal-header">
+                    <button class="modal-close" onclick="UI.hideModal('product-modal-overlay','product-modal')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                    <span class="modal-title" style="font-size:1.2rem">${Lang.localized(product.nameAr, product.nameEn)}</span>
+                </div>
+                <div class="modal-body">
+                    <div class="product-modal-image-wrap">
+                        <img src="${product.imagePath || '/images/classic-cheeseburger__0x1e3y1qv68eiip.jpg'}" class="product-modal-image" alt="" />
+                    </div>
+                    ${desc ? `<div class="product-modal-desc">${desc}</div>` : ''}
+            `;
+
+            // Accordion لكل برغر
+            for (let i = 0; i < familySize; i++) {
+                const isOpen = openBurgerIndex === i;
+                const state = burgersState[i];
+                const typeName = state.selectedType ? Lang.localized(state.selectedType.nameAr, state.selectedType.nameEn) : '';
+                const addonsCount = state.selectedAddOns.length;
+                const burgerLabel = isAr ? `البرغر ${i + 1}` : `Burger ${i + 1}`;
+                const summary = typeName ? `${typeName}${addonsCount > 0 ? ` • ${addonsCount} ${isAr ? 'إضافة' : 'extras'}` : ''}` : '';
+
+                html += `
+                    <div class="family-burger-accordion ${isOpen ? 'open' : ''}" style="
+                        border: 2px solid ${isOpen ? '#8B0000' : '#eee'};
+                        border-radius: 18px;
+                        margin-bottom: 10px;
+                        overflow: hidden;
+                        transition: border-color 0.2s;
+                    ">
+                        <div class="family-burger-header" data-action="family-toggle" data-idx="${i}" style="
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            padding: 14px 18px;
+                            cursor: pointer;
+                            background: ${isOpen ? '#fff8f8' : '#fafafa'};
+                        ">
+                            <div style="display:flex;align-items:center;gap:10px">
+                                <span style="font-size:1.3rem">🍔</span>
+                                <div>
+                                    <div style="font-weight:900;font-size:15px;color:#1a1a1a">${burgerLabel}</div>
+                                    ${summary ? `<div style="font-size:12px;color:#8B0000;font-weight:700">${summary}</div>` : ''}
+                                </div>
+                            </div>
+                            <span style="font-size:1.2rem;color:#8B0000;transform:rotate(${isOpen ? '180' : '0'}deg);transition:transform 0.2s">▾</span>
+                        </div>
+                        ${isOpen ? `<div class="family-burger-body" style="padding:15px;border-top:1px solid #eee">${renderBurgerPanel(i)}</div>` : ''}
+                    </div>
+                `;
+            }
+
+            // ملاحظة + كمية + زر
+            html += `
+                <div class="note-field">
+                    <label style="text-align:right;display:block;margin-bottom:10px;font-weight:900;font-size:14px">${Lang.t('addNote')}</label>
+                    <textarea id="product-note" placeholder="${Lang.t('notes')}..." style="width:100%;border-radius:15px;border:2px solid #eee;padding:15px;text-align:right;font-size:14px"></textarea>
+                </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="cart-qty-control" style="margin-bottom:12px;justify-content:center">
+                        <button data-action="family-qty-minus">−</button>
+                        <span>${quantity}</span>
+                        <button data-action="family-qty-plus">+</button>
+                    </div>
+                    <button class="add-to-cart-btn" data-action="family-add-to-cart" style="padding:15px;font-size:15px">
+                        ${Lang.t('addToCart')} (${Math.floor(totalPrice)}${currency})
+                    </button>
+                </div>
+            `;
+
+            panel.innerHTML = html;
+
+            // إعادة السكرول بعد الريندر
+            const newBody = panel.querySelector('.modal-body');
+            if (newBody && scrollPos > 0) {
+                setTimeout(() => { newBody.scrollTop = scrollPos; }, 0);
+            }
+
+            // ربط الأحداث
+            panel.querySelectorAll('[data-action]').forEach(el => {
+                el.addEventListener('click', () => {
+                    const action = el.dataset.action;
+
+                    if (action === 'family-toggle') {
+                        const idx = Number(el.dataset.idx);
+                        openBurgerIndex = openBurgerIndex === idx ? -1 : idx;
+                        render();
+                        return;
+                    }
+
+                    if (action === 'family-type') {
+                        const burgerIdx = Number(el.dataset.burgerIdx);
+                        const typeId = Number(el.dataset.typeId);
+                        burgersState[burgerIdx].selectedType = product.types.find(t => t.id === typeId) || null;
+                        render();
+                        return;
+                    }
+
+                    if (action === 'family-addon') {
+                        const burgerIdx = Number(el.dataset.burgerIdx);
+                        const groupId = Number(el.dataset.groupId);
+                        const itemId = Number(el.dataset.itemId);
+                        const group = addonGroups.find(g => g.id === groupId);
+                        const item = group?.items.find(it => it.id === itemId);
+                        if (!group || !item) return;
+                        toggleAddon(burgerIdx, group, item);
+                        render();
+                        return;
+                    }
+
+                    if (action === 'family-qty-minus') {
+                        if (quantity > 1) quantity--;
+                        render();
+                        return;
+                    }
+
+                    if (action === 'family-qty-plus') {
+                        quantity++;
+                        render();
+                        return;
+                    }
+
+                    if (action === 'family-add-to-cart') {
+                        const note = document.getElementById('product-note')?.value || '';
+
+                        // بناء JSON منظم لكل برغر
+                        const burgersJson = burgersState.map((state, i) => {
+                            const withoutAddons = state.selectedAddOns.filter(a =>
+                                (a.groupType || '').toLowerCase() === 'without' ||
+                                (a.groupNameAr || '').includes('بدون') ||
+                                (a.nameAr || '').includes('بدون') ||
+                                (a.nameEn || '').toLowerCase().includes('without')
+                            );
+                            const normalAddons = state.selectedAddOns.filter(a =>
+                                (a.groupType || '').toLowerCase() !== 'without' &&
+                                !(a.groupNameAr || '').includes('بدون') &&
+                                !(a.nameAr || '').includes('بدون') &&
+                                !(a.nameEn || '').toLowerCase().includes('without')
+                            );
+                            return {
+                                index: i + 1,
+                                typeAr: state.selectedType ? (state.selectedType.nameAr || '') : '',
+                                typeEn: state.selectedType ? (state.selectedType.nameEn || '') : '',
+                                addons: normalAddons.map(a => ({ nameAr: a.nameAr || '', nameEn: a.nameEn || '', price: a.price || 0 })),
+                                without: withoutAddons.map(a => ({ nameAr: a.nameAr || '', nameEn: a.nameEn || '' })),
+                            };
+                        });
+
+                        const familyPayload = JSON.stringify({
+                            type: 'family_meal',
+                            burgers: burgersJson,
+                            note: note
+                        });
+
+                        const allSelectedAddons = burgersState.flatMap(s => s.selectedAddOns);
+                        const bDiscF = product.branchDiscounts || product.branch_discounts || {};
+                        const effectiveDiscountF = (branchId !== undefined && bDiscF[branchId] !== undefined)
+                            ? Number(bDiscF[branchId])
+                            : branchDiscount;
+
+                        Cart.addItem(
+                            branchSlug,
+                            product,
+                            quantity,
+                            null,
+                            null,
+                            allSelectedAddons,
+                            familyPayload,
+                            effectiveDiscountF
+                        );
+
+                        UI.hideModal('product-modal-overlay', 'product-modal');
+                        UI.updateCartBadge(branchSlug);
+                        return;
+                    }
+                });
+            });
+        };
+
+        try {
+            render();
+            UI.showModal('product-modal-overlay', 'product-modal');
+        } catch (e) {
+            console.error("Failed to render family meal modal:", e);
+            alert("Sorry, an error occurred. Error: " + e.message);
         }
     }
 };

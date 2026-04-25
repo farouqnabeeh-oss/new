@@ -188,18 +188,78 @@ function SuccessContent() {
 
                     {oi.addon_details && (
                       <div style={{ marginTop: '8px', fontSize: '12px', background: '#fafafa', borderRadius: '10px', padding: '10px', lineHeight: '1.8' }}>
-                        {oi.addon_details.split(' | ').map((part: string, pIdx: number) => {
-                          const isWithout = part.startsWith('بدون') || part.startsWith('Without');
-                          const isType = part.startsWith('النوع') || part.startsWith('Type');
-                          return (
-                            <div key={pIdx} style={{
-                              color: isWithout ? '#e63946' : isType ? '#1d3557' : '#555',
-                              fontWeight: isWithout || isType ? 800 : 600
-                            }}>
-                              {isWithout ? '🚫 ' : isType ? '🍽️ ' : '• '}{part}
-                            </div>
-                          );
-                        })}
+                        {(() => {
+                          // JSON parse — وجبة عائلية
+                          let familyData: any = null;
+                          try {
+                            const parsed = JSON.parse(oi.addon_details);
+                            if (parsed?.type === 'family_meal') familyData = parsed;
+                          } catch (_) { }
+
+                          if (familyData) {
+                            return (
+                              <div>
+                                {familyData.burgers.map((burger: any, bIdx: number) => (
+                                  <div key={bIdx} style={{
+                                    borderTop: bIdx > 0 ? '1px solid #eee' : 'none',
+                                    paddingTop: bIdx > 0 ? '6px' : '0',
+                                    marginTop: bIdx > 0 ? '6px' : '0',
+                                  }}>
+                                    <div>
+                                      <span style={{ fontWeight: 900, color: '#8B0000' }}>
+                                        🍔 {isAr ? `برغر ${burger.index}` : `Burger ${burger.index}`}:
+                                      </span>
+                                      <span style={{ fontWeight: 700, color: '#333', marginRight: '6px', marginLeft: '6px' }}>
+                                        {isAr ? burger.typeAr : burger.typeEn}
+                                      </span>
+                                    </div>
+                                    {burger.addons?.length > 0 && (
+                                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+                                        {burger.addons.map((addon: any, aIdx: number) => (
+                                          <span key={aIdx} style={{
+                                            background: '#dcfce7', color: '#166534',
+                                            padding: '2px 8px', borderRadius: '6px', fontWeight: 700, fontSize: '11px'
+                                          }}>
+                                            ➕ {isAr ? addon.nameAr : addon.nameEn}{addon.price > 0 ? ` (+${addon.price}₪)` : ''}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                    {burger.without?.length > 0 && (
+                                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+                                        {burger.without.map((w: any, wIdx: number) => (
+                                          <span key={wIdx} style={{
+                                            background: '#fee2e2', color: '#b91c1c',
+                                            padding: '2px 8px', borderRadius: '6px', fontWeight: 700, fontSize: '11px'
+                                          }}>
+                                            🚫 {isAr ? w.nameAr : w.nameEn}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                                {familyData.note && (
+                                  <div style={{ color: '#888', fontStyle: 'italic', marginTop: '6px' }}>📝 {familyData.note}</div>
+                                )}
+                              </div>
+                            );
+                          }
+
+                          // أصناف عادية
+                          return oi.addon_details.split(' | ').map((part: string, pIdx: number) => {
+                            const isWithout = part.startsWith('بدون') || part.startsWith('Without');
+                            const isType = part.startsWith('النوع') || part.startsWith('Type');
+                            return (
+                              <div key={pIdx} style={{
+                                color: isWithout ? '#e63946' : isType ? '#1d3557' : '#555',
+                                fontWeight: isWithout || isType ? 800 : 600
+                              }}>
+                                {isWithout ? '🚫 ' : isType ? '🍽️ ' : '• '}{part}
+                              </div>
+                            );
+                          });
+                        })()}
                       </div>
                     )}
                   </div>

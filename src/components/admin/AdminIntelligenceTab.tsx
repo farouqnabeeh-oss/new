@@ -4,6 +4,7 @@ import { type Order, type Branch } from "@/lib/types";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { updateOrderStatus, getOrderSummary } from "@/lib/order-actions";
 import { Search, Filter, Calendar, CreditCard, LayoutGrid, RefreshCw, X } from "lucide-react";
+import { FamilyMealDetails, parseFamilyMeal } from "@/lib/Familymealutils";
 
 type Props = {
   orders?: Order[]; // optional — now fetched internally
@@ -505,16 +506,27 @@ export function AdminIntelligenceTab({ orders: initialOrders = [], branches, rol
                     <span style={{ fontWeight: 900, fontSize: '1.1rem' }}>{item.quantity}x {item.product_name_ar}</span>
                     <span style={{ fontWeight: 900, color: '#8B0000' }}>{item.price * item.quantity} ₪</span>
                   </div>
+
                   {item.addon_details && (
-                    <div style={{ fontSize: '13px', color: '#555', lineHeight: '1.6', background: '#fcfcfc', padding: '15px', borderRadius: '15px', border: '1px solid #f0f0f0' }}>
-                      {item.addon_details.split(' | ').map((part: string, pIdx: number) => {
-                        const isWithout = part.includes('بدون') || part.includes('ملاحظات');
-                        return (
-                          <div key={pIdx} style={{ color: isWithout ? '#e63946' : 'inherit', fontWeight: isWithout ? 800 : 600 }}>
-                            {isWithout ? '🚫 ' : '• '}{part}
-                          </div>
-                        );
-                      })}
+                    <div style={{ fontSize: '13px', color: '#555', lineHeight: '1.6', background: '#fcfcfc', padding: '15px', borderRadius: '15px', border: '1px solid #f0f0f0', marginTop: '10px' }}>
+                      {parseFamilyMeal(item.addon_details) ? (
+                        <FamilyMealDetails addonDetails={item.addon_details} isAr={true} />
+                      ) : (
+                        // fallback — نص مفرمت قديم (لو مش JSON وجبة عائلية)
+                        item.addon_details.split(' | ').map((part: string, pIdx: number) => {
+                          const isWithout = part.includes('بدون') || part.includes('Without') || part.startsWith('🚫');
+                          const isNote = part.includes('ملاحظة') || part.includes('Note');
+                          return (
+                            <div key={pIdx} style={{
+                              color: isWithout ? '#e63946' : isNote ? '#888' : '#333',
+                              fontWeight: isWithout ? 800 : 600,
+                              marginBottom: '4px'
+                            }}>
+                              {isWithout ? '🚫 ' : isNote ? '📝 ' : '• '}{part.replace('🚫', '').trim()}
+                            </div>
+                          );
+                        })
+                      )}
                     </div>
                   )}
                 </div>

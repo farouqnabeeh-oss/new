@@ -95,23 +95,33 @@ export default function MenuClient({ categories = [], allProducts = [], allAddon
         // 2. فلترة المجموعات المربوطة (مباشرة + يدوية + قسم)
         const productAddonGroups = allAddonGroups.filter((group) => {
           const isDirect = String(group.productId) === String(p.id);
-          const isCategory = String(group.categoryId) === String(p.categoryId) && !group.productId;
-          // هنا نستخدم البيانات التي جلبناها من data.ts
-          const isLinked = p.linkedAddonGroupIds?.includes(Number(group.id));
-
-          return isDirect || isCategory || isLinked;
+          const isLinked = (p as any).linkedAddonGroupIds?.includes(Number(group.id));
+          return isDirect || isLinked;
         });
 
         // 3. فتح النافذة فوراً بدون أي Fetch أو Loading
         if (window.UI && window.UI.renderProductModal) {
-          window.UI.renderProductModal(
-            p,
-            productAddonGroups,
-            branch.slug,
-            currency,
-            branch.discountPercent || 0,
-            branch.id
-          );
+          // لو وجبة عائلية → استخدم modal خاص
+          const isFamilyMeal = (p as any).familySize > 0;
+          if (isFamilyMeal && window.UI.renderFamilyMealModal) {
+            window.UI.renderFamilyMealModal(
+              p,
+              productAddonGroups,
+              branch.slug,
+              currency,
+              branch.discountPercent || 0,
+              branch.id
+            );
+          } else {
+            window.UI.renderProductModal(
+              p,
+              productAddonGroups,
+              branch.slug,
+              currency,
+              branch.discountPercent || 0,
+              branch.id
+            );
+          }
         }
       };
 
@@ -209,6 +219,15 @@ export default function MenuClient({ categories = [], allProducts = [], allAddon
       if (typeof cleanup === 'function') cleanup();
     };
   }, [categories, allProducts, allAddonGroups, branch, isAr, currency, updateBadge]);
+
+  useEffect(() => {
+    const fp = allProducts.filter((p: any) => p.familySize != null);
+    console.log("Family meal products:", fp.map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      familySize: p.familySize
+    })));
+  }, [allProducts]);
 
   return null;
 }

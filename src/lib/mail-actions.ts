@@ -34,10 +34,54 @@ export async function sendOrderInvoiceEmail(order: any, items: any[], branch: an
         const name = item.productNameAr || item.product_name_ar || "منتج";
         const qty = item.quantity || 1;
         const price = item.price || 0;
+        const addonDetails = item.addonDetails || item.addon_details || '';
+
+        let addonsHtml = '';
+        if (addonDetails) {
+            // كشف الوجبة العائلية — JSON
+            let familyData: any = null;
+            try {
+                const parsed = JSON.parse(addonDetails);
+                if (parsed?.type === 'family_meal') familyData = parsed;
+            } catch (_) { }
+
+            if (familyData) {
+                const rows = familyData.burgers.map((burger: any) => {
+                    const typeName = burger.typeAr || '';
+                    const addonsHtmlInner = burger.addons.map((a: any) =>
+                        `<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:6px;font-weight:700;font-size:11px;margin:2px;display:inline-block;">➕ ${a.nameAr}${a.price > 0 ? ` (+${a.price}₪)` : ''}</span>`
+                    ).join('');
+                    const withoutHtmlInner = burger.without.map((w: any) =>
+                        `<span style="background:#fee2e2;color:#b91c1c;padding:2px 8px;border-radius:6px;font-weight:700;font-size:11px;margin:2px;display:inline-block;">🚫 ${w.nameAr}</span>`
+                    ).join('');
+                    return `<div style="padding:5px 0;border-bottom:1px dashed #eee;">
+                        <span style="font-weight:900;color:#8B0000;">🍔 برغر ${burger.index}:</span>
+                        ${typeName ? `<span style="font-weight:700;color:#333;margin:0 6px;">${typeName}</span>` : ''}
+                        ${addonsHtmlInner ? `<div style="margin-top:3px;">${addonsHtmlInner}</div>` : ''}
+                        ${withoutHtmlInner ? `<div style="margin-top:3px;">${withoutHtmlInner}</div>` : ''}
+                    </div>`;
+                }).join('');
+                const noteHtml = familyData.note
+                    ? `<div style="color:#888;font-style:italic;margin-top:5px;font-size:11px;">📝 ${familyData.note}</div>`
+                    : '';
+                addonsHtml = `<div style="margin-top:8px;padding:10px;background:#fff8f8;border-radius:8px;border:1px solid #ffe4e4;font-size:12px;">${rows}${noteHtml}</div>`;
+            } else {
+                const parts = addonDetails.split('|').filter((p: string) => p.trim());
+                addonsHtml = `<div style="margin-top:6px;font-size:12px;color:#666;">` +
+                    parts.map((part: string) => {
+                        const isWithout = part.includes('بدون') || part.toLowerCase().includes('without');
+                        return `<div style="color:${isWithout ? '#dc2626' : '#666'};font-weight:${isWithout ? '700' : '500'};">${isWithout ? '🚫 ' : '• '}${part.trim()}</div>`;
+                    }).join('') + `</div>`;
+            }
+        }
+
         return `
             <tr>
-                <td style="padding: 12px 10px; border-bottom: 1px solid #eee; text-align: right;">${name} x ${qty}</td>
-                <td style="padding: 12px 10px; border-bottom: 1px solid #eee; text-align: left;">${price} ₪</td>
+                <td style="padding: 12px 10px; border-bottom: 1px solid #eee; text-align: right;">
+                    <div style="font-weight:700;">${name} x ${qty}</div>
+                    ${addonsHtml}
+                </td>
+                <td style="padding: 12px 10px; border-bottom: 1px solid #eee; text-align: left; vertical-align:top;">${price} ₪</td>
             </tr>
         `;
     }).join('');
